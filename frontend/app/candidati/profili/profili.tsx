@@ -1,88 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import PageHeader from "@/components/layout/pageHeader";
+import EmptyState from "@/components/empty/EmptyState";
+import Button from "@/components/ui/button";
+import Link from "next/link";
 
-export default function ProfiliPage() {
-    const [modifica, setModifica] = useState(false);
+/** Tipo locale per il profilo candidato */
+type Candidato = {
+    nome: string;
+    cognome: string;
+    email: string;
+    citta?: string | null;
+    telefono?: string | null;
+    dataNascita?: string | null; // ISO string
+};
 
-    // Nessun mock: i dati arriveranno dal DB tramite userService
-    const profilo = null;
+/** Componente di dettaglio isolato: elimina qualsiasi ambiguità di narrowing */
+function DettaglioProfilo({ c }: { c: Candidato }) {
+    return (
+        <div className="rounded-2xl border bg-[var(--surface)] border-[var(--border)] p-6 space-y-4">
+            <h3 className="text-lg font-semibold">
+                {c.nome} {c.cognome}
+            </h3>
+            <p className="text-sm text-[var(--muted)]">{c.email}</p>
+            <div className="text-sm mt-2">
+                <p>Città: {c.citta ?? "—"}</p>
+                <p>Telefono: {c.telefono ?? "—"}</p>
+                <p>Data di nascita: {c.dataNascita ?? "—"}</p>
+            </div>
+        </div>
+    );
+}
 
-    if (!profilo) {
-        return (
-            <section className="rounded-2xl p-6 bg-surface border border-border shadow-card text-center">
-                <h2 className="text-xl font-semibold mb-2">Profilo candidato</h2>
-                <p className="text-muted">
-                    Nessun profilo caricato. Quando collegheremo il database, qui
-                    verranno mostrati i tuoi dati personali.
-                </p>
-            </section>
-        );
-    }
+export default function ProfiloCandidato() {
+    // Tipizzato in modo esplicito: niente 'any' né 'never'
+    const candidato: Candidato | null = null;
 
     return (
-        <section className="space-y-8">
-            <div className="rounded-2xl p-6 bg-surface border border-border shadow-card">
-                <h2 className="text-2xl font-semibold mb-2">Il mio profilo</h2>
-                <p className="text-muted">
-                    Gestisci le informazioni del tuo account candidato.
-                </p>
-            </div>
+        <div className="space-y-6">
+            <PageHeader
+                title="Profilo candidato"
+                subtitle="Visualizza e aggiorna le tue informazioni personali"
+                actions={[{ label: "Torna alle posizioni", href: "/candidati/posizioni" }]}
+            />
 
-            <form className="rounded-2xl p-6 bg-surface border border-border shadow-card space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium">Nome</label>
-                        <input
-                            type="text"
-                            className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-accent"
-                            disabled={!modifica}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium">Cognome</label>
-                        <input
-                            type="text"
-                            className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-accent"
-                            disabled={!modifica}
-                        />
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium">Email</label>
-                    <input
-                        type="email"
-                        className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-accent"
-                        disabled={!modifica}
-                    />
-                </div>
-
-                <div className="flex justify-end gap-3">
-                    {!modifica ? (
-                        <button
-                            type="button"
-                            className="btn"
-                            onClick={() => setModifica(true)}
-                        >
-                            Modifica
-                        </button>
-                    ) : (
-                        <>
-                            <button
-                                type="button"
-                                className="rounded-xl border border-border px-4 py-2 hover:bg-surface"
-                                onClick={() => setModifica(false)}
-                            >
-                                Annulla
-                            </button>
-                            <button type="submit" className="btn">
-                                Salva modifiche
-                            </button>
-                        </>
-                    )}
-                </div>
-            </form>
-        </section>
+            {/* Se assente, stato vuoto */}
+            {candidato === null ? (
+                <EmptyState
+                    title="Profilo non disponibile"
+                    subtitle="Effettua il login per visualizzare e modificare le tue informazioni personali."
+                    actionSlot={
+                        <Button asChild>
+                            <Link href="/auth/login">Accedi</Link>
+                        </Button>
+                    }
+                />
+            ) : (
+                // Forziamo il tipo via props: qui TS è certo che 'c' è Candidato
+                <DettaglioProfilo c={candidato} />
+            )}
+        </div>
     );
 }

@@ -1,39 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 
 export default function Logout() {
-    const [done, setDone] = useState(false);
+    const router = useRouter();
+    const logout = useAuthStore((s) => s.logout);
 
     useEffect(() => {
-        // TODO: sostituire con authService.logout() + clear storage/cookie
-        const run = async () => {
-            await new Promise((r) => setTimeout(r, 400));
-            setDone(true);
-        };
-        run();
-    }, []);
+        // TODO: se/quando avrai l'API: await authService.logout();
+        logout();                 // pulizia stato globale
+        const t = setTimeout(() => {
+            router.replace("/auth/login"); // redirect certo alla pagina di login
+        }, 300);
+        return () => clearTimeout(t);
+    }, [logout, router]);
 
     return (
         <section className="max-w-md mx-auto">
-            <div className="rounded-2xl p-8 bg-surface border border-border shadow-card text-center">
-                <h2 className="text-2xl font-semibold mb-2">
-                    {done ? "Sei stato disconnesso" : "Uscita in corso..."}
-                </h2>
-                <p className="text-muted mb-6">
-                    {done
-                        ? "La sessione è stata terminata correttamente."
-                        : "Attendi qualche istante."}
-                </p>
+            <div className="rounded-2xl p-8 bg-[var(--surface)] border border-[var(--border)] shadow-sm text-center">
+                <h2 className="text-2xl font-semibold mb-2">Uscita in corso…</h2>
+                <p className="text-[var(--muted)] mb-6">Attendi qualche istante.</p>
 
                 <div className="flex items-center justify-center gap-3">
-                    <a href="/auth/login/login" className="btn">Vai al login</a>
-                    <a
-                        href="/auth/register/register"
-                        className="rounded-xl border border-border px-4 py-2 hover:bg-surface"
-                    >
-                        Crea account
-                    </a>
+                    {/* Link di fallback ASSOLUTI corretti (se l'auto-redirect non partisse) */}
+                    <a href="/auth/login" className="rounded-xl border px-4 py-2">Vai al login</a>
+                    <a href="/auth/register" className="rounded-xl border px-4 py-2">Crea account</a>
                 </div>
             </div>
         </section>

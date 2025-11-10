@@ -1,6 +1,15 @@
 "use client";
 
-import Button from "@/components/ui/button";
+import React from "react";
+
+export type CandidatoCardProps = {
+    id: string | number;
+    nome: string;
+    email: string;
+    posizione?: string;           // titolo posizione opzionale (lato HR)
+    punteggio?: number;           // opzionale (test/valutazioni)
+    rightSlot?: React.ReactNode;  // azioni contestuali (link, pulsanti)
+};
 
 export default function CandidatoCard({
                                           nome,
@@ -8,39 +17,18 @@ export default function CandidatoCard({
                                           posizione,
                                           punteggio,
                                           rightSlot,
-                                          className = "",
-                                      }: {
-    nome: string;
-    email: string;
-    posizione?: string | null;
-    punteggio?: number | string | null;
-    rightSlot?: React.ReactNode;
-    className?: string;
-}) {
+                                      }: CandidatoCardProps) {
     return (
-        <div
-            className={`w-full rounded-2xl border bg-[var(--surface)] border-[var(--border)] p-4 ${className}`}
-        >
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <h3 className="text-lg font-semibold">{nome}</h3>
-                    <p className="text-sm text-[var(--muted)]">{email}</p>
-
-                    {posizione && (
-                        <p className="text-sm mt-1">
-                            Posizione: <span className="font-medium">{posizione}</span>
-                        </p>
-                    )}
-
-                    {punteggio !== undefined && punteggio !== null && (
-                        <p className="text-sm mt-1">
-                            Punteggio: <span className="font-medium">{punteggio}</span>
-                        </p>
-                    )}
-                </div>
-
-                <div className="flex items-center gap-2">{rightSlot}</div>
+        <article className="rounded-2xl border bg-[var(--surface)] p-4 shadow-sm flex items-start justify-between gap-4">
+            <div className="space-y-1">
+                <h3 className="text-lg font-semibold text-[var(--foreground)]">{nome}</h3>
+                <p className="text-sm text-[var(--muted)]">{email}</p>
+                {posizione && <p className="text-sm">Posizione: <span className="font-medium">{posizione}</span></p>}
+                {typeof punteggio === "number" && (
+                    <p className="text-sm">Punteggio: <span className="font-medium">{punteggio}</span></p>
+                )}
             </div>
-        </div>
+            {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
+        </article>
     );
 }
