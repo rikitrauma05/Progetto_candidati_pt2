@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Button from "@/components/ui/button";
+import Input from "@/components/ui/input";
+import Select from "@/components/ui/select";
+import Textarea from "@/components/ui/textarea";
 
 type Stato = "APERTA" | "CHIUSA";
 
@@ -22,21 +26,18 @@ export default function HrPosizioneDettaglio() {
 
     useEffect(() => {
         if (!idPosizione) return;
-        const bootstrap = async () => {
+        const loadData = async () => {
             try {
                 setLoading(true);
                 setErrore(null);
-                // TODO: carica dati reali dal backend con idPosizione
-                // Esempio:
-                // const data = await posizioneService.getByIdHR(idPosizione as string)
-                // setTitolo(data.titolo) ... etc.
+                // TODO: fetch dati reali con idPosizione
             } catch {
                 setErrore("Impossibile caricare la posizione.");
             } finally {
                 setLoading(false);
             }
         };
-        bootstrap();
+        loadData();
     }, [idPosizione]);
 
     async function salvaModifiche(e: React.FormEvent) {
@@ -45,7 +46,6 @@ export default function HrPosizioneDettaglio() {
             setLoading(true);
             setErrore(null);
             // TODO: update
-            // await posizioneService.update(idPosizione as string, { titolo, sede, contratto, settore, stato, descrizione })
             setEditing(false);
         } catch {
             setErrore("Errore durante il salvataggio.");
@@ -57,10 +57,8 @@ export default function HrPosizioneDettaglio() {
     async function toggleStato() {
         try {
             setLoading(true);
-            setErrore(null);
             const nuovo = stato === "APERTA" ? "CHIUSA" : "APERTA";
             // TODO: patch stato
-            // await posizioneService.patchStato(idPosizione as string, nuovo)
             setStato(nuovo);
         } catch {
             setErrore("Errore durante l'aggiornamento dello stato.");
@@ -73,9 +71,7 @@ export default function HrPosizioneDettaglio() {
         if (!confirm("Confermi l'eliminazione della posizione?")) return;
         try {
             setLoading(true);
-            setErrore(null);
             // TODO: delete
-            // await posizioneService.delete(idPosizione as string)
             router.push("/hr/posizioni");
         } catch {
             setErrore("Errore durante l'eliminazione.");
@@ -92,16 +88,15 @@ export default function HrPosizioneDettaglio() {
         );
     }
 
-    // Se non sono stati caricati dati reali, mostriamo placeholder “non trovata”
     if (!titolo && !sede && !contratto && !settore && !descrizione) {
         return (
             <section className="rounded-2xl p-6 bg-surface border border-border shadow-card text-center">
                 <h2 className="text-xl font-semibold mb-2">Posizione non trovata</h2>
                 <p className="text-muted">Nessun dato disponibile per questa posizione.</p>
                 <div className="mt-4">
-                    <a href="/hr/posizioni" className="rounded-xl border border-border px-4 py-2 hover:bg-surface">
+                    <Button variant="secondary" onClick={() => router.push("/hr/posizioni")}>
                         Torna all’elenco
-                    </a>
+                    </Button>
                 </div>
             </section>
         );
@@ -109,113 +104,69 @@ export default function HrPosizioneDettaglio() {
 
     return (
         <section className="space-y-8">
+            {/* Header */}
             <div className="rounded-2xl p-6 bg-surface border border-border shadow-card flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-semibold">HR — Posizione</h2>
+                    <h2 className="text-2xl font-semibold">Dettaglio posizione HR</h2>
                     <p className="text-sm text-muted">
                         ID: <span className="font-mono">{String(idPosizione)}</span>
                     </p>
                 </div>
 
                 <div className="flex gap-2">
-                    <button
-                        type="button"
-                        className="rounded-xl border border-border px-4 py-2 hover:bg-surface"
-                        onClick={() => setEditing((v) => !v)}
-                    >
+                    <Button variant="outline" onClick={() => setEditing(!editing)}>
                         {editing ? "Annulla" : "Modifica"}
-                    </button>
-                    <button type="button" className="btn" onClick={toggleStato}>
+                    </Button>
+                    <Button variant="primary" onClick={toggleStato}>
                         {stato === "APERTA" ? "Chiudi posizione" : "Riapri posizione"}
-                    </button>
-                    <button
-                        type="button"
-                        className="rounded-xl border border-red-300 text-red-700 px-4 py-2 hover:bg-red-50"
-                        onClick={eliminaPosizione}
-                    >
+                    </Button>
+                    <Button variant="danger" onClick={eliminaPosizione}>
                         Elimina
-                    </button>
+                    </Button>
                 </div>
             </div>
 
+            {/* Form */}
             <form
                 onSubmit={salvaModifiche}
                 className="rounded-2xl p-6 bg-surface border border-border shadow-card space-y-4"
             >
+                {errore && (
+                    <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+                        {errore}
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium">Titolo</label>
-                        <input
-                            type="text"
-                            className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-accent"
-                            value={titolo}
-                            onChange={(e) => setTitolo(e.target.value)}
-                            disabled={!editing}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium">Sede</label>
-                        <input
-                            type="text"
-                            className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-accent"
-                            value={sede}
-                            onChange={(e) => setSede(e.target.value)}
-                            disabled={!editing}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium">Contratto</label>
-                        <input
-                            type="text"
-                            className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-accent"
-                            value={contratto}
-                            onChange={(e) => setContratto(e.target.value)}
-                            disabled={!editing}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium">Settore</label>
-                        <input
-                            type="text"
-                            className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-accent"
-                            value={settore}
-                            onChange={(e) => setSettore(e.target.value)}
-                            disabled={!editing}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium">Stato</label>
-                        <select
-                            className="w-full rounded-xl border border-border bg-background px-3 py-2"
-                            value={stato}
-                            onChange={(e) => setStato(e.target.value as Stato)}
-                            disabled={!editing}
-                        >
-                            <option value="APERTA">APERTA</option>
-                            <option value="CHIUSA">CHIUSA</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium">Descrizione</label>
-                    <textarea
-                        className="w-full rounded-xl border border-border bg-background px-3 py-2 outline-none focus:ring-2 focus:ring-accent min-h-[140px]"
-                        value={descrizione}
-                        onChange={(e) => setDescrizione(e.target.value)}
+                    <Input label="Titolo" value={titolo} onChange={(e) => setTitolo(e.target.value)} disabled={!editing} />
+                    <Input label="Sede" value={sede} onChange={(e) => setSede(e.target.value)} disabled={!editing} />
+                    <Input label="Contratto" value={contratto} onChange={(e) => setContratto(e.target.value)} disabled={!editing} />
+                    <Input label="Settore" value={settore} onChange={(e) => setSettore(e.target.value)} disabled={!editing} />
+                    <Select
+                        label="Stato"
+                        value={stato}
+                        onChange={(e) => setStato(e.target.value as Stato)}
+                        options={[
+                            { value: "APERTA", label: "APERTA" },
+                            { value: "CHIUSA", label: "CHIUSA" },
+                        ]}
                         disabled={!editing}
                     />
                 </div>
 
+                <Textarea
+                    label="Descrizione"
+                    value={descrizione}
+                    onChange={(e) => setDescrizione(e.target.value)}
+                    disabled={!editing}
+                    minRows={7}
+                />
+
                 {editing && (
                     <div className="flex justify-end">
-                        <button type="submit" className="btn">
+                        <Button type="submit" disabled={loading}>
                             Salva modifiche
-                        </button>
+                        </Button>
                     </div>
                 )}
             </form>

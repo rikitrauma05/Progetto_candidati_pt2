@@ -1,13 +1,10 @@
-import "../styles/globals.css";
+import "../styles/globals.css"; // adatta il path se diverso
 import type { Metadata } from "next";
 import Link from "next/link";
 
-/* ============================
-   Layout principale del sito
-   ============================ */
 export const metadata: Metadata = {
     title: "Lavoro Candidati",
-    description: "Piattaforma di gestione candidature e posizioni lavorative",
+    description: "Piattaforma di gestione candidature e posizioni",
 };
 
 export default function RootLayout({
@@ -20,14 +17,16 @@ export default function RootLayout({
         <body className="min-h-screen bg-background text-foreground">
         <header className="border-b border-border bg-surface shadow-card">
             <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                <Link href="/auth/login" className="text-2xl font-semibold text-accent">
+                <Link href="/auth" className="text-2xl font-semibold text-accent">
                     Lavoro<span className="text-foreground">Candidati</span>
                 </Link>
 
                 <nav className="flex gap-4 text-sm">
-                    <Link href="/auth/login" className="hover:text-accent">Home</Link>
+                    <Link href="/auth" className="hover:text-accent">Home</Link>
                     <Link href="/auth/login" className="hover:text-accent">Login</Link>
                     <Link href="/auth/register" className="hover:text-accent">Registrati</Link>
+                    <Link href="/candidati/posizioni" className="hover:text-accent">Posizioni</Link>
+                    <Link href="/hr/dashboard" className="hover:text-accent">HR</Link>
                 </nav>
             </div>
         </header>

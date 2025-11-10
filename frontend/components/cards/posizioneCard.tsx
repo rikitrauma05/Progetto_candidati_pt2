@@ -1,39 +1,42 @@
 "use client";
 
-import Link from "next/link";
-import { Posizione } from "@/types/posizione";
+import Button from "@/components/ui/button";
 
-export default function PosizioneCard({ posizione }: { posizione: Posizione }) {
+export default function PosizioneCard({
+                                          titolo,
+                                          sede,
+                                          contratto,
+                                          candidature,
+                                          rightSlot,
+                                          onOpen,
+                                          className = "",
+                                      }: {
+    titolo: string;
+    sede?: string | null;
+    contratto?: string | null;
+    candidature?: number | null;
+    rightSlot?: React.ReactNode;
+    onOpen?: () => void;
+    className?: string;
+}) {
     return (
-        <div className="rounded-2xl p-5 bg-surface border border-border shadow-card flex flex-col">
-            <div className="flex items-start justify-between gap-3">
+        <div
+            className={`w-full rounded-2xl border bg-[var(--surface)] border-[var(--border)] p-4 ${className}`}
+        >
+            <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h3 className="text-lg font-semibold">{posizione.titolo}</h3>
-                    <p className="text-sm text-muted">
-                        {posizione.sede} • {posizione.contratto} • {posizione.settore}
-                    </p>
+                    <h3 className="text-lg font-semibold">{titolo}</h3>
+                    <div className="mt-1 text-sm text-[var(--muted)]">
+                        {sede ? `Sede: ${sede}` : "Sede: n/d"} · {contratto ?? "Contratto: n/d"}
+                    </div>
+                    {typeof candidature === "number" && (
+                        <div className="mt-1 text-sm">Candidature: {candidature}</div>
+                    )}
                 </div>
-
-                <span
-                    className={`text-xs px-2 py-1 rounded ${
-                        posizione.stato === "APERTA"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                    }`}
-                    title={`Aggiornata il ${posizione.aggiornataIl}`}
-                >
-          {posizione.stato}
-        </span>
-            </div>
-
-            <div className="mt-5 flex justify-between items-center">
-        <span className="text-xs text-muted">
-          Ultimo aggiornamento: {posizione.aggiornataIl}
-        </span>
-
-                <Link href={`/candidati/posizioni/${posizione.id}`} className="btn">
-                    Dettagli
-                </Link>
+                <div className="flex items-center gap-2">
+                    {rightSlot}
+                    {onOpen && <Button onClick={onOpen}>Apri</Button>}
+                </div>
             </div>
         </div>
     );
