@@ -4,7 +4,7 @@
  * URL base per le chiamate API.
  * Se NEXT_PUBLIC_API_BASE è vuoto, usa il proxy definito in next.config.ts.
  */
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "";
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "/api";
 
 /**
  * Costruisce l’URL completo per la fetch.
