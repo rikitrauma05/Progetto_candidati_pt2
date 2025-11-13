@@ -56,37 +56,39 @@ export default function PosizioniHR() {
                 </div>
             )}
 
-            {!loading && !errore && posizioni.length === 0 && (
-                <EmptyState
-                    title="Nessuna posizione trovata"
-                    subtitle="Non sono presenti posizioni attive al momento."
-                    actionSlot={
-                        <Button asChild>
-                            <Link href="/hr/posizioni/nuova">Crea nuova posizione</Link>
-                        </Button>
-                    }
-                />
-            )}
+            <div className="max-w-5xl mx-auto">
+                {!loading && !errore && posizioni.length === 0 && (
+                    <EmptyState
+                        title="Nessuna posizione trovata"
+                        subtitle="Non sono presenti posizioni attive al momento."
+                        actionSlot={
+                            <Button asChild>
+                                <Link href="/hr/posizioni/nuova">Crea nuova posizione</Link>
+                            </Button>
+                        }
+                    />
+                )}
 
-            {!loading && !errore && posizioni.length > 0 && (
-                <div className="grid gap-3">
-                    {posizioni.map((p) => (
-                        <PosizioneCard
-                            key={p.idPosizione}
-                            id={p.idPosizione}
-                            titolo={p.titolo}
-                            sede={p.sede}
-                            contratto={p.contratto}
-                            candidature={p.candidatureRicevute}
-                            rightSlot={
-                                <Button asChild>
-                                    <Link href={`/hr/posizioni/${p.idPosizione}`}>Dettaglio</Link>
-                                </Button>
-                            }
-                        />
-                    ))}
-                </div>
-            )}
+                {!loading && !errore && posizioni.length > 0 && (
+                    <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+                        {posizioni.map((p) => (
+                            <PosizioneCard
+                                key={p.idPosizione}
+                                id={p.idPosizione}
+                                titolo={p.titolo}
+                                sede={p.sede}
+                                contratto={p.contratto}
+                                candidature={p.candidatureRicevute}
+                                rightSlot={
+                                    <Button asChild>
+                                        <Link href={`/hr/posizioni/${p.idPosizione}`}>Dettaglio</Link>
+                                    </Button>
+                                }
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

@@ -63,7 +63,7 @@ export default function PosizioniCandidato() {
                 </div>
             )}
 
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-5xl mx-auto">
                 {!errore && posizioni.length === 0 && (
                     <EmptyState
                         title="Nessuna posizione disponibile"
@@ -72,7 +72,7 @@ export default function PosizioniCandidato() {
                 )}
 
                 {!errore && posizioni.length > 0 && (
-                    <div className="grid gap-3 md:gap-4">
+                    <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
                         {posizioni.map((p) => (
                             <PosizioneCard
                                 key={p.idPosizione}
