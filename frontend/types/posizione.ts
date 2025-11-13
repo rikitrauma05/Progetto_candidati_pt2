@@ -21,13 +21,12 @@ export type Settore = {
 };
 
 /**
- * Tipo principale di una Posizione lavorativa.
- * Include sia "idPosizione" (come nel backend)
- * sia "id" per compatibilità con i componenti React.
+ * Tipo principale per le posizioni.
+ * Manteniamo sia "idPosizione" (backend) sia "id" (frontend/React keys).
  */
 export type Posizione = {
-    id: number | string;              // usato dal frontend (PosizioneCard)
-    idPosizione: number;              // chiave primaria dal backend
+    id: number | string;      // usato dai componenti React (PosizioneCard)
+    idPosizione: number;      // PK dal backend
     titolo: string;
     descrizione?: string;
     sede?: string;

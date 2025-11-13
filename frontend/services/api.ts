@@ -2,36 +2,42 @@
 
 /**
  * URL base per le chiamate API.
- * Se NEXT_PUBLIC_API_BASE è vuoto, usa il proxy definito in next.config.ts.
+ * Se NEXT_PUBLIC_API_BASE è vuoto o solo spazi,
+ * usa sempre il proxy locale "/api" (configurato in next.config.ts).
  */
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "/api";
+const RAW_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
-/**
- * Costruisce l’URL completo per la fetch.
- * Se il percorso è già assoluto (http://...), lo lascia invariato.
- */
-function buildUrl(path: string) {
-    return path.startsWith("http") ? path : API_BASE + path;
+export const API_BASE =
+  RAW_BASE && RAW_BASE.trim() !== ""
+    ? RAW_BASE.replace(/\/+$/, "")
+    : "/api";
+
+
+function isAbsolute(url: string) {
+  return /^https?:\/\//i.test(url);
 }
 
-/**
- * Effettua una richiesta GET e restituisce il JSON tipizzato.
- * - Cache: "no-store" per ottenere dati sempre aggiornati in sviluppo.
- * - Lancia un errore se la risposta non è ok.
- */
+function join(base: string, path: string) {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${p}`; // es. "/api" + "/posizioni" -> "/api/posizioni"
+}
+
 export async function getJson<T = unknown>(
-    path: string,
-    init?: RequestInit
+  path: string,
+  init?: RequestInit
 ): Promise<T> {
-    const res = await fetch(buildUrl(path), {
-        cache: "no-store",
-        ...init,
-    });
+  const url = isAbsolute(path) ? path : join(API_BASE, path);
+  const res = await fetch(url, { cache: "no-store", ...init });
 
-    if (!res.ok) {
-        const msg = await res.text().catch(() => res.statusText);
-        throw new Error(msg || `HTTP ${res.status}`);
-    }
+  if (!res.ok) {
+    const raw = await res.text().catch(() => res.statusText);
+    const msg =
+      raw && raw.startsWith("<!")
+        ? `${res.status} ${res.statusText}`
+        : raw;
 
-    return res.json() as Promise<T>;
+    throw new Error(msg || `HTTP ${res.status}`);
+  }
+
+  return res.json() as Promise<T>;
 }
