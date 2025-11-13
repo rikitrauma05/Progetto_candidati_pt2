@@ -30,7 +30,7 @@ export default function HrPosizioneDettaglio() {
             try {
                 setLoading(true);
                 setErrore(null);
-                // TODO: fetch dati reali con idPosizione
+                // TODO: fetch reale
             } catch {
                 setErrore("Impossibile caricare la posizione.");
             } finally {
@@ -57,8 +57,8 @@ export default function HrPosizioneDettaglio() {
     async function toggleStato() {
         try {
             setLoading(true);
-            const nuovo = stato === "APERTA" ? "CHIUSA" : "APERTA";
-            // TODO: patch stato
+            const nuovo: Stato = stato === "APERTA" ? "CHIUSA" : "APERTA";
+            // TODO: patch
             setStato(nuovo);
         } catch {
             setErrore("Errore durante l'aggiornamento dello stato.");
@@ -88,23 +88,8 @@ export default function HrPosizioneDettaglio() {
         );
     }
 
-    if (!titolo && !sede && !contratto && !settore && !descrizione) {
-        return (
-            <section className="rounded-2xl p-6 bg-surface border border-border shadow-card text-center">
-                <h2 className="text-xl font-semibold mb-2">Posizione non trovata</h2>
-                <p className="text-muted">Nessun dato disponibile per questa posizione.</p>
-                <div className="mt-4">
-                    <Button variant="secondary" onClick={() => router.push("/hr/posizioni")}>
-                        Torna all’elenco
-                    </Button>
-                </div>
-            </section>
-        );
-    }
-
     return (
         <section className="space-y-8">
-            {/* Header */}
             <div className="rounded-2xl p-6 bg-surface border border-border shadow-card flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-semibold">Dettaglio posizione HR</h2>
@@ -114,7 +99,7 @@ export default function HrPosizioneDettaglio() {
                 </div>
 
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setEditing(!editing)}>
+                    <Button variant="outline" onClick={() => setEditing((v) => !v)}>
                         {editing ? "Annulla" : "Modifica"}
                     </Button>
                     <Button variant="primary" onClick={toggleStato}>
@@ -126,7 +111,6 @@ export default function HrPosizioneDettaglio() {
                 </div>
             </div>
 
-            {/* Form */}
             <form
                 onSubmit={salvaModifiche}
                 className="rounded-2xl p-6 bg-surface border border-border shadow-card space-y-4"
@@ -138,14 +122,34 @@ export default function HrPosizioneDettaglio() {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input label="Titolo" value={titolo} onChange={(e) => setTitolo(e.target.value)} disabled={!editing} />
-                    <Input label="Sede" value={sede} onChange={(e) => setSede(e.target.value)} disabled={!editing} />
-                    <Input label="Contratto" value={contratto} onChange={(e) => setContratto(e.target.value)} disabled={!editing} />
-                    <Input label="Settore" value={settore} onChange={(e) => setSettore(e.target.value)} disabled={!editing} />
+                    <Input
+                        label="Titolo"
+                        value={titolo}
+                        onChange={(e) => setTitolo(e.target.value)}
+                        disabled={!editing}
+                    />
+                    <Input
+                        label="Sede"
+                        value={sede}
+                        onChange={(e) => setSede(e.target.value)}
+                        disabled={!editing}
+                    />
+                    <Input
+                        label="Contratto"
+                        value={contratto}
+                        onChange={(e) => setContratto(e.target.value)}
+                        disabled={!editing}
+                    />
+                    <Input
+                        label="Settore"
+                        value={settore}
+                        onChange={(e) => setSettore(e.target.value)}
+                        disabled={!editing}
+                    />
                     <Select
                         label="Stato"
                         value={stato}
-                        onChange={(e) => setStato(e.target.value as Stato)}
+                        onChangeAction={(val: string) => setStato(val as Stato)}
                         options={[
                             { value: "APERTA", label: "APERTA" },
                             { value: "CHIUSA", label: "CHIUSA" },
@@ -157,7 +161,7 @@ export default function HrPosizioneDettaglio() {
                 <Textarea
                     label="Descrizione"
                     value={descrizione}
-                    onChange={(e) => setDescrizione(e.target.value)}
+                    onChangeAction={(val: string) => setDescrizione(val)}
                     disabled={!editing}
                     minRows={7}
                 />

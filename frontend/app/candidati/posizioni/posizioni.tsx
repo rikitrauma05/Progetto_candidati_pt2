@@ -1,166 +1,77 @@
-// frontend/app/candidati/posizioni/posizioni.tsx
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import PageHeader from "@/components/layout/pageHeader";
-import EmptyState from "@/components/empty/EmptyState";
 import Button from "@/components/ui/button";
+import EmptyState from "@/components/empty/EmptyState";
 import PosizioneCard from "@/components/cards/posizioneCard";
-import { getPosizioniFiltrate } from "@/services/posizione.service";
-import type { Posizione } from "@/types/posizione";
+import { getJson } from "@/services/api";
 
-type PosizioniFilters = {
-    contratto: string;
-    sede: string;
-    settore: string;
+type Posizione = {
+    idPosizione: number;
+    titolo: string;
+    sede?: string;
+    contratto?: string;
+    candidatureRicevute?: number;
 };
 
-export default function PosizioniPage() {
+export default function PosizioniCandidato() {
     const [posizioni, setPosizioni] = useState<Posizione[]>([]);
-    const [err, setErr] = useState<string>("");
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState<PosizioniFilters>({
-        contratto: "",
-        sede: "",
-        settore: "",
-    });
-
-    const router = useRouter();
+    const [errore, setErrore] = useState<string | null>(null);
 
     useEffect(() => {
-        let mounted = true;
-
-        setLoading(true);
-        setErr("");
-
-        getPosizioniFiltrate(filters)
-            .then((data) => {
-                if (!mounted) return;
+        const load = async () => {
+            try {
+                setLoading(true);
+                setErrore(null);
+                const data = await getJson<Posizione[]>("/posizioni");
                 setPosizioni(data ?? []);
-            })
-            .catch((e) => {
-                if (!mounted) return;
-                setErr(String(e?.message || e));
-            })
-            .finally(() => {
-                if (!mounted) return;
+            } catch (e) {
+                console.error(e);
+                setErrore("Errore durante il caricamento delle posizioni.");
+            } finally {
                 setLoading(false);
-            });
-
-        return () => {
-            mounted = false;
+            }
         };
-    }, [filters]);
+        load();
+    }, []);
 
-    function handleFilterChange(e: React.ChangeEvent<HTMLSelectElement>) {
-        const { name, value } = e.target;
-        setFilters((prev) => ({ ...prev, [name]: value }));
+    if (loading) {
+        return (
+            <div className="space-y-6">
+                <PageHeader
+                    title="Posizioni disponibili"
+                    subtitle="Esplora le posizioni aperte e invia la tua candidatura"
+                />
+                <p className="text-sm text-[var(--muted)]">Caricamento posizioni…</p>
+            </div>
+        );
     }
-
-    function clearFilters() {
-        setFilters({ contratto: "", sede: "", settore: "" });
-    }
-
-    const errorText = useMemo(() => {
-        if (!err) return "";
-        return err.length > 160 ? `${err.slice(0, 160)}…` : err;
-    }, [err]);
 
     return (
         <div className="space-y-6">
             <PageHeader
                 title="Posizioni disponibili"
-                subtitle="Consulta e filtra le offerte attive"
-                actions={[
-                    {
-                        label: "Pulisci filtri",
-                        onClick: clearFilters,
-                    },
-                ]}
+                subtitle="Esplora le posizioni aperte e invia la tua candidatura"
             />
 
-            {/* FILTRI */}
-            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/15 bg-[var(--surface)] px-3 py-3">
-                <select
-                    name="contratto"
-                    value={filters.contratto}
-                    onChange={handleFilterChange}
-                    className="h-10 rounded-xl border border-white/15 bg-black/40 px-3 text-sm text-[var(--foreground)] outline-none transition hover:border-white/35 focus:border-blue-500"
-                >
-                    <option value="">Tutti i contratti</option>
-                    <option value="Indeterminato">Tempo indeterminato</option>
-                    <option value="Determinato">Tempo determinato</option>
-                    <option value="Stage">Stage</option>
-                    <option value="Part-Time">Part-time</option>
-                </select>
-
-                <select
-                    name="sede"
-                    value={filters.sede}
-                    onChange={handleFilterChange}
-                    className="h-10 rounded-xl border border-white/15 bg-black/40 px-3 text-sm text-[var(--foreground)] outline-none transition hover:border-white/35 focus:border-blue-500"
-                >
-                    <option value="">Tutte le sedi</option>
-                    <option value="Milano">Milano</option>
-                    <option value="Roma">Roma</option>
-                    <option value="Torino">Torino</option>
-                    <option value="Piacenza">Piacenza</option>
-                </select>
-
-                <select
-                    name="settore"
-                    value={filters.settore}
-                    onChange={handleFilterChange}
-                    className="h-10 rounded-xl border border-white/15 bg-black/40 px-3 text-sm text-[var(--foreground)] outline-none transition hover:border-white/35 focus:border-blue-500"
-                >
-                    <option value="">Tutti i settori</option>
-                    <option value="IT">IT</option>
-                    <option value="HR">HR</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Finance">Finance</option>
-                </select>
-
-                <div className="ml-auto">
-                    <Button onClick={clearFilters}>Pulisci filtri</Button>
-                </div>
-            </div>
-
-            {/* STATO: errore */}
-            {errorText && !loading && (
-                <div className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                    Errore: {errorText}
+            {errore && (
+                <div className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {errore}
                 </div>
             )}
 
-            {/* STATO: loading */}
-            {loading && (
-                <div className="grid gap-3 sm:grid-cols-2">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div
-                            key={i}
-                            className="animate-pulse rounded-2xl border border-white/10 bg-[var(--surface)] p-4"
-                        >
-                            <div className="mb-2 h-4 w-2/3 rounded bg-white/10" />
-                            <div className="mb-4 h-3 w-1/3 rounded bg-white/10" />
-                            <div className="h-8 w-24 rounded-full bg-white/10" />
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* STATO: vuoto */}
-            {!loading && !errorText && posizioni.length === 0 && (
+            {!errore && posizioni.length === 0 && (
                 <EmptyState
-                    title="Nessuna posizione trovata"
-                    subtitle="Nessuna offerta corrisponde ai filtri selezionati."
+                    title="Nessuna posizione disponibile"
+                    subtitle="Quando saranno pubblicate nuove posizioni le troverai qui."
                 />
             )}
 
-            {/* STATO: dati */}
-            {!loading && posizioni.length > 0 && (
-                <div className="grid gap-3 sm:grid-cols-2">
+            {!errore && posizioni.length > 0 && (
+                <div className="grid gap-3">
                     {posizioni.map((p) => (
                         <PosizioneCard
                             key={p.idPosizione}
@@ -168,7 +79,6 @@ export default function PosizioniPage() {
                             titolo={p.titolo}
                             sede={p.sede}
                             contratto={p.contratto}
-                            onClick={() => router.push(`/candidati/posizioni/${p.idPosizione}`)}
                             rightSlot={
                                 <Button asChild>
                                     <Link href={`/candidati/posizioni/${p.idPosizione}`}>

@@ -1,8 +1,8 @@
-// frontend/app/layout.tsx
 import "@/styles/globals.css";
 import Link from "next/link";
+import type { Metadata } from "next";
 
-export const metadata = {
+export const metadata: Metadata = {
     title: "Lavoro_Candidati",
     description: "Piattaforma candidature e test",
 };
@@ -16,14 +16,9 @@ export default function RootLayout({
         <html lang="it">
         <body className="min-h-dvh bg-[var(--background)] text-[var(--foreground)] antialiased">
         <div className="min-h-dvh flex flex-col">
-
-            {/* NAVBAR UNICA PER TUTTO IL PROGETTO */}
             <header className="border-b border-border bg-black/70 backdrop-blur">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-                    <Link
-                        href="/"
-                        className="text-lg font-semibold tracking-tight"
-                    >
+                    <Link href="/" className="text-lg font-semibold tracking-tight">
                         Candid<span className="text-blue-500">AI</span>
                     </Link>
 
@@ -82,7 +77,6 @@ export default function RootLayout({
                 </div>
             </header>
 
-            {/* CONTENUTO DELLE PAGINE */}
             <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6">
                 {children}
             </main>

@@ -1,12 +1,10 @@
 "use client";
 
-import * as React from "react";
-
 export default function Textarea({
                                      label,
                                      name,
                                      value,
-                                     onChange,
+                                     onChangeAction,
                                      placeholder,
                                      minRows = 4,
                                      error,
@@ -18,7 +16,7 @@ export default function Textarea({
     label?: string;
     name?: string;
     value?: string;
-    onChange?: (v: string) => void;
+    onChangeAction?: (v: string) => void;
     placeholder?: string;
     minRows?: number;
     error?: string;
@@ -34,10 +32,11 @@ export default function Textarea({
                     {label} {required && <span className="text-red-600">*</span>}
                 </label>
             )}
+
             <textarea
                 name={name}
                 value={value ?? ""}
-                onChange={(e) => onChange?.(e.target.value)}
+                onChange={(e) => onChangeAction?.(e.target.value)}
                 placeholder={placeholder}
                 rows={minRows}
                 disabled={disabled}
@@ -45,6 +44,7 @@ export default function Textarea({
                    bg-[var(--surface)] text-[var(--foreground)] border-[var(--border)]
                    focus:ring-2 focus:ring-[var(--accent)]"
             />
+
             {hint && !error && <p className="mt-1 text-xs text-[var(--muted)]">{hint}</p>}
             {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
         </div>
