@@ -63,33 +63,35 @@ export default function PosizioniCandidato() {
                 </div>
             )}
 
-            {!errore && posizioni.length === 0 && (
-                <EmptyState
-                    title="Nessuna posizione disponibile"
-                    subtitle="Quando saranno pubblicate nuove posizioni le troverai qui."
-                />
-            )}
+            <div className="max-w-3xl mx-auto">
+                {!errore && posizioni.length === 0 && (
+                    <EmptyState
+                        title="Nessuna posizione disponibile"
+                        subtitle="Quando saranno pubblicate nuove posizioni le troverai qui."
+                    />
+                )}
 
-            {!errore && posizioni.length > 0 && (
-                <div className="grid gap-3">
-                    {posizioni.map((p) => (
-                        <PosizioneCard
-                            key={p.idPosizione}
-                            id={p.idPosizione}
-                            titolo={p.titolo}
-                            sede={p.sede}
-                            contratto={p.contratto}
-                            rightSlot={
-                                <Button asChild>
-                                    <Link href={`/candidati/posizioni/${p.idPosizione}`}>
-                                        Dettaglio
-                                    </Link>
-                                </Button>
-                            }
-                        />
-                    ))}
-                </div>
-            )}
+                {!errore && posizioni.length > 0 && (
+                    <div className="grid gap-3 md:gap-4">
+                        {posizioni.map((p) => (
+                            <PosizioneCard
+                                key={p.idPosizione}
+                                id={p.idPosizione}
+                                titolo={p.titolo}
+                                sede={p.sede}
+                                contratto={p.contratto}
+                                rightSlot={
+                                    <Button asChild>
+                                        <Link href={`/candidati/posizioni/${p.idPosizione}`}>
+                                            Dettaglio
+                                        </Link>
+                                    </Button>
+                                }
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
