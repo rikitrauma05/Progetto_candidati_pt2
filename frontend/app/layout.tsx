@@ -1,6 +1,7 @@
 import "@/styles/globals.css";
 import Link from "next/link";
 import type { Metadata } from "next";
+import NavLinks from "./NavLinks";
 
 export const metadata: Metadata = {
     title: "Lavoro_Candidati",
@@ -23,56 +24,7 @@ export default function RootLayout({
                     </Link>
 
                     <nav className="flex items-center gap-2 text-sm">
-                        <Link
-                            href="/"
-                            className="rounded-full px-3 py-1.5 text-muted hover:bg-white/5 hover:text-[var(--foreground)] transition"
-                        >
-                            Home
-                        </Link>
-
-                        <Link
-                            href="/candidati/posizioni"
-                            className="rounded-full px-3 py-1.5 text-muted hover:bg-white/5 hover:text-[var(--foreground)] transition"
-                        >
-                            Posizioni
-                        </Link>
-
-                        <Link
-                            href="/candidati/candidature"
-                            className="rounded-full px-3 py-1.5 text-muted hover:bg-white/5 hover:text-[var(--foreground)] transition"
-                        >
-                            Candidature
-                        </Link>
-
-                        <Link
-                            href="/candidati/test"
-                            className="rounded-full px-3 py-1.5 text-muted hover:bg-white/5 hover:text-[var(--foreground)] transition"
-                        >
-                            Test
-                        </Link>
-
-                        <Link
-                            href="/candidati/profili"
-                            className="rounded-full px-3 py-1.5 text-muted hover:bg-white/5 hover:text-[var(--foreground)] transition"
-                        >
-                            Profilo
-                        </Link>
-
-                        <span className="mx-1 h-5 w-px bg-border" />
-
-                        <Link
-                            href="/auth/login"
-                            className="rounded-full px-3 py-1.5 text-xs text-muted hover:bg-white/5 hover:text-[var(--foreground)] transition"
-                        >
-                            Login
-                        </Link>
-
-                        <Link
-                            href="/auth/register"
-                            className="rounded-full bg-blue-500 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-blue-600 transition"
-                        >
-                            Registrati
-                        </Link>
+                        <NavLinks />
                     </nav>
                 </div>
             </header>
