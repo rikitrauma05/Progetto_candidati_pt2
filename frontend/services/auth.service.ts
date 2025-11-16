@@ -21,7 +21,7 @@ export function login(payload: LoginRequest) {
  * body: { email, password, nome, cognome, ruolo, consensoPrivacy }
  */
 export function register(payload: RegisterRequest) {
-    return postJson<void, RegisterRequest>("/auth/register", payload);
+    return postJson<LoginResponse, RegisterRequest>("/auth/register", payload);
 }
 
 /**

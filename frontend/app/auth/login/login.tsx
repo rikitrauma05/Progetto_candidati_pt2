@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {login as loginApi } from "@/services/auth.service";
 import Link from "next/link";
 import PageHeader from "@/components/layout/pageHeader";
 import { useAuthStore } from "@/store/authStore";
@@ -23,19 +24,30 @@ export default function LoginPage() {
         setBusy(true);
 
         try {
-            const ruolo = email.toLowerCase().includes("hr") ? "HR" : "CANDIDATO" as const;
-
-            login({
-                id: 1,
-                nome: "Utente",
-                cognome: ruolo === "HR" ? "HR" : "Candidato",
+            const resp = await loginApi({
                 email,
-                ruolo,
+                password,
             });
 
-            router.push(ruolo === "HR" ? "/hr/dashboard" : "/candidati/profili");
-        } catch {
-            setError("Accesso non riuscito. Riprova.");
+            // resp.user è il UtenteDto (tipizzato in types/user.ts)
+            login(resp.user);
+
+            // redirect in base al ruolo reale
+            if (resp.user.ruolo === "HR") {
+                router.push("/hr/dashboard");
+            } else {
+                router.push("/candidati/profili");
+            }
+        } catch (err: any) {
+            const msg = String(err?.message || "");
+
+            if (msg.includes("UTENTE_NON_TROVATO")) {
+                setError("Utente non trovato.");
+            } else if (msg.includes("PASSWORD_ERRATA")) {
+                setError("Password errata.");
+            } else {
+                setError("Login non riuscito. Riprova.");
+            }
         } finally {
             setBusy(false);
         }

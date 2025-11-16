@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { register as registerApi } from "@/services/auth.service";
+import type { RuoloCodice } from "@/types/auth";
 import PageHeader from "@/components/layout/pageHeader";
 import Input from "@/components/ui/input";
 import Button from "@/components/ui/button";
@@ -36,18 +38,28 @@ export default function Register() {
 
         setBusy(true);
         try {
-            // Qui in futuro chiamerai la tua API di registrazione.
-            // Ora completiamo il flusso: set auth store + redirect.
-            login({
-                id: Date.now(),
+            const ruolo: RuoloCodice = "CANDIDATO"; // per ora fisso il ruolo
+            const resp = await registerApi({
+                email: form.email,
+                password: form.password,
                 nome: form.nome,
                 cognome: form.cognome,
-                email: form.email,
-                ruolo: "CANDIDATO",
+                ruolo,
+                consensoPrivacy: true, // oppure prendi il valore da una checkbox se la aggiungerai
             });
+
+            // Salva utente reale nello store
+            login(resp.user);
+
+            // Nuovo candidato → profilo candidato
             router.push("/candidati/profili");
-        } catch {
-            setError("Registrazione non riuscita. Riprova.");
+        } catch (err: any) {
+            const msg = String(err?.message || "");
+            if (msg.includes("EMAIL_GIA_REGISTRATA")) {
+                setError("Esiste già un account con questa email.");
+            } else {
+                setError("Registrazione non riuscita. Riprova.");
+            }
         } finally {
             setBusy(false);
         }

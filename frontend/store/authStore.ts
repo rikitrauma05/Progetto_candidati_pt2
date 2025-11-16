@@ -1,14 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-
-type User = {
-    id: number | string;
-    nome: string;
-    cognome: string;
-    email: string;
-    ruolo: "CANDIDATO" | "HR";
-};
+import type { User } from "@/types/user";
 
 type AuthState = {
     user: User | null;

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { logout as logoutApi } from "@/services/auth.service";
 import { useAuthStore } from "@/store/authStore";
 
 export default function Logout() {
@@ -9,12 +10,20 @@ export default function Logout() {
     const logout = useAuthStore((s) => s.logout);
 
     useEffect(() => {
-        // TODO: se/quando avrai l'API: await authService.logout();
-        logout();                 // pulizia stato globale
-        const t = setTimeout(() => {
-            router.replace("/auth/login"); // redirect certo alla pagina di login
-        }, 300);
-        return () => clearTimeout(t);
+        async function doLogout() {
+            try {
+                await logoutApi(); // chiama /api/auth/logout se lo implementi
+            } catch {
+                // possiamo anche ignorare errori qui
+            } finally {
+                logout(); // svuota lo store
+                const t = setTimeout(() => {
+                    router.replace("/auth/login");
+                }, 300);
+                return () => clearTimeout(t);
+            }
+        }
+        void doLogout();
     }, [logout, router]);
 
     return (
