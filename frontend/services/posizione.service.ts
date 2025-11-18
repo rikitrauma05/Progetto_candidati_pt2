@@ -1,49 +1,69 @@
 // frontend/services/posizione.service.ts
+
 import { getJson } from "./api";
 import type { Posizione } from "@/types/posizione";
 
 /**
- * GET /posizioni/topquattro
- * Top posizioni per la home candidato.
+ * Lista di tutte le posizioni visibili al candidato.
  */
-export async function getTopQuattroPosizioni(): Promise<Posizione[]> {
-    const data = await getJson<Posizione[]>("posizioni/topquattro");
-    return data.map((p: Posizione) => ({ ...p, id: p.idPosizione }));
+export async function fetchPosizioni(): Promise<Posizione[]> {
+    return getJson<Posizione[]>("/posizioni");
 }
 
 /**
- * GET /posizioni/{id}
- * Dettaglio posizione per candidato.
+ * Dettaglio di una singola posizione.
+ * Nome compatibile con il codice esistente (idPosizione.tsx).
  */
-export async function getPosizioneById(id: string | number): Promise<Posizione> {
-    const data = await getJson<Posizione>(`posizioni/${id}`);
-    return { ...data, id: data.idPosizione };
+export async function getPosizioneById(
+    idPosizione: number | string
+): Promise<Posizione> {
+    return getJson<Posizione>(`/posizioni/${idPosizione}`);
 }
 
 /**
- * GET /posizioni
- * Lista completa posizioni (candidato).
+ * Lista delle posizioni preferite dell'utente loggato.
  */
-export async function getTutteLePosizioni(): Promise<Posizione[]> {
-    const data = await getJson<Posizione[]>("posizioni");
-    return data.map((p: Posizione) => ({ ...p, id: p.idPosizione }));
+export async function fetchPosizioniPreferite(): Promise<Posizione[]> {
+    return getJson<Posizione[]>("/posizioni/preferite");
+}
+
+export type PreferitoStatus = {
+    isPreferita: boolean;
+};
+
+/**
+ * Restituisce se una posizione è nei preferiti dell'utente loggato.
+ */
+export async function isPosizionePreferita(
+    idPosizione: number | string
+): Promise<boolean> {
+    const res = await getJson<PreferitoStatus>(
+        `/posizioni/${idPosizione}/preferiti`
+    );
+    return !!res.isPreferita;
 }
 
 /**
- * GET /posizioni?contratto=&sede=&settore=
- * Lista posizioni filtrate lato candidato.
+ * Imposta esplicitamente lo stato di preferito/non preferito.
+ * Se preferita = true → aggiunge ai preferiti (POST).
+ * Se preferita = false → rimuove dai preferiti (DELETE).
  */
-export async function getPosizioniFiltrate(filters: {
-    contratto?: string;
-    sede?: string;
-    settore?: string;
-}): Promise<Posizione[]> {
-    const params = new URLSearchParams();
-    if (filters.contratto) params.append("contratto", filters.contratto);
-    if (filters.sede) params.append("sede", filters.sede);
-    if (filters.settore) params.append("settore", filters.settore);
+export async function setPosizionePreferita(
+    idPosizione: number | string,
+    preferita: boolean
+): Promise<PreferitoStatus> {
+    return getJson<PreferitoStatus>(`/posizioni/${idPosizione}/preferiti`, {
+        method: preferita ? "POST" : "DELETE",
+    });
+}
 
-    const qs = params.toString();
-    const data = await getJson<Posizione[]>(`posizioni${qs ? `?${qs}` : ""}`);
-    return data.map((p: Posizione) => ({ ...p, id: p.idPosizione }));
+/**
+ * Comoda funzione per fare toggle lato client:
+ * passa lo stato corrente e lo inverte.
+ */
+export async function togglePosizionePreferita(
+    idPosizione: number | string,
+    isCurrentlyPreferita: boolean
+): Promise<PreferitoStatus> {
+    return setPosizionePreferita(idPosizione, !isCurrentlyPreferita);
 }

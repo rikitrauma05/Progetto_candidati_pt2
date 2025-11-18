@@ -7,6 +7,7 @@ import PageHeader from "@/components/layout/pageHeader";
 import EmptyState from "@/components/empty/EmptyState";
 import { getPosizioneById } from "@/services/posizione.service";
 import type { Posizione } from "@/types/posizione";
+import ApplyButton from "@/components/forms/ApplyButton";
 
 export default function IdPosizionePage() {
     const { id } = useParams<{ id: string }>();
@@ -62,7 +63,9 @@ export default function IdPosizionePage() {
                 title={posizione?.titolo || "Dettaglio posizione"}
                 subtitle={
                     posizione
-                        ? `${posizione.sede} • ${posizione.contratto || "Contratto non specificato"}`
+                        ? `${posizione.sede} • ${
+                            posizione.contratto || "Contratto non specificato"
+                        }`
                         : "Caricamento dettagli della posizione in corso…"
                 }
                 actions={[
@@ -119,13 +122,16 @@ export default function IdPosizionePage() {
                                 {posizione.titolo}
                             </h2>
                             <p className="text-sm text-muted">
-                                {posizione.sede} • {posizione.contratto || "Contratto non specificato"}
+                                {posizione.sede} •{" "}
+                                {posizione.contratto || "Contratto non specificato"}
                             </p>
                         </div>
 
                         {posizione.idStatoPosizione && (
                             <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-muted">
-                                {posizione.idStatoPosizione.descrizione}
+                                {/* se nel tipo è un oggetto con descrizione */}
+                                {(posizione as any).idStatoPosizione?.descrizione ??
+                                    "Attiva"}
                             </span>
                         )}
                     </div>
@@ -135,7 +141,8 @@ export default function IdPosizionePage() {
                         <section className="md:col-span-2 space-y-3">
                             <h3 className="text-base font-semibold">Descrizione</h3>
                             <p className="text-sm text-muted whitespace-pre-line">
-                                {posizione.descrizione || "Nessuna descrizione fornita per questa posizione."}
+                                {posizione.descrizione ||
+                                    "Nessuna descrizione fornita per questa posizione."}
                             </p>
                         </section>
 
@@ -153,11 +160,12 @@ export default function IdPosizionePage() {
                                 </li>
                                 <li>
                                     <strong>Settore:</strong>{" "}
-                                    {posizione.idSettore?.nome || "Non indicato"}
+                                    {(posizione as any).idSettore?.nome || "Non indicato"}
                                 </li>
                                 <li>
                                     <strong>Stato:</strong>{" "}
-                                    {posizione.idStatoPosizione?.descrizione || "Attiva"}
+                                    {(posizione as any).idStatoPosizione?.descrizione ||
+                                        "Attiva"}
                                 </li>
                                 <li>
                                     <strong>Candidature ricevute:</strong>{" "}
@@ -165,6 +173,14 @@ export default function IdPosizionePage() {
                                 </li>
                             </ul>
                         </section>
+                    </div>
+
+                    {/* Bottone candidatura riusabile */}
+                    <div className="mt-6 flex justify-end">
+                        <ApplyButton
+                            idPosizione={posizione.idPosizione}
+                            fullWidth={false}
+                        />
                     </div>
                 </div>
             )}

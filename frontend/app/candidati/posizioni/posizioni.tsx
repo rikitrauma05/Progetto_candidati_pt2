@@ -7,6 +7,7 @@ import Button from "@/components/ui/button";
 import EmptyState from "@/components/empty/EmptyState";
 import PosizioneCard from "@/components/cards/posizioneCard";
 import { getJson } from "@/services/api";
+import ApplyButton from "@/components/forms/ApplyButton";
 
 type Posizione = {
     idPosizione: number;
@@ -26,6 +27,7 @@ export default function PosizioniCandidato() {
             try {
                 setLoading(true);
                 setErrore(null);
+
                 const data = await getJson<Posizione[]>("/posizioni");
                 setPosizioni(data ?? []);
             } catch (e) {
@@ -35,6 +37,7 @@ export default function PosizioniCandidato() {
                 setLoading(false);
             }
         };
+
         load();
     }, []);
 
@@ -45,7 +48,9 @@ export default function PosizioniCandidato() {
                     title="Posizioni disponibili"
                     subtitle="Esplora le posizioni aperte e invia la tua candidatura"
                 />
-                <p className="text-sm text-[var(--muted)]">Caricamento posizioni…</p>
+                <p className="text-sm text-[var(--muted)]">
+                    Caricamento posizioni…
+                </p>
             </div>
         );
     }
@@ -80,12 +85,18 @@ export default function PosizioniCandidato() {
                                 titolo={p.titolo}
                                 sede={p.sede}
                                 contratto={p.contratto}
+                                candidature={p.candidatureRicevute}
                                 rightSlot={
-                                    <Button asChild>
-                                        <Link href={`/candidati/posizioni/${p.idPosizione}`}>
-                                            Dettaglio
-                                        </Link>
-                                    </Button>
+                                    <>
+                                        <Button asChild>
+                                            <Link
+                                                href={`/candidati/posizioni/${p.idPosizione}`}
+                                            >
+                                                Dettaglio
+                                            </Link>
+                                        </Button>
+                                        <ApplyButton idPosizione={p.idPosizione} />
+                                    </>
                                 }
                             />
                         ))}
