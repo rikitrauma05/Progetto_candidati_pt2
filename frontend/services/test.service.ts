@@ -1,6 +1,7 @@
-// frontend/services/test.service.ts
+// /frontend/services/test.service.ts
 
 import { getJson, postJson } from "./api";
+
 import type {
     TestListItem,
     TentativoListItem,
@@ -9,54 +10,78 @@ import type {
     GetDomandeResponse,
     InviaRisposteRequest,
     InviaRisposteResponse,
+    StrutturaTestDto,
+    RisultatoTentativoDettaglio,
 } from "@/types/test";
 
+// Riesporto per comodità lato componenti
+export type { StrutturaTestDto as StrutturaTest };
+
 /**
- * GET /test
- * Restituisce la lista di tutti i test (backend: TestController -> getAllTests).
+ * GET /test/disponibili
+ * Ritorna la lista dei test a cui il candidato può accedere.
  */
 export function getTestDisponibili() {
-    return getJson<TestListItem[]>("/test");
+    return getJson<TestListItem[]>("/test/disponibili");
 }
 
 /**
- * Storico tentativi del candidato.
- * Al momento il backend non espone ancora l’endpoint,
- * quindi restituiamo una lista vuota senza fare chiamate HTTP.
+ * GET /test/tentativi/miei
+ * Ritorna lo storico dei tentativi del candidato loggato.
  */
-export async function getTentativiCandidato(): Promise<TentativoListItem[]> {
-    return [];
+export function getTentativiCandidato() {
+    return getJson<TentativoListItem[]>("/test/tentativi/miei");
 }
 
 /**
- * POST /test/tentativi
- * Avvio di un nuovo tentativo di test.
- * (Endpoint da implementare nel backend; per ora NON viene usato dalle pagine.)
+ * GET /test/{idTest}/struttura
+ * Carica struttura completa del test (metadata + domande + opzioni).
  */
-export function avviaTest(data: AvviaTestRequest) {
-    return postJson<AvviaTestResponse>("/test/tentativi", data);
+export function getStrutturaTest(idTest: number) {
+    return getJson<StrutturaTestDto>(`/test/${idTest}/struttura`);
+}
+
+/**
+ * POST /test/{idTest}/tentativi/avvia
+ * Avvia un nuovo tentativo.
+ */
+export function avviaTest(idTest: number, body: AvviaTestRequest = {}) {
+    return postJson<AvviaTestResponse>(
+        `/test/${idTest}/tentativi/avvia`,
+        body
+    );
 }
 
 /**
  * GET /test/tentativi/{idTentativo}/domande
- * Recupera le domande di un tentativo.
- * (Endpoint da implementare nel backend; per ora NON viene usato dalle pagine.)
+ * Ottiene le domande relative a un tentativo.
  */
 export function getDomandeTentativo(idTentativo: number) {
-    return getJson<GetDomandeResponse>(`/test/tentativi/${idTentativo}/domande`);
+    return getJson<GetDomandeResponse>(
+        `/test/tentativi/${idTentativo}/domande`
+    );
 }
 
 /**
  * POST /test/tentativi/{idTentativo}/risposte
- * Invio delle risposte di un tentativo.
- * (Endpoint da implementare nel backend; per ora NON viene usato dalle pagine.)
+ * Invia tutte le risposte e ottiene punteggio + esito.
  */
 export function inviaRisposte(
     idTentativo: number,
-    data: InviaRisposteRequest
+    payload: InviaRisposteRequest
 ) {
     return postJson<InviaRisposteResponse>(
         `/test/tentativi/${idTentativo}/risposte`,
-        data
+        payload
+    );
+}
+
+/**
+ * GET /test/tentativi/{idTentativo}/risultati
+ * Ottiene i risultati dettagliati del tentativo.
+ */
+export function getRisultatoTentativo(idTentativo: number) {
+    return getJson<RisultatoTentativoDettaglio>(
+        `/test/tentativi/${idTentativo}/risultati`
     );
 }

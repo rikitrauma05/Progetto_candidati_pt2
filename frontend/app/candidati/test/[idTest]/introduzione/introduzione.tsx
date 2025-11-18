@@ -1,10 +1,199 @@
-export default function IntroduzioneTest() {
+// app/candidati/test/[idTest]/introduzione/introduzione.tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+
+import PageHeader from "@/components/layout/pageHeader";
+import Button from "@/components/ui/button";
+import { getStrutturaTest, StrutturaTest } from "@/services/test.service";
+
+export default function IntroduzioneTestPage() {
+    const params = useParams<{ idTest: string }>();
+    const idTest = Number(params?.idTest ?? "0");
+
+    const [test, setTest] = useState<StrutturaTest | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [errore, setErrore] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!idTest) return;
+
+        async function load() {
+            setLoading(true);
+            setErrore(null);
+            try {
+                const data = await getStrutturaTest(idTest);
+                setTest(data);
+            } catch (e) {
+                console.error(e);
+                setErrore("Non è stato possibile caricare i dettagli del test.");
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        load();
+    }, [idTest]);
+
+    // idTest non valido
+    if (!idTest) {
+        return (
+            <div className="space-y-6">
+                <PageHeader
+                    title="Test non valido"
+                    subtitle="L'identificativo del test non è corretto."
+                    actions={[
+                        {
+                            label: "Torna ai test",
+                            href: "/candidati/test",
+                        },
+                    ]}
+                />
+            </div>
+        );
+    }
+
+    // stato di caricamento
+    if (loading) {
+        return (
+            <div className="space-y-6">
+                <PageHeader
+                    title="Introduzione al test"
+                    subtitle="Caricamento dei dettagli del test in corso…"
+                />
+                <div className="max-w-3xl mx-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
+                    <div className="h-4 w-32 rounded bg-[var(--surface-soft)] mb-4" />
+                    <div className="h-3 w-full rounded bg-[var(--surface-soft)] mb-2" />
+                    <div className="h-3 w-5/6 rounded bg-[var(--surface-soft)] mb-2" />
+                    <div className="h-3 w-4/6 rounded bg-[var(--surface-soft)]" />
+                </div>
+            </div>
+        );
+    }
+
+    // errore o nessun test
+    if (errore || !test) {
+        return (
+            <div className="space-y-6">
+                <PageHeader
+                    title="Errore nel caricamento del test"
+                    subtitle={errore ?? "Si è verificato un errore imprevisto."}
+                    actions={[
+                        {
+                            label: "Torna ai test",
+                            href: "/candidati/test",
+                        },
+                    ]}
+                />
+                <div className="max-w-3xl mx-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
+                    <p className="text-sm text-[var(--muted)]">
+                        Riprova più tardi. Se il problema persiste, contatta il supporto.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="space-y-4">
-            <h1 className="text-xl font-semibold">Introduzione al test</h1>
-            <p className="text-sm text-[var(--muted)]">
-                Qui verranno visualizzati i dettagli del test prima di iniziare.
-            </p>
+        <div className="space-y-6">
+            <PageHeader
+                title={`Introduzione al test: ${test.titolo}`}
+                subtitle={
+                    test.descrizione ??
+                    "Prima di iniziare, leggi con attenzione le informazioni qui sotto."
+                }
+                actions={[
+                    {
+                        label: "Torna ai test",
+                        href: "/candidati/test",
+                    },
+                ]}
+            />
+
+            <section className="max-w-3xl mx-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm space-y-6">
+                {/* Panoramica */}
+                <div className="space-y-2">
+                    <h2 className="text-lg font-semibold">Panoramica del test</h2>
+                    <p className="text-sm text-[var(--muted)]">
+                        Questo test fa parte del processo di selezione. Le domande servono a
+                        valutare le tue competenze in modo oggettivo e uniforme per tutti i candidati.
+                    </p>
+                </div>
+
+                {/* Info principali */}
+                <div className="grid gap-3 text-sm text-[var(--muted)] sm:grid-cols-2">
+                    <div className="rounded-xl bg-[var(--surface-soft)] p-3">
+                        <p className="text-[0.7rem] uppercase tracking-wide">
+                            Durata massima
+                        </p>
+                        <p className="mt-1 text-base font-semibold text-[var(--foreground)]">
+                            {test.durataMinuti} minuti
+                        </p>
+                    </div>
+
+                    <div className="rounded-xl bg-[var(--surface-soft)] p-3">
+                        <p className="text-[0.7rem] uppercase tracking-wide">
+                            Numero di domande
+                        </p>
+                        <p className="mt-1 text-base font-semibold text-[var(--foreground)]">
+                            {test.numeroDomande}
+                        </p>
+                    </div>
+
+                    <div className="rounded-xl bg-[var(--surface-soft)] p-3">
+                        <p className="text-[0.7rem] uppercase tracking-wide">
+                            Punteggio massimo
+                        </p>
+                        <p className="mt-1 text-base font-semibold text-[var(--foreground)]">
+                            {test.punteggioMax} punti
+                        </p>
+                    </div>
+
+                    {typeof test.punteggioMin === "number" && (
+                        <div className="rounded-xl bg-[var(--surface-soft)] p-3">
+                            <p className="text-[0.7rem] uppercase tracking-wide">
+                                Punteggio minimo per superare
+                            </p>
+                            <p className="mt-1 text-base font-semibold text-[var(--foreground)]">
+                                {test.punteggioMin} punti
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Regole generali */}
+                <div className="space-y-2">
+                    <h3 className="text-sm font-semibold">
+                        Regole e suggerimenti
+                    </h3>
+                    <ul className="list-disc list-inside text-sm text-[var(--muted)] space-y-1">
+                        <li>
+                            Una volta avviato il test, il tempo inizierà a scorrere e non potrà
+                            essere messo in pausa.
+                        </li>
+                        <li>
+                            Rispondi a tutte le domande nel limite di tempo indicato. Se non sei
+                            sicuro di una risposta, prova comunque a selezionare l'opzione che
+                            ritieni più corretta.
+                        </li>
+                        <li>
+                            Assicurati di avere una connessione stabile prima di iniziare e
+                            evita di chiudere la pagina durante lo svolgimento.
+                        </li>
+                    </ul>
+                </div>
+
+                {/* Pulsante per iniziare il test */}
+                <div className="flex justify-end pt-2">
+                    <Link href={`/candidati/test/${idTest}/tentativo`}>
+                        <Button variant="primary">
+                            Inizia il test
+                        </Button>
+                    </Link>
+                </div>
+            </section>
         </div>
     );
 }
