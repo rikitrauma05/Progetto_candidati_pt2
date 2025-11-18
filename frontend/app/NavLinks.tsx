@@ -1,20 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function NavLinks() {
-    const [active, setActive] = useState<string>("");
-
-    useEffect(() => {
-        const saved = localStorage.getItem("activeLink");
-        if (saved) setActive(saved);
-    }, []);
-
-    const handleClick = (href: string) => {
-        localStorage.setItem("activeLink", href);
-        setActive(href);
-    };
+    const pathname = usePathname();
 
     const mainLinks = [
         { href: "/", label: "Home" },
@@ -29,19 +19,23 @@ export default function NavLinks() {
         { href: "/auth/register", label: "Registrati" },
     ];
 
+    const isActive = (href: string) => {
+        // Attivo se il pathname inizia con il link
+        return pathname === href || pathname.startsWith(href + "/");
+    };
+
     return (
         <>
             {/* LINK PRINCIPALI */}
             {mainLinks.map(({ href, label }) => {
-                const isSelected = active === href;
+                const selected = isActive(href);
 
                 return (
                     <Link
                         key={href}
                         href={href}
-                        onClick={() => handleClick(href)}
                         className={`rounded-full px-3 py-1.5 transition ${
-                            isSelected
+                            selected
                                 ? "bg-blue-500 text-white"
                                 : "text-muted hover:bg-white/5 hover:text-[var(--foreground)]"
                         }`}
@@ -55,15 +49,14 @@ export default function NavLinks() {
 
             {/* LOGIN / REGISTRAZIONE */}
             {authLinks.map(({ href, label }) => {
-                const isSelected = active === href;
+                const selected = isActive(href);
 
                 return (
                     <Link
                         key={href}
                         href={href}
-                        onClick={() => handleClick(href)}
                         className={`rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition ${
-                            isSelected
+                            selected
                                 ? "bg-blue-500 text-white"
                                 : "text-muted hover:bg-white/5 hover:text-[var(--foreground)]"
                         }`}
