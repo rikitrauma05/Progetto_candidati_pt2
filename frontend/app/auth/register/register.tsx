@@ -88,10 +88,9 @@ export default function Register() {
                 dataNascita: form.dataNascita || null,
                 telefono: form.telefono || null,
                 citta: form.citta || null,
-                cvFileName: cvFile?.name ?? null,
             } as any;
 
-            const resp = await registerApi(payload);
+            const resp = await registerApi(payload,cvFile);
 
             login(resp.user);
             router.push("/candidati/profili");

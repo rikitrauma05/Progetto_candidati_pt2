@@ -1,4 +1,4 @@
-import { getJson, postJson, deleteJson } from "./api";
+import {getJson, postJson, deleteJson, postFormData} from "./api";
 import type {
     LoginRequest,
     LoginResponse,
@@ -17,11 +17,26 @@ export function login(payload: LoginRequest) {
 }
 
 /**
- * POST /auth/register
- * body: { email, password, nome, cognome, ruolo, consensoPrivacy }
+ * REGISTER con CV: invia multipart/form-data
+ * - payload: RegisterRequest serializzato in JSON
+ * - cv: file (opzionale)
  */
-export function register(payload: RegisterRequest) {
-    return postJson<LoginResponse, RegisterRequest>("/auth/register", payload);
+export function register(payload: RegisterRequest, cvFile?: File | null) {
+
+    const formData = new FormData();
+
+    // parte "payload" come JSON (Content-Type: application/json)
+    const jsonBlob = new Blob([JSON.stringify(payload)], {
+        type: "application/json",
+    });
+    formData.append("payload", jsonBlob);
+
+    // parte "cv" come file (se presente)
+    if (cvFile) {
+        formData.append("cv", cvFile);
+    }
+
+    return postFormData<LoginResponse>("/auth/register", formData);
 }
 
 /**

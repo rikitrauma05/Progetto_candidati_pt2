@@ -56,6 +56,36 @@ async function request<T = unknown>(
     return JSON.parse(text) as T;
 }
 
+// services/api.ts
+
+export async function postFormData<T = unknown>(
+    path: string,
+    formData: FormData,
+    init?: RequestInit
+): Promise<T> {
+    const url = isAbsolute(path) ? path : join(API_BASE, path);
+
+    const res = await fetch(url, {
+        method: "POST",
+        body: formData,
+        // ATTENZIONE: **NON** mettere Content-Type qui.
+        // Il browser aggiunge da solo "multipart/form-data; boundary=..."
+        ...init,
+    });
+
+    if (!res.ok) {
+        const raw = await res.text().catch(() => res.statusText);
+        const msg =
+            raw && raw.startsWith("<!")
+                ? `${res.status} ${res.statusText}`
+                : raw;
+
+        throw new Error(msg || `HTTP ${res.status}`);
+    }
+
+    return res.json() as Promise<T>;
+}
+
 export async function getJson<T = unknown>(
     path: string,
     init?: RequestInit
