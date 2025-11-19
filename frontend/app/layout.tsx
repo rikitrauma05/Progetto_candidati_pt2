@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import NavLinks from "./NavLinks";
 
 export const metadata: Metadata = {
-    title: "Lavoro_Candidati",
+    title: "CANDID - AI",
     description: "Piattaforma candidature e test",
 };
 
