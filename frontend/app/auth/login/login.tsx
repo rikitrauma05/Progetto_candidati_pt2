@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {login as loginApi } from "@/services/auth.service";
-import {register as registerApi} from "@/services/auth.service";
 import Link from "next/link";
 import PageHeader from "@/components/layout/pageHeader";
 import { useAuthStore } from "@/store/authStore";
