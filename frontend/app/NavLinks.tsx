@@ -2,69 +2,107 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
+
+type Item = { href: string; label: string };
+
+const hrItems: Item[] = [
+    { href: "/hr/dashboard", label: "Dashboard" },
+    { href: "/hr/posizioni", label: "Posizioni" },
+    { href: "/hr/candidati", label: "Candidati" },
+    { href: "/hr/analisi", label: "Analisi" },
+];
+
+const candidateItems: Item[] = [
+    { href: "/candidati/posizioni", label: "Posizioni" },
+    { href: "/candidati/candidature", label: "Candidature" },
+    { href: "/candidati/profili", label: "Profilo" },
+];
 
 export default function NavLinks() {
     const pathname = usePathname();
+    const { isAuthenticated, user, logout } = useAuthStore();
 
-    const mainLinks = [
-        { href: "/", label: "Home" },
-        { href: "/candidati/posizioni", label: "Posizioni" },
-        { href: "/candidati/candidature", label: "Candidature" },
-        { href: "/candidati/test", label: "Test" },
-        { href: "/candidati/profili", label: "Profilo" },
-    ];
+    const ruolo = user?.ruolo;
+    const items: Item[] =
+        ruolo === "HR"
+            ? hrItems
+            : ruolo === "CANDIDATO"
+                ? candidateItems
+                : [];
 
-    const authLinks = [
-        { href: "/auth/login", label: "Login" },
-        { href: "/auth/register", label: "Registrati" },
-    ];
+    const renderItem = (item: Item) => {
+        const active =
+            pathname === item.href ||
+            (pathname?.startsWith(item.href + "/") ?? false);
 
-    const isActive = (href: string) => {
-        // Attivo se il pathname inizia con il link
-        return pathname === href || pathname.startsWith(href + "/");
+        return (
+            <li key={item.href}>
+                <Link
+                    href={item.href}
+                    className={`rounded-xl px-3 py-2 text-sm transition ${
+                        active
+                            ? "bg-[var(--accent)] text-white"
+                            : "text-[var(--foreground)] hover:bg-[var(--border)]"
+                    }`}
+                >
+                    {item.label}
+                </Link>
+            </li>
+        );
     };
 
     return (
         <>
-            {/* LINK PRINCIPALI */}
-            {mainLinks.map(({ href, label }) => {
-                const selected = isActive(href);
-
-                return (
+            {/* Menu centrale */}
+            <ul className="flex items-center gap-3 mr-4">
+                {/* Link Home sempre visibile */}
+                <li key="home">
                     <Link
-                        key={href}
-                        href={href}
-                        className={`rounded-full px-3 py-1.5 transition ${
-                            selected
-                                ? "bg-blue-500 text-white"
-                                : "text-muted hover:bg-white/5 hover:text-[var(--foreground)]"
+                        href="/"
+                        className={`rounded-xl px-3 py-2 text-sm transition ${
+                            pathname === "/"
+                                ? "bg-[var(--accent)] text-white"
+                                : "text-[var(--foreground)] hover:bg-[var(--border)]"
                         }`}
                     >
-                        {label}
+                        Home
                     </Link>
-                );
-            })}
+                </li>
 
-            <span className="mx-1 h-5 w-px bg-border" />
+                {/* Link in base al ruolo (solo se autenticato) */}
+                {isAuthenticated && items.map(renderItem)}
+            </ul>
 
-            {/* LOGIN / REGISTRAZIONE */}
-            {authLinks.map(({ href, label }) => {
-                const selected = isActive(href);
+            {/* Azioni a destra: login/registrazione oppure logout */}
+            <div className="flex items-center gap-2">
+                {!isAuthenticated && (
+                    <>
+                        <Link
+                            href="/auth/login"
+                            className="rounded-xl border px-3 py-1.5 text-sm hover:bg-[var(--border)]"
+                        >
+                            Login
+                        </Link>
+                        <Link
+                            href="/auth/register"
+                            className="rounded-xl border px-3 py-1.5 text-sm hover:bg-[var(--border)]"
+                        >
+                            Registrati
+                        </Link>
+                    </>
+                )}
 
-                return (
-                    <Link
-                        key={href}
-                        href={href}
-                        className={`rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition ${
-                            selected
-                                ? "bg-blue-500 text-white"
-                                : "text-muted hover:bg-white/5 hover:text-[var(--foreground)]"
-                        }`}
+                {isAuthenticated && (
+                    <button
+                        type="button"
+                        onClick={logout}
+                        className="rounded-xl border px-3 py-1.5 text-sm hover:bg-[var(--border)]"
                     >
-                        {label}
-                    </Link>
-                );
-            })}
+                        Logout
+                    </button>
+                )}
+            </div>
         </>
     );
 }
