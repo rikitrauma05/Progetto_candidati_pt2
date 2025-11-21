@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { KeyboardEvent } from "react";
 import { Star } from "lucide-react";
 
 export type PosizioneCardProps = {
@@ -12,7 +12,7 @@ export type PosizioneCardProps = {
     punteggio?: number;
 
     /**
-     * Slot per bottoni/azioni extra (es. "Vedi dettagli").
+     * Slot per bottoni/azioni extra (es. "Candidati").
      */
     rightSlot?: React.ReactNode;
 
@@ -23,6 +23,13 @@ export type PosizioneCardProps = {
      */
     isPreferita?: boolean;
     togglePreferitaAction?: () => void;
+
+    /**
+     * Se true, la card è cliccabile (es. porta al dettaglio).
+     * onClickCard viene chiamato al click/ENTER/SPACE.
+     */
+    clickable?: boolean;
+    onClickCard?: () => void;
 };
 
 export default function PosizioneCard({
@@ -34,9 +41,29 @@ export default function PosizioneCard({
                                           rightSlot,
                                           isPreferita = false,
                                           togglePreferitaAction,
+                                          clickable = false,
+                                          onClickCard,
                                       }: PosizioneCardProps) {
+    const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+        if (!clickable || !onClickCard) return;
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onClickCard();
+        }
+    };
+
+    const handleClick = () => {
+        if (clickable && onClickCard) {
+            onClickCard();
+        }
+    };
+
     return (
         <article
+            role={clickable ? "button" : undefined}
+            tabIndex={clickable ? 0 : undefined}
+            onClick={handleClick}
+            onKeyDown={handleKeyDown}
             className="
         group
         rounded-2xl border border-[color-mix(in_srgb,var(--border)_70%,transparent)]
@@ -49,7 +76,12 @@ export default function PosizioneCard({
         hover:shadow-md
         hover:-translate-y-0.5
         transition-all duration-200
+        outline-none
+        focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2
+        focus-visible:ring-offset-[var(--background)]
+        cursor-default
       "
+            style={clickable ? { cursor: "pointer" } : undefined}
         >
             {/* LEFT: info posizione */}
             <div className="min-w-0 flex-1">
@@ -108,7 +140,10 @@ export default function PosizioneCard({
                     {togglePreferitaAction && (
                         <button
                             type="button"
-                            onClick={togglePreferitaAction}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                togglePreferitaAction();
+                            }}
                             aria-pressed={isPreferita}
                             aria-label={
                                 isPreferita
@@ -135,7 +170,12 @@ export default function PosizioneCard({
                     )}
 
                     {rightSlot && (
-                        <div className="inline-flex items-center gap-1">{rightSlot}</div>
+                        <div
+                            className="inline-flex items-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {rightSlot}
+                        </div>
                     )}
                 </div>
             )}

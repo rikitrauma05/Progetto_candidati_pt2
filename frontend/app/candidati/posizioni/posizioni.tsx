@@ -1,23 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import PageHeader from "@/components/layout/pageHeader";
-import Button from "@/components/ui/button";
 import EmptyState from "@/components/empty/EmptyState";
 import PosizioneCard from "@/components/cards/posizioneCard";
-import { getJson } from "@/services/api";
 import ApplyButton from "@/components/forms/ApplyButton";
-
-type Posizione = {
-    idPosizione: number;
-    titolo: string;
-    sede?: string;
-    contratto?: string;
-    candidatureRicevute?: number;
-};
+import { fetchPosizioni } from "@/services/posizione.service";
+import type { Posizione } from "@/types/posizione";
 
 export default function PosizioniCandidato() {
+    const router = useRouter();
     const [posizioni, setPosizioni] = useState<Posizione[]>([]);
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
@@ -28,17 +21,18 @@ export default function PosizioniCandidato() {
                 setLoading(true);
                 setErrore(null);
 
-                const data = await getJson<Posizione[]>("/posizioni");
+                const data = await fetchPosizioni();
+                // data è Posizione[] tipizzato dal service
                 setPosizioni(data ?? []);
             } catch (e) {
-                console.error(e);
+                console.error("Errore durante il caricamento delle posizioni:", e);
                 setErrore("Errore durante il caricamento delle posizioni.");
             } finally {
                 setLoading(false);
             }
         };
 
-        load();
+        void load();
     }, []);
 
     if (loading) {
@@ -86,17 +80,12 @@ export default function PosizioniCandidato() {
                                 sede={p.sede}
                                 contratto={p.contratto}
                                 candidature={p.candidatureRicevute}
+                                clickable
+                                onClickCard={() =>
+                                    router.push(`/candidati/posizioni/${p.idPosizione}`)
+                                }
                                 rightSlot={
-                                    <>
-                                        <Button asChild>
-                                            <Link
-                                                href={`/candidati/posizioni/${p.idPosizione}`}
-                                            >
-                                                Dettaglio
-                                            </Link>
-                                        </Button>
-                                        <ApplyButton idPosizione={p.idPosizione} />
-                                    </>
+                                    <ApplyButton idPosizione={p.idPosizione} />
                                 }
                             />
                         ))}
