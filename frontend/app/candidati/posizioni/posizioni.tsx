@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import PageHeader from "@/components/layout/pageHeader";
 import EmptyState from "@/components/empty/EmptyState";
 import PosizioneCard from "@/components/cards/posizioneCard";
@@ -10,7 +9,6 @@ import { fetchPosizioni } from "@/services/posizione.service";
 import type { Posizione } from "@/types/posizione";
 
 export default function PosizioniCandidato() {
-    const router = useRouter();
     const [posizioni, setPosizioni] = useState<Posizione[]>([]);
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
@@ -22,10 +20,12 @@ export default function PosizioniCandidato() {
                 setErrore(null);
 
                 const data = await fetchPosizioni();
-                // data è Posizione[] tipizzato dal service
                 setPosizioni(data ?? []);
             } catch (e) {
-                console.error("Errore durante il caricamento delle posizioni:", e);
+                console.error(
+                    "Errore durante il caricamento delle posizioni:",
+                    e
+                );
                 setErrore("Errore durante il caricamento delle posizioni.");
             } finally {
                 setLoading(false);
@@ -81,12 +81,8 @@ export default function PosizioniCandidato() {
                                 contratto={p.contratto}
                                 candidature={p.candidatureRicevute}
                                 clickable
-                                onClickCard={() =>
-                                    router.push(`/candidati/posizioni/${p.idPosizione}`)
-                                }
-                                rightSlot={
-                                    <ApplyButton idPosizione={p.idPosizione} />
-                                }
+                                href={`/candidati/posizioni/${p.idPosizione}`}
+                                rightSlot={<ApplyButton idPosizione={p.idPosizione} />}
                             />
                         ))}
                     </div>

@@ -2,6 +2,7 @@
 
 import React, { KeyboardEvent } from "react";
 import { Star } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export type PosizioneCardProps = {
     id: string | number;
@@ -25,11 +26,10 @@ export type PosizioneCardProps = {
     togglePreferitaAction?: () => void;
 
     /**
-     * Se true, la card è cliccabile (es. porta al dettaglio).
-     * onClickCard viene chiamato al click/ENTER/SPACE.
+     * Se true, la card è cliccabile (es. porta al dettaglio) e usa href.
      */
     clickable?: boolean;
-    onClickCard?: () => void;
+    href?: string;
 };
 
 export default function PosizioneCard({
@@ -42,27 +42,31 @@ export default function PosizioneCard({
                                           isPreferita = false,
                                           togglePreferitaAction,
                                           clickable = false,
-                                          onClickCard,
+                                          href,
                                       }: PosizioneCardProps) {
-    const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-        if (!clickable || !onClickCard) return;
-        if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            onClickCard();
+    const router = useRouter();
+
+    const canNavigate = clickable && !!href;
+
+    const handleActivate = () => {
+        if (canNavigate) {
+            router.push(href!);
         }
     };
 
-    const handleClick = () => {
-        if (clickable && onClickCard) {
-            onClickCard();
+    const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+        if (!canNavigate) return;
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleActivate();
         }
     };
 
     return (
         <article
-            role={clickable ? "button" : undefined}
-            tabIndex={clickable ? 0 : undefined}
-            onClick={handleClick}
+            role={canNavigate ? "button" : undefined}
+            tabIndex={canNavigate ? 0 : undefined}
+            onClick={handleActivate}
             onKeyDown={handleKeyDown}
             className="
         group
@@ -79,9 +83,8 @@ export default function PosizioneCard({
         outline-none
         focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2
         focus-visible:ring-offset-[var(--background)]
-        cursor-default
       "
-            style={clickable ? { cursor: "pointer" } : undefined}
+            style={canNavigate ? { cursor: "pointer" } : undefined}
         >
             {/* LEFT: info posizione */}
             <div className="min-w-0 flex-1">

@@ -1,6 +1,6 @@
 // frontend/services/posizione.service.ts
 
-import { getJson } from "./api";
+import { getJson, postJson, deleteJson } from "./api";
 import type { Posizione } from "@/types/posizione";
 
 /**
@@ -12,7 +12,6 @@ export async function fetchPosizioni(): Promise<Posizione[]> {
 
 /**
  * Dettaglio di una singola posizione.
- * Nome compatibile con il codice esistente (idPosizione.tsx).
  */
 export async function getPosizioneById(
     idPosizione: number | string
@@ -52,9 +51,15 @@ export async function setPosizionePreferita(
     idPosizione: number | string,
     preferita: boolean
 ): Promise<PreferitoStatus> {
-    return getJson<PreferitoStatus>(`/posizioni/${idPosizione}/preferiti`, {
-        method: preferita ? "POST" : "DELETE",
-    });
+    const path = `/posizioni/${idPosizione}/preferiti`;
+
+    if (preferita) {
+        // Aggiunge ai preferiti
+        return postJson<PreferitoStatus>(path);
+    } else {
+        // Rimuove dai preferiti
+        return deleteJson<PreferitoStatus>(path);
+    }
 }
 
 /**

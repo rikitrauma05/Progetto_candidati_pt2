@@ -1,88 +1,145 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {login as loginApi } from "@/services/auth.service";
 import Link from "next/link";
-import PageHeader from "@/components/layout/pageHeader";
+
 import { useAuthStore } from "@/store/authStore";
+import { login as loginService } from "@/services/auth.service";
+import type { LoginRequest, LoginResponse } from "@/types/auth";
+import PageHeader from "@/components/layout/pageHeader";
 import Button from "@/components/ui/button";
-import Input from "@/components/ui/input";
 
 export default function LoginPage() {
     const router = useRouter();
-    const login = useAuthStore((s) => s.login);
+    const { isAuthenticated, user, login: loginStore } = useAuthStore();
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [busy, setBusy] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [form, setForm] = useState<LoginRequest>({
+        email: "",
+        password: "",
+    });
 
-    async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    const [loading, setLoading] = useState(false);
+    const [errore, setErrore] = useState<string | null>(null);
+
+    // Se sei già loggato, manda subito alla pagina giusta
+    useEffect(() => {
+        if (!isAuthenticated || !user) return;
+
+        if (user.ruolo === "HR") {
+            router.replace("/hr/dashboard");
+        } else if (user.ruolo === "CANDIDATO") {
+            router.replace("/candidati/posizioni");
+        } else {
+            router.replace("/");
+        }
+    }, [isAuthenticated, user, router]);
+
+    const handleChange =
+        (field: keyof LoginRequest) =>
+            (e: React.ChangeEvent<HTMLInputElement>) => {
+                setForm((prev) => ({ ...prev, [field]: e.target.value }));
+            };
+
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setError(null);
-        setBusy(true);
+        setErrore(null);
+        setLoading(true);
 
         try {
-            const resp = await loginApi({
-                email,
-                password,
+            // chiamata al backend
+            const resp: LoginResponse = await loginService(form);
+
+            // salviamo in Zustand
+            loginStore(resp.user, {
+                accessToken: resp.accessToken,
+                refreshToken: resp.refreshToken,
             });
 
-            // resp.user è il UtenteDto (tipizzato in types/user.ts)
-            login(resp.user);
-
-            // redirect in base al ruolo reale
+            // redirect in base al ruolo
             if (resp.user.ruolo === "HR") {
                 router.push("/hr/dashboard");
+            } else if (resp.user.ruolo === "CANDIDATO") {
+                router.push("/candidati/posizioni");
             } else {
-                router.push("/candidati/profili");
+                router.push("/");
             }
         } catch (err: any) {
-            const msg = String(err?.message || "");
-
-            if (msg.includes("UTENTE_NON_TROVATO")) {
-                setError("Utente non trovato.");
-            } else if (msg.includes("PASSWORD_ERRATA")) {
-                setError("Password errata.");
-            } else {
-                setError("Login non riuscito. Riprova.");
-            }
+            console.error("Errore login:", err);
+            setErrore(err?.message ?? "Errore durante il login.");
         } finally {
-            setBusy(false);
+            setLoading(false);
         }
-    }
+    };
 
     return (
-        <main className="container mx-auto p-4 space-y-6 max-w-md">
-            <PageHeader title="Accedi" subtitle="Inserisci le tue credenziali per continuare" />
+        <div className="min-h-dvh flex items-center justify-center px-4">
+            <div className="w-full max-w-lg space-y-6">
+                <PageHeader
+                    title="Accedi a CandidAI"
+                    subtitle="Inserisci le tue credenziali per continuare"
+                />
 
-            <form onSubmit={onSubmit} className="rounded-2xl border bg-[var(--surface)] border-[var(--border)] p-6 space-y-4">
-                <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm">Email</label>
-                    <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} required />
-                </div>
+                {errore && (
+                    <div className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+                        {errore}
+                    </div>
+                )}
 
-                <div className="space-y-2">
-                    <label htmlFor="password" className="text-sm">Password</label>
-                    <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.currentTarget.value)} required />
-                </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-1">
+                        <label
+                            htmlFor="email"
+                            className="text-sm font-medium text-[var(--foreground)]"
+                        >
+                            Email
+                        </label>
+                        <input
+                            id="email"
+                            type="email"
+                            required
+                            value={form.email}
+                            onChange={handleChange("email")}
+                            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                        />
+                    </div>
 
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                    <div className="space-y-1">
+                        <label
+                            htmlFor="password"
+                            className="text-sm font-medium text-[var(--foreground)]"
+                        >
+                            Password
+                        </label>
+                        <input
+                            id="password"
+                            type="password"
+                            required
+                            value={form.password}
+                            onChange={handleChange("password")}
+                            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                        />
+                    </div>
 
-                <div className="pt-2">
-                    <Button type="submit" disabled={busy} className="w-full">
-                        {busy ? "Accesso..." : "Accedi"}
+                    <Button
+                        type="submit"
+                        className="w-full justify-center"
+                        disabled={loading}
+                    >
+                        {loading ? "Accesso in corso..." : "Accedi"}
                     </Button>
-                </div>
+                </form>
 
-                <div className="pt-4 text-sm">
+                <p className="text-center text-sm text-[var(--muted)]">
                     Non hai un account?{" "}
-                    <Link href="/auth/register" className="underline">
+                    <Link
+                        href="/auth/register"
+                        className="font-medium text-[var(--accent)] hover:underline"
+                    >
                         Registrati
                     </Link>
-                </div>
-            </form>
-        </main>
+                </p>
+            </div>
+        </div>
     );
 }
