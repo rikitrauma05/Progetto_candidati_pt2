@@ -67,3 +67,10 @@ body {
 .btn:hover {
     background-color: #1d4ed8;
 }
+
+/* Rende bianco SOLO il calendario nativo degli input date */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+
