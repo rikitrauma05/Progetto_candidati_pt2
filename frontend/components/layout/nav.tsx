@@ -2,72 +2,114 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 
-type Item = { href: string; label: string };
+function classNames(...classes: Array<string | false | null | undefined>) {
+    return classes.filter(Boolean).join(" ");
+}
 
-const hrItems: Item[] = [
-    { href: "/hr/dashboard", label: "Dashboard" },
-    { href: "/hr/posizioni", label: "Posizioni" },
-    { href: "/hr/candidati", label: "Candidati" },
-    { href: "/hr/analisi", label: "Analisi" },
-];
-
-const candidateItems: Item[] = [
-    { href: "/candidati/posizioni", label: "Posizioni" },
-    { href: "/candidati/candidature", label: "Candidature" },
-    { href: "/candidati/profili", label: "Profilo" },
-];
-
-export default function Nav({
-                                area = "hr",
-                            }: {
-    area?: "hr" | "candidati";
-}) {
+export default function Nav() {
     const pathname = usePathname();
-    const items = area === "hr" ? hrItems : candidateItems;
+    const { user, isAuthenticated } = useAuthStore();
+
+    const ruolo = user?.ruolo; // 'CANDIDATO' | 'HR'
+    const isHR = ruolo === "HR";
+    const isCandidato = ruolo === "CANDIDATO";
+
+    type NavLink = {
+        href: string;
+        label: string;
+    };
+
+    let navLinks: NavLink[] = [];
+
+    if (isCandidato) {
+        navLinks = [
+            { href: "/candidati/posizioni", label: "Posizioni aperte" },
+            { href: "/candidati/candidature", label: "Le mie candidature" },
+            { href: "/candidati/profili", label: "Profilo" },
+        ];
+    } else if (isHR) {
+        navLinks = [
+            { href: "/hr/dashboard", label: "Dashboard" },
+            { href: "/hr/posizioni", label: "Posizioni" },
+            { href: "/hr/candidati", label: "Candidati" },
+            { href: "/hr/analisi", label: "Analisi" },
+        ];
+    }
 
     return (
-        <nav className="flex items-center justify-between gap-6">
-            <Link href="/" className="text-base font-semibold">
-                Lavoro_Candidati
-            </Link>
+        <header className="border-b bg-background/80 backdrop-blur">
+            <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+                {/* Logo / titolo */}
+                <div className="flex items-center gap-2">
+                    <Link href="/" className="text-lg font-semibold tracking-tight">
+                        CandidAI
+                    </Link>
+                </div>
 
-            <ul className="flex items-center gap-4">
-                {items.map((it) => {
-                    const active =
-                        pathname === it.href ||
-                        (pathname?.startsWith(it.href + "/") ?? false);
-                    return (
-                        <li key={it.href}>
+                {/* Link di navigazione (solo se loggato) */}
+                {isAuthenticated && navLinks.length > 0 && (
+                    <div className="hidden gap-4 md:flex">
+                        {navLinks.map((link) => (
                             <Link
-                                href={it.href}
-                                className={`rounded-xl px-3 py-2 text-sm ${
-                                    active
-                                        ? "bg-[var(--accent)] text-white"
-                                        : "text-[var(--foreground)] hover:bg-[var(--border)]"
-                                }`}
+                                key={link.href}
+                                href={link.href}
+                                className={classNames(
+                                    "text-sm font-medium transition-colors",
+                                    pathname.startsWith(link.href)
+                                        ? "text-primary"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
                             >
-                                {it.label}
+                                {link.label}
                             </Link>
-                        </li>
-                    );
-                })}
-            </ul>
+                        ))}
+                    </div>
+                )}
 
-            <div className="flex items-center gap-3">
-                <Link
-                    href="/auth/login"
-                    className="rounded-xl border px-3 py-2 text-sm"
-                >
-                    Login
-                </Link>
-                <Link
-                    href="/auth/logout"
-                    className="rounded-xl border px-3 py-2 text-sm"
-                >
-                    Logout
-                </Link>
-            </div>
-        </nav>
+                {/* Area destra: login/register oppure utente + logout */}
+                <div className="flex items-center gap-3">
+                    {!isAuthenticated && (
+                        <>
+                            <Link
+                                href="/auth/login"
+                                className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                            >
+                                Login
+                            </Link>
+                            <Link
+                                href="/auth/register"
+                                className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                            >
+                                Registrati
+                            </Link>
+                        </>
+                    )}
+
+                    {isAuthenticated && (
+                        <>
+                            {user && (
+                                <span className="hidden text-sm text-muted-foreground sm:inline">
+                                    {ruolo === "HR" ? "HR" : "Candidato"}:{" "}
+                                    <span className="font-semibold">
+                                        {user.nome} {user.cognome}
+                                    </span>
+                                </span>
+                            )}
+
+                            {/* Qui non facciamo più la logica di logout,
+                                ma andiamo alla pagina /auth/logout */}
+                            <Link
+                                href="/auth/logout"
+                                className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-accent"
+                            >
+                                Logout
+                            </Link>
+                        </>
+                    )}
+                </div>
+            </nav>
+        </header>
     );
 }

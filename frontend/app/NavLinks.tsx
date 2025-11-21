@@ -4,105 +4,151 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 
-type Item = { href: string; label: string };
-
-const hrItems: Item[] = [
-    { href: "/hr/dashboard", label: "Dashboard" },
-    { href: "/hr/posizioni", label: "Posizioni" },
-    { href: "/hr/candidati", label: "Candidati" },
-    { href: "/hr/analisi", label: "Analisi" },
-];
-
-const candidateItems: Item[] = [
-    { href: "/candidati/posizioni", label: "Posizioni" },
-    { href: "/candidati/candidature", label: "Candidature" },
-    { href: "/candidati/profili", label: "Profilo" },
-];
+function classNames(...classes: Array<string | false | null | undefined>) {
+    return classes.filter(Boolean).join(" ");
+}
 
 export default function NavLinks() {
     const pathname = usePathname();
-    const { isAuthenticated, user, logout } = useAuthStore();
+    const { user, isAuthenticated } = useAuthStore();
 
-    const ruolo = user?.ruolo;
-    const items: Item[] =
-        ruolo === "HR"
-            ? hrItems
-            : ruolo === "CANDIDATO"
-                ? candidateItems
-                : [];
+    const ruolo = user?.ruolo; // "CANDIDATO" | "HR" | "ADMIN"
+    const isHR = ruolo === "HR";
+    const isCandidato = ruolo === "CANDIDATO";
 
-    const renderItem = (item: Item) => {
-        const active =
-            pathname === item.href ||
-            (pathname?.startsWith(item.href + "/") ?? false);
-
-        return (
-            <li key={item.href}>
-                <Link
-                    href={item.href}
-                    className={`rounded-xl px-3 py-2 text-sm transition ${
-                        active
-                            ? "bg-[var(--accent)] text-white"
-                            : "text-[var(--foreground)] hover:bg-[var(--border)]"
-                    }`}
-                >
-                    {item.label}
-                </Link>
-            </li>
-        );
+    type NavItem = {
+        href: string;
+        label: string;
+        show: boolean;
     };
 
+    const items: NavItem[] = [
+        {
+            href: "/",
+            label: "Home",
+            show: true,
+        },
+        {
+            href: "/candidati/posizioni",
+            label: "Posizioni aperte",
+            // visibile sia da non loggato che dal candidato
+            show: !isAuthenticated || isCandidato,
+        },
+        {
+            href: "/candidati/candidature",
+            label: "Le mie candidature",
+            show: isCandidato,
+        },
+        {
+            href: "/hr/dashboard",
+            label: "Dashboard HR",
+            show: isHR,
+        },
+        {
+            href: "/hr/posizioni",
+            label: "Posizioni HR",
+            show: isHR,
+        },
+        {
+            href: "/hr/candidati",
+            label: "Candidati",
+            show: isHR,
+        },
+    ];
+
     return (
-        <>
-            {/* Menu centrale */}
-            <ul className="flex items-center gap-3 mr-4">
-                {/* Link Home sempre visibile */}
-                <li key="home">
-                    <Link
-                        href="/"
-                        className={`rounded-xl px-3 py-2 text-sm transition ${
-                            pathname === "/"
-                                ? "bg-[var(--accent)] text-white"
-                                : "text-[var(--foreground)] hover:bg-[var(--border)]"
-                        }`}
-                    >
-                        Home
-                    </Link>
-                </li>
-
-                {/* Link in base al ruolo (solo se autenticato) */}
-                {isAuthenticated && items.map(renderItem)}
-            </ul>
-
-            {/* Azioni a destra: login/registrazione oppure logout */}
+        <div className="flex items-center gap-2">
+            {/* Link di navigazione */}
             <div className="flex items-center gap-2">
-                {!isAuthenticated && (
-                    <>
+                {items
+                    .filter((item) => item.show)
+                    .map((item) => (
                         <Link
-                            href="/auth/login"
-                            className="rounded-xl border px-3 py-1.5 text-sm hover:bg-[var(--border)]"
+                            key={item.href}
+                            href={item.href}
+                            className={classNames(
+                                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                                pathname === item.href
+                                    ? "bg-blue-500 text-white"
+                                    : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/5"
+                            )}
                         >
-                            Login
+                            {item.label}
                         </Link>
-                        <Link
-                            href="/auth/register"
-                            className="rounded-xl border px-3 py-1.5 text-sm hover:bg-[var(--border)]"
-                        >
-                            Registrati
-                        </Link>
-                    </>
-                )}
+                    ))}
+            </div>
 
-                {isAuthenticated && (
-                    <button
-                        type="button"
-                        onClick={logout}
-                        className="rounded-xl border px-3 py-1.5 text-sm hover:bg-[var(--border)]"
+            {/* Spacer */}
+            <div className="w-px h-6 bg-white/10 mx-1" />
+
+            {/* Area auth: login/registrati oppure utente + logout */}
+            {!isAuthenticated && (
+                <div className="flex items-center gap-2">
+                    <Link
+                        href="/auth/login"
+                        className={classNames(
+                            "px-3 py-1.5 rounded-full text-xs font-medium border border-white/20 transition-colors",
+                            pathname?.startsWith("/auth/login")
+                                ? "bg-white text-black"
+                                : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/5"
+                        )}
+                    >
+                        Login
+                    </Link>
+                    <Link
+                        href="/auth/register"
+                        className="px-3 py-1.5 rounded-full text-xs font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                    >
+                        Registrati
+                    </Link>
+                </div>
+            )}
+
+            {isAuthenticated && (
+                <div className="flex items-center gap-2">
+                    {/* Info utente compatta */}
+                    {user && (
+                        <div className="hidden sm:flex flex-col items-end mr-1">
+                            <span className="text-xs font-semibold leading-tight">
+                                {user.nome} {user.cognome}
+                            </span>
+                            <span className="text-[10px] uppercase tracking-wide text-[var(--muted)]">
+                                {ruolo === "HR"
+                                    ? "HR"
+                                    : ruolo === "CANDIDATO"
+                                        ? "Candidato"
+                                        : ruolo}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Link al profilo a seconda del ruolo */}
+                    {isCandidato && (
+                        <Link
+                            href="/candidati/profili"
+                            className="hidden sm:inline-flex px-3 py-1.5 rounded-full text-[11px] font-medium border border-white/20 text-[var(--muted)] hover:bg-white/5 hover:text-[var(--foreground)] transition-colors"
+                        >
+                            Profilo
+                        </Link>
+                    )}
+                    {isHR && (
+                        <Link
+                            href="/hr/dashboard"
+                            className="hidden sm:inline-flex px-3 py-1.5 rounded-full text-[11px] font-medium border border-white/20 text-[var(--muted)] hover:bg-white/5 hover:text-[var(--foreground)] transition-colors"
+                        >
+                            Area HR
+                        </Link>
+                    )}
+
+                    {/* Logout -> va alla pagina dedicata /auth/logout */}
+                    <Link
+                        href="/auth/logout"
+                        className="px-3 py-1.5 rounded-full text-xs font-medium border border-red-500/60 text-red-300 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors"
                     >
                         Logout
-                    </button>
-                )}
-            </div>
-        </>
+                    </Link>
+                </div>
+            )}
+        </div>
     );
 }
