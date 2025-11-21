@@ -22,83 +22,44 @@ export default function NavLinks() {
         show: boolean;
     };
 
+    // Link principali della navbar
     const items: NavItem[] = [
-        {
-            href: "/",
-            label: "Home",
-            show: true,
-        },
-        {
-            href: "/candidati/posizioni",
-            label: "Posizioni aperte",
-            // visibile sia da non loggato che dal candidato
-            show: !isAuthenticated || isCandidato,
-        },
-        {
-            href: "/candidati/candidature",
-            label: "Le mie candidature",
-            show: isCandidato,
-        },
-        {
-            href: "/hr/dashboard",
-            label: "Dashboard HR",
-            show: isHR,
-        },
-        {
-            href: "/hr/posizioni",
-            label: "Posizioni HR",
-            show: isHR,
-        },
-        {
-            href: "/hr/candidati",
-            label: "Candidati",
-            show: isHR,
-        },
+        { href: "/", label: "Home", show: true },
+        { href: "/candidati/posizioni", label: "Posizioni aperte", show: isAuthenticated && isCandidato }, // si vede solo quando si ci logga
+        { href: "/candidati/candidature", label: "Le mie candidature", show: isCandidato },
+        { href: "/hr/dashboard", label: "Dashboard HR", show: isHR },
+        { href: "/hr/posizioni", label: "Posizioni HR", show: isHR },
+        { href: "/hr/candidati", label: "Candidati", show: isHR },
     ];
+
+    // Funzione helper per generare i link uniformi
+    const navLinkClasses = (href: string) =>
+        classNames(
+            "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+            pathname === href ? "bg-blue-500 text-white" : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/5"
+        );
 
     return (
         <div className="flex items-center gap-2">
-            {/* Link di navigazione */}
+            {/* Link di navigazione principali */}
             <div className="flex items-center gap-2">
-                {items
-                    .filter((item) => item.show)
-                    .map((item) => (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={classNames(
-                                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                                pathname === item.href
-                                    ? "bg-blue-500 text-white"
-                                    : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/5"
-                            )}
-                        >
-                            {item.label}
-                        </Link>
-                    ))}
+                {items.filter((item) => item.show).map((item) => (
+                    <Link key={item.href} href={item.href} className={navLinkClasses(item.href)}>
+                        {item.label}
+                    </Link>
+                ))}
             </div>
 
             {/* Spacer */}
             <div className="w-px h-6 bg-white/10 mx-1" />
 
-            {/* Area auth: login/registrati oppure utente + logout */}
+            {/* Area autenticazione */}
             {!isAuthenticated && (
                 <div className="flex items-center gap-2">
-                    <Link
-                        href="/auth/login"
-                        className={classNames(
-                            "px-3 py-1.5 rounded-full text-xs font-medium border border-white/20 transition-colors",
-                            pathname?.startsWith("/auth/login")
-                                ? "bg-white text-black"
-                                : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/5"
-                        )}
-                    >
+                    <Link href="/auth/login" className={navLinkClasses("/auth/login")}>
                         Login
                     </Link>
-                    <Link
-                        href="/auth/register"
-                        className="px-3 py-1.5 rounded-full text-xs font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                    >
+                    <Link href="/auth/register" className={navLinkClasses("/auth/register")}>
                         Registrati
                     </Link>
                 </div>
@@ -113,37 +74,30 @@ export default function NavLinks() {
                                 {user.nome} {user.cognome}
                             </span>
                             <span className="text-[10px] uppercase tracking-wide text-[var(--muted)]">
-                                {ruolo === "HR"
-                                    ? "HR"
-                                    : ruolo === "CANDIDATO"
-                                        ? "Candidato"
-                                        : ruolo}
+                                {ruolo === "HR" ? "HR" : ruolo === "CANDIDATO" ? "Candidato" : ruolo}
                             </span>
                         </div>
                     )}
 
-                    {/* Link al profilo a seconda del ruolo */}
+                    {/* Link aggiuntivi a seconda del ruolo */}
                     {isCandidato && (
-                        <Link
-                            href="/candidati/profili"
-                            className="hidden sm:inline-flex px-3 py-1.5 rounded-full text-[11px] font-medium border border-white/20 text-[var(--muted)] hover:bg-white/5 hover:text-[var(--foreground)] transition-colors"
-                        >
+                        <Link href="/candidati/profili" className={navLinkClasses("/candidati/profili")}>
                             Profilo
                         </Link>
                     )}
                     {isHR && (
-                        <Link
-                            href="/hr/dashboard"
-                            className="hidden sm:inline-flex px-3 py-1.5 rounded-full text-[11px] font-medium border border-white/20 text-[var(--muted)] hover:bg-white/5 hover:text-[var(--foreground)] transition-colors"
-                        >
+                        <Link href="/hr/dashboard" className={navLinkClasses("/hr/dashboard")}>
                             Area HR
                         </Link>
                     )}
 
-                    {/* Logout -> va alla pagina dedicata /auth/logout */}
+                    {/* Logout */}
                     <Link
                         href="/auth/logout"
-                        className="px-3 py-1.5 rounded-full text-xs font-medium border border-red-500/60 text-red-300 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors"
+                        className={classNames(
+                            "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                            "text-red-400 hover:text-white hover:bg-red-500"
+                        )}
                     >
                         Logout
                     </Link>
