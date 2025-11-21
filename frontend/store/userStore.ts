@@ -9,7 +9,9 @@ export type UserProfile = {
     cognome: string;
     email: string;
     ruolo: string;
-    // aggiungi qui eventuali altri campi che ti arrivano dal backend
+    telefono?: string;
+    citta?: string;
+    dataNascita?: string;
 };
 
 type UserStoreState = {

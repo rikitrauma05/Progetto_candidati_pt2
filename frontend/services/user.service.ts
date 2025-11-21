@@ -1,5 +1,5 @@
 // frontend/services/user.service.ts
-import { getJson } from "./api";
+import { getJson, postJson, putJson } from "./api"; // presuppone che tu abbia queste funzioni
 import type { UserProfile } from "@/store/userStore";
 import { useAuthStore } from "@/store/authStore";
 
@@ -8,19 +8,16 @@ export type Candidato = {
     nome: string;
     cognome: string;
     email: string;
+    citta: string;
+    dataNascita: string;
+    telefono?: string;
     // campi opzionali usati nella lista HR
     ultimaPosizione?: string;
     punteggioTotale?: number;
 };
 
 /**
- * Recupera il profilo dell'utente loggato partendo dallo user salvato
- * nell'authStore (quello che arriva dalla login).
- *
- * Backend:
- *   GET /api/utenti/{id}
- * Frontend (getJson):
- *   chiama "/api" + "/utenti/{id}" -> "/api/utenti/{id}"
+ * Recupera il profilo dell'utente loggato.
  */
 export async function getProfiloCandidato(): Promise<UserProfile> {
     const { user } = useAuthStore.getState();
@@ -31,14 +28,10 @@ export async function getProfiloCandidato(): Promise<UserProfile> {
         );
     }
 
-    // ATTENZIONE:
-    // qui assumo che il tipo User abbia un campo "idUtente".
-    // Se nel tuo tipo User il campo ha un altro nome, cambialo qui.
     const id = (user as any).idUtente;
-
     if (!id) {
         throw new Error(
-            "ID utente non presente nell'oggetto user. Controlla il tipo User in /store/userStore o /types/user.ts."
+            "ID utente non presente nell'oggetto user. Controlla il tipo User."
         );
     }
 
@@ -46,12 +39,45 @@ export async function getProfiloCandidato(): Promise<UserProfile> {
 }
 
 /**
+ * Aggiorna i dati del profilo dell'utente loggato.
+ *
+ * Backend atteso:
+ *   PUT /api/utenti/{id}
+ */
+export async function updateProfiloCandidato(profilo: Partial<UserProfile>): Promise<UserProfile> {
+    const { user } = useAuthStore.getState();
+    if (!user) throw new Error("Utente non loggato");
+
+    const id = (user as any).idUtente;
+    if (!id) throw new Error("ID utente mancante");
+
+    return putJson<UserProfile>(`/utenti/${id}`, profilo);
+}
+
+/**
+ * Upload del CV dell'utente loggato.
+ *
+ * Backend atteso:
+ *   POST /api/utenti/{id}/cv
+ */
+/*export async function uploadCv(file: File): Promise<void> {
+    const { user } = useAuthStore.getState();
+    if (!user) throw new Error("Utente non loggato");
+
+    const id = (user as any).idUtente;
+    if (!id) throw new Error("ID utente mancante");
+
+    const formData = new FormData();
+    formData.append("cv", file);
+
+    await uploadFile(`/utenti/${id}/cv`, formData);
+}*/
+
+/**
  * Restituisce la lista dei candidati visibile all'HR.
  *
  * Backend atteso:
  *   GET /api/hr/candidati
- * Frontend (getJson):
- *   chiama "/api" + "/hr/candidati" -> "/api/hr/candidati"
  */
 export async function getCandidati(): Promise<Candidato[]> {
     return getJson<Candidato[]>("/hr/candidati");
