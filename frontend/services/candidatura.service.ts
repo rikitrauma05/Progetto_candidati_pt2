@@ -31,21 +31,6 @@ async function patchJson<T, B = unknown>(
         body: body !== undefined ? JSON.stringify(body) : undefined,
     });
 
-    if (!response.ok) {
-        let message = `Errore HTTP ${response.status}`;
-        try {
-            const data = await response.json();
-            if (typeof data === "string") {
-                message = data;
-            } else if (data?.message) {
-                message = data.message;
-            }
-        } catch {
-            // ignoriamo errori di parsing
-        }
-        throw new Error(message);
-    }
-
     if (response.status === 204) {
         return undefined as unknown as T;
     }

@@ -19,13 +19,12 @@ export default function PosizioniCandidato() {
                 setLoading(true);
                 setErrore(null);
 
+                console.log("Chiamo fetchPosizioni..."); // debug
                 const data = await fetchPosizioni();
+                console.log("Posizioni ricevute:", data); // debug
                 setPosizioni(data ?? []);
             } catch (e) {
-                console.error(
-                    "Errore durante il caricamento delle posizioni:",
-                    e
-                );
+                console.error("Errore durante il caricamento delle posizioni:", e);
                 setErrore("Errore durante il caricamento delle posizioni.");
             } finally {
                 setLoading(false);
@@ -42,9 +41,7 @@ export default function PosizioniCandidato() {
                     title="Posizioni disponibili"
                     subtitle="Esplora le posizioni aperte e invia la tua candidatura"
                 />
-                <p className="text-sm text-[var(--muted)]">
-                    Caricamento posizioni…
-                </p>
+                <p className="text-sm text-[var(--muted)]">Caricamento posizioni…</p>
             </div>
         );
     }

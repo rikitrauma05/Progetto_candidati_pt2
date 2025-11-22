@@ -1,23 +1,62 @@
 // frontend/services/posizione.service.ts
 
-import { getJson, postJson, deleteJson } from "./api";
+import {getJson, postJson, deleteJson, API_BASE_URL} from "./api";
 import type { Posizione } from "@/types/posizione";
+import {useAuthStore} from "@/store/authStore";
 
 /**
  * Lista di tutte le posizioni visibili al candidato.
  */
 export async function fetchPosizioni(): Promise<Posizione[]> {
-    return getJson<Posizione[]>("/posizioni");
+    const { accessToken } = useAuthStore.getState();
+    console.log("AccessToken:", accessToken);
+
+
+    const res = await fetch(`${API_BASE_URL}/posizioni`, {
+        headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+        },
+    });
+
+    if (!res.ok) {
+        let msg = `Errore HTTP ${res.status}`;
+        try {
+            const data = await res.json();
+            if (data?.message) msg = data.message;
+        } catch {}
+        throw new Error(msg);
+    }
+
+    return res.json();
 }
 
 /**
  * Dettaglio di una singola posizione.
  */
-export async function getPosizioneById(
-    idPosizione: number | string
-): Promise<Posizione> {
-    return getJson<Posizione>(`/posizioni/${idPosizione}`);
+
+export async function getPosizioneById(idPosizione: number | string): Promise<Posizione> {
+    const { accessToken } = useAuthStore.getState();
+
+    const res = await fetch(`${API_BASE_URL}/posizioni/${idPosizione}`, {
+        headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+        },
+    });
+
+    if (!res.ok) {
+        let msg = `Errore HTTP ${res.status}`;
+        try {
+            const data = await res.json();
+            if (data?.message) msg = data.message;
+        } catch {}
+        throw new Error(msg);
+    }
+
+    return res.json();
 }
+
 
 /**
  * Lista delle posizioni preferite dell'utente loggato.
@@ -71,4 +110,5 @@ export async function togglePosizionePreferita(
     isCurrentlyPreferita: boolean
 ): Promise<PreferitoStatus> {
     return setPosizionePreferita(idPosizione, !isCurrentlyPreferita);
+
 }
