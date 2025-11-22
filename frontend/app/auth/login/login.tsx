@@ -64,6 +64,7 @@ export default function LoginPage() {
             } else {
                 router.push("/");
             }
+
         } catch (err: any) {
             console.error("Errore login:", err);
             setErrore(err?.message ?? "Errore durante il login.");
@@ -71,6 +72,7 @@ export default function LoginPage() {
             setLoading(false);
         }
     };
+
 
     return (
         <div className="min-h-dvh flex items-center justify-center px-4">
