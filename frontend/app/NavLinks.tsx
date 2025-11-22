@@ -27,9 +27,10 @@ export default function NavLinks() {
         { href: "/", label: "Home", show: true },
         { href: "/candidati/posizioni", label: "Posizioni aperte", show: isAuthenticated && isCandidato }, // si vede solo quando si ci logga
         { href: "/candidati/candidature", label: "Le mie candidature", show: isCandidato },
-        { href: "/hr/dashboard", label: "Dashboard HR", show: isHR },
         { href: "/hr/posizioni", label: "Posizioni HR", show: isHR },
         { href: "/hr/candidati", label: "Candidati", show: isHR },
+        { href: "/hr/test", label: "Test", show: isHR },
+
     ];
 
     // Funzione helper per generare i link uniformi
@@ -87,7 +88,7 @@ export default function NavLinks() {
                     )}
                     {isHR && (
                         <Link href="/hr/dashboard" className={navLinkClasses("/hr/dashboard")}>
-                            Area HR
+                             HR
                         </Link>
                     )}
 
