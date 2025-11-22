@@ -26,9 +26,11 @@ export default function Register() {
     });
 
     const [cvFile, setCvFile] = useState<File | null>(null);
+    const [consensoPrivacy, setConsensoPrivacy] = useState(false);
     const [cvError, setCvError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
+
 
     function onChange<K extends keyof typeof form>(key: K, val: string) {
         setForm((f) => ({ ...f, [key]: val }));
@@ -73,6 +75,11 @@ export default function Register() {
             return;
         }
 
+        if (!consensoPrivacy) {
+            setError("Devi accettare l'informativa sulla privacy per continuare.");
+            return;
+        }
+
         setBusy(true);
 
         try {
@@ -84,11 +91,11 @@ export default function Register() {
                 nome: form.nome,
                 cognome: form.cognome,
                 ruolo,
-                consensoPrivacy: true,
+                consensoPrivacy,
                 dataNascita: form.dataNascita || null,
                 telefono: form.telefono || null,
                 citta: form.citta || null,
-            } as any;
+            };
 
             const resp = await registerApi(payload,cvFile);
 
@@ -239,6 +246,32 @@ export default function Register() {
                             {cvError}
                         </p>
                     )}
+                </div>
+
+                <div className="space-y-2">
+                    <div className="flex items-start gap-3 p-4 rounded-lg border border-[var(--border)] bg-[var(--background)]">
+                        <input
+                            id="consensoPrivacy"
+                            type="checkbox"
+                            checked={consensoPrivacy}
+                            onChange={(e) => setConsensoPrivacy(e.target.checked)}
+                            className="mt-1 h-4 w-4 rounded border-[var(--border)] text-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
+                        />
+                        <label
+                            htmlFor="consensoPrivacy"
+                            className="text-sm leading-relaxed cursor-pointer"
+                        >
+                            Accetto l'
+                            <Link
+                                href="/privacy"
+                                target="_blank"
+                                className="underline font-medium hover:text-[var(--accent)]"
+                            >
+                                informativa sulla privacy
+                            </Link>{" "}
+                            e acconsento al trattamento dei miei dati personali.
+                        </label>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

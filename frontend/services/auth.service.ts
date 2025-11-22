@@ -19,7 +19,44 @@ import type {
  *   useAuthStore.getState().login(resp.user, { accessToken: resp.accessToken, refreshToken: resp.refreshToken });
  */
 export function login(payload: LoginRequest) {
-    return postJson<LoginResponse, LoginRequest>("/auth/login", payload);
+    try {
+        return postJson<LoginResponse, LoginRequest>("/auth/login", payload);
+    } catch (error) {
+        handleAuthError(error, "ERRORE_LOGIN");
+    }}
+
+
+function handleAuthError(error: any, defaultMessage: string): never {
+    const errorMessage = String(error?.message || "");
+
+    // Estrai il codice di errore se presente
+    if (errorMessage.includes("401") || errorMessage.includes("Unauthorized")) {
+        throw new Error("CREDENZIALI_NON_VALIDE");
+    }
+
+    if (errorMessage.includes("404") || errorMessage.includes("Not Found")) {
+        throw new Error("UTENTE_NON_TROVATO");
+    }
+
+    if (errorMessage.includes("403") || errorMessage.includes("Forbidden")) {
+        throw new Error("ACCOUNT_DISABILITATO");
+    }
+
+    if (errorMessage.includes("409") || errorMessage.includes("Conflict")) {
+        throw new Error("EMAIL_GIA_REGISTRATA");
+    }
+
+    if (errorMessage.includes("Network") || errorMessage.includes("fetch")) {
+        throw new Error("ERRORE_CONNESSIONE");
+    }
+
+    // Se c'è un messaggio custom dal backend, usalo
+    if (error?.message && !error.message.startsWith("HTTP")) {
+        throw error;
+    }
+
+    // Altrimenti usa il messaggio di default
+    throw new Error(defaultMessage);
 }
 
 /**

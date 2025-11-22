@@ -1,9 +1,8 @@
 "use client";
 
-import { FormEvent, useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
 import { useAuthStore } from "@/store/authStore";
 import { login as loginService } from "@/services/auth.service";
 import type { LoginRequest, LoginResponse } from "@/types/auth";
@@ -20,53 +19,73 @@ export default function LoginPage() {
     });
 
     const [loading, setLoading] = useState(false);
-    const [errore, setErrore] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-    // Se sei già loggato, manda subito alla pagina giusta
+    // Redirect se già autenticato
     useEffect(() => {
         if (!isAuthenticated || !user) return;
 
-        if (user.ruolo === "HR") {
-            router.replace("/hr/dashboard");
-        } else if (user.ruolo === "CANDIDATO") {
-            router.replace("/candidati/posizioni");
-        } else {
-            router.replace("/");
-        }
+        const redirectPath =
+            user.ruolo === "HR"
+                ? "/hr/dashboard"
+                : user.ruolo === "CANDIDATO"
+                    ? "/candidati/posizioni"
+                    : "/";
+
+        router.replace(redirectPath);
     }, [isAuthenticated, user, router]);
 
-    const handleChange =
-        (field: keyof LoginRequest) =>
-            (e: React.ChangeEvent<HTMLInputElement>) => {
-                setForm((prev) => ({ ...prev, [field]: e.target.value }));
-            };
+    const handleInputChange = (field: keyof LoginRequest) => (
+        e: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        setForm((prev) => ({ ...prev, [field]: e.target.value }));
+    };
+
+    const getErrorMessage = (err: any): string => {
+        const errorMessage = String(err?.message || "");
+
+        // Gestione errori specifici dal backend
+        if (errorMessage.includes("CREDENZIALI_NON_VALIDE") ||
+            errorMessage.includes("401") ||
+            errorMessage.includes("Unauthorized")) {
+            return "Email o password non corretti.";
+        }
+
+        //TODO: Da controllare
+        if (errorMessage.includes("UTENTE_NON_TROVATO")) {
+            return "Non esiste un account con questa email.";
+        }
+
+        // Messaggio generico per errori non gestiti
+        return "Si è verificato un errore durante l'accesso. Riprova.";
+    };
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setErrore(null);
+        setError(null);
         setLoading(true);
 
         try {
-            // chiamata al backend
-            const resp: LoginResponse = await loginService(form);
+            const response: LoginResponse = await loginService(form);
 
-            // salviamo in Zustand
-            loginStore(resp.user, {
-                accessToken: resp.accessToken,
-                refreshToken: resp.refreshToken,
+            // Salva i dati nello store
+            loginStore(response.user, {
+                accessToken: response.accessToken,
+                refreshToken: response.refreshToken,
             });
 
-            // redirect in base al ruolo
-            if (resp.user.ruolo === "HR") {
-                router.push("/hr/dashboard");
-            } else if (resp.user.ruolo === "CANDIDATO") {
-                router.push("/candidati/posizioni");
-            } else {
-                router.push("/");
-            }
+            // Redirect in base al ruolo
+            const redirectPath =
+                response.user.ruolo === "HR"
+                    ? "/hr/dashboard"
+                    : response.user.ruolo === "CANDIDATO"
+                        ? "/candidati/posizioni"
+                        : "/";
+
+            router.push(redirectPath);
         } catch (err: any) {
             console.error("Errore login:", err);
-            setErrore(err?.message ?? "Errore durante il login.");
+            setError(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -80,14 +99,17 @@ export default function LoginPage() {
                     subtitle="Inserisci le tue credenziali per continuare"
                 />
 
-                {errore && (
-                    <div className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
-                        {errore}
+                {error && (
+                    <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {error}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-1">
+                <form
+                    onSubmit={handleSubmit}
+                    className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 space-y-4 shadow-sm"
+                >
+                    <div className="space-y-2">
                         <label
                             htmlFor="email"
                             className="text-sm font-medium text-[var(--foreground)]"
@@ -99,12 +121,13 @@ export default function LoginPage() {
                             type="email"
                             required
                             value={form.email}
-                            onChange={handleChange("email")}
-                            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                            onChange={handleInputChange("email")}
+                            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] outline-none focus:ring-2 focus:ring-[var(--accent)] transition-shadow"
+                            placeholder="tua@email.com"
                         />
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                         <label
                             htmlFor="password"
                             className="text-sm font-medium text-[var(--foreground)]"
@@ -116,18 +139,21 @@ export default function LoginPage() {
                             type="password"
                             required
                             value={form.password}
-                            onChange={handleChange("password")}
-                            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                            onChange={handleInputChange("password")}
+                            className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--foreground)] outline-none focus:ring-2 focus:ring-[var(--accent)] transition-shadow"
+                            placeholder="••••••••"
                         />
                     </div>
 
-                    <Button
-                        type="submit"
-                        className="w-full justify-center"
-                        disabled={loading}
-                    >
-                        {loading ? "Accesso in corso..." : "Accedi"}
-                    </Button>
+                    <div className="pt-2">
+                        <Button
+                            type="submit"
+                            className="w-full justify-center"
+                            disabled={loading}
+                        >
+                            {loading ? "Accesso in corso..." : "Accedi"}
+                        </Button>
+                    </div>
                 </form>
 
                 <p className="text-center text-sm text-[var(--muted)]">
