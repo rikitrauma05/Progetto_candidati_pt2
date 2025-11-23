@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { User } from "@/types/user";
 
 type Tokens = {
@@ -14,62 +15,74 @@ type AuthState = {
     accessToken: string | null;
     refreshToken: string | null;
 
-    // azioni principali
+    hydrated: boolean; // nuovo flag
+
     login: (user: User, tokens?: Tokens) => void;
     logout: () => void;
 
-    // utility, nel caso vengano usate altrove
     setUser: (user: User | null) => void;
     setTokens: (tokens: Partial<Tokens>) => void;
+
+    setHydrated: (v: boolean) => void;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
-    user: null,
-    isAuthenticated: false,
-    accessToken: null,
-    refreshToken: null,
-
-    /**
-     * Login: imposta utente, flag e (se presenti) i token JWT.
-     * La seconda argomento è opzionale, così NON rompiamo le chiamate esistenti
-     * che usavano solo login(user).
-     */
-    login: (user, tokens) =>
-        set(() => ({
-            user,
-            isAuthenticated: true,
-            accessToken: tokens?.accessToken ?? null,
-            refreshToken: tokens?.refreshToken ?? null,
-        })),
-
-    /**
-     * Logout: pulisce utente e token.
-     */
-    logout: () =>
-        set(() => ({
+export const useAuthStore = create<AuthState>()(
+    persist(
+        (set) => ({
             user: null,
             isAuthenticated: false,
             accessToken: null,
             refreshToken: null,
-        })),
 
-    /**
-     * Aggiorna solo l'utente (utile se in futuro fai una pagina "modifica profilo").
-     */
-    setUser: (user) =>
-        set((state) => ({
-            ...state,
-            user,
-            isAuthenticated: !!user,
-        })),
+            hydrated: false,
 
-    /**
-     * Aggiorna solo i token (può essere usato per il refresh).
-     */
-    setTokens: (tokens) =>
-        set((state) => ({
-            ...state,
-            accessToken: tokens.accessToken ?? state.accessToken,
-            refreshToken: tokens.refreshToken ?? state.refreshToken,
-        })),
-}));
+            login: (user, tokens) =>
+                set(() => ({
+                    user,
+                    isAuthenticated: true,
+                    accessToken: tokens?.accessToken ?? null,
+                    refreshToken: tokens?.refreshToken ?? null,
+                })),
+
+            logout: () =>
+                set(() => ({
+                    user: null,
+                    isAuthenticated: false,
+                    accessToken: null,
+                    refreshToken: null,
+                })),
+
+            setUser: (user) =>
+                set((state) => ({
+                    ...state,
+                    user,
+                    isAuthenticated: !!user,
+                })),
+
+            setTokens: (tokens) =>
+                set((state) => ({
+                    ...state,
+                    accessToken: tokens.accessToken ?? state.accessToken,
+                    refreshToken: tokens.refreshToken ?? state.refreshToken,
+                })),
+
+            setHydrated: (v) => set({ hydrated: v }),
+        }),
+
+        {
+            name: "auth-storage",
+            partialize: (state) => ({
+                user: state.user,
+                accessToken: state.accessToken,
+                refreshToken: state.refreshToken,
+                isAuthenticated: state.isAuthenticated,
+            }),
+
+            onRehydrateStorage: () => (state) => {
+                if (state) {
+                    state.setHydrated(true);
+                }
+            },
+        }
+    )
+);

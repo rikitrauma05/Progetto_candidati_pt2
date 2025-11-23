@@ -28,35 +28,38 @@ export function useAuth() {
 export function useAuthGuard() {
     const router = useRouter();
     const pathname = usePathname();
-    const { isAuthenticated, user } = useAuthStore();
+
+    const { isAuthenticated, user, hydrated } = useAuthStore();
 
     useEffect(() => {
+        // Finché Zustand NON ha ricaricato i dati, non fare redirect
+        if (!hydrated) return;
+
         if (!pathname) return;
 
-        const isPublic = PUBLIC_ROUTES.some((p) =>
-            pathname === p || pathname.startsWith(p + "/")
+        const isPublic = PUBLIC_ROUTES.some(
+            (p) => pathname === p || pathname.startsWith(p + "/")
         );
 
-        // Se la rotta è pubblica, non facciamo niente
+        // Se la pagina è pubblica, lascia passare
         if (isPublic) return;
 
-        // Se non è autenticato, lo rimandiamo al login
+        // Se NON autenticato → redirect al login
         if (!isAuthenticated) {
             router.replace("/auth/login");
             return;
         }
 
-        // Se è autenticato, controlliamo i ruoli base:
-        // - rotte /hr solo per HR
-        // - rotte /candidati solo per CANDIDATO
+        // Controllo ruolo HR
         if (pathname.startsWith("/hr") && user?.ruolo !== "HR") {
             router.replace("/");
             return;
         }
 
+        // Controllo ruolo CANDIDATO
         if (pathname.startsWith("/candidati") && user?.ruolo !== "CANDIDATO") {
             router.replace("/");
             return;
         }
-    }, [isAuthenticated, user, pathname, router]);
+    }, [hydrated, isAuthenticated, user, pathname, router]);
 }

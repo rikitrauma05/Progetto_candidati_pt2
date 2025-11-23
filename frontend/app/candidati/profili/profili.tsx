@@ -161,14 +161,14 @@ export default function ProfiloCandidato() {
                     {cvFile && <p className="mt-2 text-sm text-green-600">File selezionato: {cvFile.name}</p>}
                     {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
                     {uploadSuccess && <p className="mt-2 text-sm text-green-600">CV caricato con successo!</p>}
-                    <button
-                        type="button"
-                        onClick={handleCvUpload}
-                        disabled={!cvFile || uploading}
-                        className="mt-2 inline-flex items-center rounded-lg border px-3 py-1.5 text-sm hover:bg-[var(--border)]"
-                    >
-                        {uploading ? "Caricamento..." : "Carica CV"}
-                    </button>
+                    {/*<button*/}
+                    {/*    type="button"*/}
+                    {/*    onClick={handleCvUpload}*/}
+                    {/*    disabled={!cvFile || uploading}*/}
+                    {/*    className="mt-2 inline-flex items-center rounded-lg border px-3 py-1.5 text-sm hover:bg-[var(--border)]"*/}
+                    {/*>*/}
+                    {/*    {uploading ? "Caricamento..." : "Carica CV"}*/}
+                    {/*</button>*/}
                 </div>
 
                 <div className="pt-2">
