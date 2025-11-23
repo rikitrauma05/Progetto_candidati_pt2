@@ -8,10 +8,13 @@ import Button from "@/components/ui/button";
 import CandidatoCard from "@/components/cards/candidatoCard";
 import * as userService from "@/services/user.service";
 
+// prendo sia il tipo che la funzione
+import { getCandidati, type Candidato } from "@/services/user.service";
+
 export default function CandidatiHR() {
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
-    const [candidati, setCandidati] = useState<any[]>([]);
+    const [candidati, setCandidati] = useState<Candidato[]>([]);
 
     useEffect(() => {
         const load = async () => {
@@ -66,14 +69,14 @@ export default function CandidatiHR() {
                 <div className="grid gap-4">
                     {candidati.map((c) => (
                         <CandidatoCard
-                            key={c.idUtente}
-                            id={c.idUtente}
-                            nome={`${c.nome} ${c.cognome}`}
-                            email={c.email}
+                            key={c.idCandidato}
+                            id={c.idCandidato}
+                            nome={`${c.idUtente.nome} ${c.idUtente.cognome}`}
+                            email={c.idUtente.email}
                             posizione={c.ultimaPosizione}
                             punteggio={c.punteggioTotale}
                             clickable
-                            href={`/hr/candidati/${c.idUtente}`}
+                            href={`/hr/candidati/${c.idCandidato}`}
                         />
                     ))}
                 </div>

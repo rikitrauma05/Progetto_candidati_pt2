@@ -3,6 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
+// importiamo servizio e tipo dal user.service.ts
+import {
+    getCandidatoById,
+    updateCandidato,
+    deleteCandidato,
+    type Candidato,
+} from "@/services/user.service";
+
 export default function HrCandidatoDettaglio() {
     const { idCandidato } = useParams<{ idCandidato: string }>();
     const router = useRouter();
@@ -10,6 +18,9 @@ export default function HrCandidatoDettaglio() {
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
     const [modifica, setModifica] = useState(false);
+
+    // candidato completo (come da type Candidato)
+    const [candidato, setCandidato] = useState<Candidato | null>(null);
 
     // Dati profilo (placeholders, nessun mock: saranno popolati via API)
     const [nome, setNome] = useState("");
@@ -20,31 +31,84 @@ export default function HrCandidatoDettaglio() {
 
     useEffect(() => {
         if (!idCandidato) return;
+
+        const idNum = Number(idCandidato);
+        if (Number.isNaN(idNum)) {
+            setErrore("ID candidato non valido.");
+            setLoading(false);
+            return;
+        }
+
         const bootstrap = async () => {
             try {
                 setLoading(true);
                 setErrore(null);
-                // TODO: carica dati reali
-                // const data = await candidatoService.getById(idCandidato as string)
-                // setNome(data.nome) ...
-            } catch {
+
+                const idNum = Number(idCandidato);
+                if (Number.isNaN(idNum)) {
+                    throw new Error("ID candidato non valido");
+                }
+
+                // chiamata reale al backend:
+                // GET /api/hr/candidati/{id}
+                const data = await getCandidatoById(idNum);
+                setCandidato(data);
+
+                // popola il form con i dati dell'utente associato
+                setNome(data.idUtente.nome ?? "");
+                setCognome(data.idUtente.cognome ?? "");
+                setEmail(data.idUtente.email ?? "");
+                setTelefono(data.idUtente.telefono ?? "");
+                // NOTE: qui potresti settare note da data.noteInterna se la aggiungi al BE
+                setNote("");
+            } catch (e) {
+                console.error(e);
                 setErrore("Impossibile caricare il candidato.");
             } finally {
                 setLoading(false);
             }
         };
-        bootstrap();
+
+        void bootstrap();
     }, [idCandidato]);
 
     async function salvaModifiche(e: React.FormEvent) {
         e.preventDefault();
+
+        if (!candidato) {
+            setErrore("Dati candidato non caricati.");
+            return;
+        }
+
         try {
             setLoading(true);
             setErrore(null);
-            // TODO: update candidato
-            // await candidatoService.update(idCandidato as string, { nome, cognome, email, telefono, note })
+
+            const idNum = Number(idCandidato);
+
+            // Costruiamo un nuovo oggetto Candidato aggiornando solo i campi dell'utente
+            const payload: Candidato = {
+                ...candidato,
+                idUtente: {
+                    ...candidato.idUtente,
+                    nome,
+                    cognome,
+                    email,
+                    telefono,
+                },
+                // se nel tipo Candidato questi campi sono opzionali, nessun problema
+                ultimaPosizione: candidato.ultimaPosizione,
+                punteggioTotale: candidato.punteggioTotale,
+            };
+
+            //PUT /api/hr/candidati/{id}
+            const updated = await updateCandidato(idNum, payload);
+
+            setCandidato(updated);
             setModifica(false);
-        } catch {
+
+        } catch (err) {
+            console.error(err);
             setErrore("Errore durante il salvataggio.");
         } finally {
             setLoading(false);
@@ -52,14 +116,19 @@ export default function HrCandidatoDettaglio() {
     }
 
     async function eliminaCandidato() {
+        if (!idCandidato) return;
         if (!confirm("Confermi l'eliminazione del candidato?")) return;
+
         try {
             setLoading(true);
             setErrore(null);
-            // TODO: delete candidato
-            // await candidatoService.delete(idCandidato as string)
+
+            const idNum = Number(idCandidato);
+            await deleteCandidato(idNum);
+
             router.push("/hr/candidati");
-        } catch {
+        } catch (err) {
+            console.error(err);
             setErrore("Errore durante l'eliminazione.");
         } finally {
             setLoading(false);

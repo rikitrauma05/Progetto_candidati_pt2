@@ -1,17 +1,21 @@
 // frontend/services/user.service.ts
-import { getJson, postJson, putJson } from "./api"; // presuppone che tu abbia queste funzioni
+import {deleteJson, getJson, postJson, putJson} from "./api"; // presuppone che tu abbia queste funzioni
 import type { UserProfile } from "@/store/userStore";
 import { useAuthStore } from "@/store/authStore";
 
 export type Candidato = {
-    idUtente: number;
-    nome: string;
-    cognome: string;
-    email: string;
-    citta: string;
-    dataNascita: string;
-    telefono?: string;
-    // campi opzionali usati nella lista HR
+    idCandidato: number;
+    idUtente: {
+        idUtente: number;
+        nome: string;
+        cognome: string;
+        email: string;
+        telefono?: string | null;
+        citta?: string | null;
+        // altri campi se servono...
+    };
+    active: boolean;
+    // opzionali, calcolati lato FE
     ultimaPosizione?: string;
     punteggioTotale?: number;
 };
@@ -81,4 +85,29 @@ export async function updateProfiloCandidato(profilo: Partial<UserProfile>): Pro
  */
 export async function getCandidati(): Promise<Candidato[]> {
     return getJson<Candidato[]>("/hr/candidati");
+}
+
+/**
+ * Dettaglio singolo candidato HR
+ */
+export async function getCandidatoById(id: number): Promise<Candidato> {
+    return getJson<Candidato>(`/hr/candidati/${id}`);
+}
+
+/**
+ * Aggiorna un candidato (PUT /api/hr/candidati/{id})
+ * Qui passiamo un oggetto Candidato completo.
+ */
+export async function updateCandidato(
+    id: number,
+    payload: Candidato
+): Promise<Candidato> {
+    return putJson<Candidato, Candidato>(`/hr/candidati/${id}`, payload);
+}
+
+/**
+ * Elimina un candidato (DELETE /api/hr/candidati/{id})
+ */
+export async function deleteCandidato(id: number): Promise<void> {
+    return deleteJson<void>(`/hr/candidati/${id}`);
 }

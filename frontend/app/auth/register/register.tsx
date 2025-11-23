@@ -70,6 +70,11 @@ export default function Register() {
             return;
         }
 
+        if(!cvFile){
+            setError("Devi caricare il cv");
+            return;
+        }
+
         if (cvError) {
             setError(cvError);
             return;
