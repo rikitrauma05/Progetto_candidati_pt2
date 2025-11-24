@@ -1,4 +1,3 @@
-// frontend/app/candidati/posizioni/posizioni.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,12 +5,20 @@ import PageHeader from "@/components/layout/pageHeader";
 import EmptyState from "@/components/empty/EmptyState";
 import PosizioneCard from "@/components/cards/posizioneCard";
 import ApplyButton from "@/components/forms/ApplyButton";
-import { fetchPosizioni } from "@/services/posizione.service";
-import type { Posizione } from "@/types/posizione";
+import { getJson } from "@/services/api";
+
+type Posizione = {
+    idPosizione: number;
+    titolo: string;
+    sede?: string;
+    contratto?: string;
+    candidatureRicevute?: number;
+    ral?: number;
+};
 
 export default function PosizioniCandidato() {
     const [posizioni, setPosizioni] = useState<Posizione[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState<boolean>(true);
     const [errore, setErrore] = useState<string | null>(null);
 
     useEffect(() => {
@@ -20,13 +27,15 @@ export default function PosizioniCandidato() {
                 setLoading(true);
                 setErrore(null);
 
-                console.log("Chiamo fetchPosizioni."); // debug
-                const data = await fetchPosizioni();
-                console.log("Posizioni ricevute:", data); // debug
+                // endpoint per le posizioni visibili al candidato
+                const data = await getJson<Posizione[]>("/posizioni");
                 setPosizioni(data ?? []);
-            } catch (e) {
+            } catch (e: any) {
                 console.error("Errore durante il caricamento delle posizioni:", e);
-                setErrore("Errore durante il caricamento delle posizioni.");
+                setErrore(
+                    e?.message ||
+                    "Si è verificato un errore durante il caricamento delle posizioni.",
+                );
             } finally {
                 setLoading(false);
             }
@@ -40,9 +49,11 @@ export default function PosizioniCandidato() {
             <div className="space-y-6">
                 <PageHeader
                     title="Posizioni disponibili"
-                    subtitle="Esplora le posizioni aperte e invia la tua candidatura"
+                    subtitle="Esplora le posizioni aperte e invia la tua candidatura."
                 />
-                <p className="text-sm text-[var(--muted)]">Caricamento posizioni…</p>
+                <p className="text-sm text-[var(--muted)]">
+                    Caricamento delle posizioni in corso…
+                </p>
             </div>
         );
     }
@@ -51,11 +62,11 @@ export default function PosizioniCandidato() {
         <div className="space-y-6">
             <PageHeader
                 title="Posizioni disponibili"
-                subtitle="Esplora le posizioni aperte e invia la tua candidatura"
+                subtitle="Esplora le posizioni aperte e invia la tua candidatura."
             />
 
             {errore && (
-                <div className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+                <div className="max-w-3xl mx-auto rounded-xl border border-red-500/40 bg-red-900/30 px-4 py-3 text-sm text-red-100">
                     {errore}
                 </div>
             )}
@@ -77,7 +88,7 @@ export default function PosizioniCandidato() {
                                 titolo={p.titolo}
                                 sede={p.sede}
                                 contratto={p.contratto}
-                                // candidature={p.candidatureRicevute}
+                                candidature={p.candidatureRicevute}
                                 clickable
                                 href={`/candidati/posizioni/${p.idPosizione}`}
                                 rightSlot={
