@@ -256,12 +256,12 @@ export default function RisultatiTestPage() {
                             <h3 className="text-sm font-semibold">
                                 Informazioni sul tentativo
                             </h3>
-                            <p className="text-sm text-[var(--muted)]">
-                                Identificativo tentativo:{" "}
-                                <span className="font-mono">
-                                    #{risultato.idTentativo}
-                                </span>
-                            </p>
+                            {/*<p className="text-sm text-[var(--muted)]">*/}
+                            {/*    Identificativo tentativo:{" "}*/}
+                            {/*    <span className="font-mono">*/}
+                            {/*        #{risultato.idTentativo}*/}
+                            {/*    </span>*/}
+                            {/*</p> */}
                             <p className="text-sm text-[var(--muted)]">
                                 Data e ora completamento:{" "}
                                 <span className="font-medium">
