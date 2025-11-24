@@ -26,7 +26,7 @@ export default function PosizioniHR() {
             try {
                 setLoading(true);
                 setErrore(null);
-                const data = await getJson<Posizione[]>("/posizioni");
+                const data = await getJson<Posizione[]>("/posizioni/hr/mie");
                 setPosizioni(data ?? []);
             } catch (e) {
                 console.error(e);

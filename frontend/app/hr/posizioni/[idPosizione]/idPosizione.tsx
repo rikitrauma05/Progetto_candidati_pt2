@@ -1,5 +1,7 @@
 "use client";
 
+import { getJson } from "@/services/api";
+import { deleteJson } from "@/services/api";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Button from "@/components/ui/button";
@@ -8,6 +10,15 @@ import Select from "@/components/ui/select";
 import Textarea from "@/components/ui/textarea";
 
 type Stato = "APERTA" | "CHIUSA";
+
+type Posizione = {
+    idPosizione: number;
+    titolo: string;
+    descrizione?: string;
+    sede?: string;
+    contratto?: string;
+    // altri campi se ti servono
+};
 
 export default function HrPosizioneDettaglio() {
     const { idPosizione } = useParams<{ idPosizione: string }>();
@@ -30,7 +41,13 @@ export default function HrPosizioneDettaglio() {
             try {
                 setLoading(true);
                 setErrore(null);
-                // TODO: fetch reale
+                const data = await getJson<Posizione>(`/posizioni/${idPosizione}`);
+
+                setTitolo(data.titolo ?? "");
+                setDescrizione(data.descrizione ?? "");
+                setSede(data.sede ?? "");
+                setContratto(data.contratto ?? "");
+
             } catch {
                 setErrore("Impossibile caricare la posizione.");
             } finally {
@@ -69,11 +86,16 @@ export default function HrPosizioneDettaglio() {
 
     async function eliminaPosizione() {
         if (!confirm("Confermi l'eliminazione della posizione?")) return;
+
         try {
             setLoading(true);
-            // TODO: delete
+            setErrore(null);
+
+            await deleteJson<void>(`/posizioni/${idPosizione}`);
+
             router.push("/hr/posizioni");
-        } catch {
+        } catch (err) {
+            console.error(err);
             setErrore("Errore durante l'eliminazione.");
         } finally {
             setLoading(false);

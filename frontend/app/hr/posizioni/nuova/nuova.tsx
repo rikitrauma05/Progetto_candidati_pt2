@@ -1,5 +1,6 @@
 "use client";
 
+import { postJson } from "@/services/api";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/button";
@@ -33,14 +34,37 @@ export default function HrNuovaPosizione() {
 
         try {
             setSubmitting(true);
-            // TODO: chiamata create posizione
+
+            // corpo della nuova posizione da inviare al backend
+            // i nomi dei campi corrispondono all'entity Posizione lato backend
+            const body = {
+                titolo,
+                descrizione,
+                sede,
+                contratto,
+                candidatureRicevute: 0, // importante: nel model è NOT NULL
+                // per ora lasciamo RAL, idSettore, idStatoPosizione null
+            };
+
+            await postJson("/posizioni/nuova", {
+                titolo,
+                descrizione,
+                sede,
+                contratto,
+                // questi per ora li vede solo il backend se decidi di usarli dopo
+                stato,
+                settore,
+            });
+
             router.push("/hr/posizioni");
-        } catch {
+        } catch (err) {
+            console.error(err);
             setErrore("Errore durante la creazione della posizione.");
         } finally {
             setSubmitting(false);
         }
     }
+
 
     return (
         <section className="space-y-8">
