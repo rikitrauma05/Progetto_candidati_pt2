@@ -1,9 +1,10 @@
 "use client";
 
-import { getJson } from "@/services/api";
-import { deleteJson } from "@/services/api";
-import { useEffect, useState } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
+
+import { getJson, deleteJson } from "@/services/api";
+
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Select from "@/components/ui/select";
@@ -37,32 +38,35 @@ export default function HrPosizioneDettaglio() {
 
     useEffect(() => {
         if (!idPosizione) return;
+
         const loadData = async () => {
             try {
                 setLoading(true);
                 setErrore(null);
+
                 const data = await getJson<Posizione>(`/posizioni/${idPosizione}`);
 
                 setTitolo(data.titolo ?? "");
                 setDescrizione(data.descrizione ?? "");
                 setSede(data.sede ?? "");
                 setContratto(data.contratto ?? "");
-
+                // se in futuro hai stato/settore da backend li setti qui
             } catch {
                 setErrore("Impossibile caricare la posizione.");
             } finally {
                 setLoading(false);
             }
         };
+
         loadData();
     }, [idPosizione]);
 
-    async function salvaModifiche(e: React.FormEvent) {
+    async function salvaModifiche(e: FormEvent) {
         e.preventDefault();
         try {
             setLoading(true);
             setErrore(null);
-            // TODO: update
+            // TODO: chiamata PUT/PATCH per aggiornare la posizione
             setEditing(false);
         } catch {
             setErrore("Errore durante il salvataggio.");
@@ -75,7 +79,7 @@ export default function HrPosizioneDettaglio() {
         try {
             setLoading(true);
             const nuovo: Stato = stato === "APERTA" ? "CHIUSA" : "APERTA";
-            // TODO: patch
+            // TODO: chiamata PATCH per aggiornare solo lo stato
             setStato(nuovo);
         } catch {
             setErrore("Errore durante l'aggiornamento dello stato.");
@@ -102,6 +106,10 @@ export default function HrPosizioneDettaglio() {
         }
     }
 
+    function tornaAllePosizioni() {
+        router.push("/hr/posizioni");
+    }
+
     if (loading) {
         return (
             <section className="rounded-2xl p-6 bg-surface border border-border shadow-card text-center">
@@ -112,6 +120,13 @@ export default function HrPosizioneDettaglio() {
 
     return (
         <section className="space-y-8">
+            {/* barra superiore con bottone TORNA ALLE POSIZIONI */}
+            <div className="flex items-center justify-between">
+                <Button variant="outline" onClick={tornaAllePosizioni}>
+                    ← Torna alle posizioni
+                </Button>
+            </div>
+
             <div className="rounded-2xl p-6 bg-surface border border-border shadow-card flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-semibold">Dettaglio posizione HR</h2>
@@ -121,6 +136,7 @@ export default function HrPosizioneDettaglio() {
                 </div>
 
                 <div className="flex gap-2">
+                    {/* Se in futuro riattivi la modifica, basta scommentare */}
                     {/*<Button variant="outline" onClick={() => setEditing((v) => !v)}>*/}
                     {/*    {editing ? "Annulla" : "Modifica"}*/}
                     {/*</Button>*/}
