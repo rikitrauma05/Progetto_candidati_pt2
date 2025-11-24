@@ -1,4 +1,4 @@
-// /frontend/services/test.service.ts
+// frontend/services/test.service.ts
 
 import { getJson, postJson } from "./api";
 
@@ -12,38 +12,48 @@ import type {
     InviaRisposteResponse,
     StrutturaTestDto,
     RisultatoTentativoDettaglio,
+    TestCreateRequest,
 } from "@/types/test";
 
 // Riesporto per comodità lato componenti
 export type { StrutturaTestDto as StrutturaTest };
 
 /**
- * GET /test/disponibili
- * Ritorna la lista dei test a cui il candidato può accedere.
+ * POST /api/test
+ * Creazione di un nuovo test (lato HR) con domande + opzioni.
+ */
+export function createTest(payload: TestCreateRequest) {
+    // postJson aggiunge già il prefisso /api, quindi qui usiamo /test
+    return postJson<StrutturaTestDto>("/test", payload);
+}
+
+/**
+ * GET /api/test/disponibili
+ * Lista test disponibili per il candidato.
  */
 export function getTestDisponibili() {
     return getJson<TestListItem[]>("/test/disponibili");
 }
 
 /**
- * GET /test/tentativi/miei
- * Ritorna lo storico dei tentativi del candidato loggato.
+ * GET /api/test/tentativi/miei
+ * Storico tentativi del candidato loggato.
  */
 export function getTentativiCandidato() {
     return getJson<TentativoListItem[]>("/test/tentativi/miei");
 }
 
 /**
- * GET /test/{idTest}/struttura
- * Carica struttura completa del test (metadata + domande + opzioni).
+ * GET /api/test/{idTest}/struttura
+ * Struttura completa del test (intro + domande + opzioni).
  */
 export function getStrutturaTest(idTest: number) {
     return getJson<StrutturaTestDto>(`/test/${idTest}/struttura`);
 }
 
 /**
- * POST /test/{idTest}/tentativi/avvia
- * Avvia un nuovo tentativo.
+ * POST /api/test/{idTest}/tentativi/avvia
+ * Avvia un nuovo tentativo di test.
  */
 export function avviaTest(idTest: number, body: AvviaTestRequest = {}) {
     return postJson<AvviaTestResponse>(
@@ -53,8 +63,8 @@ export function avviaTest(idTest: number, body: AvviaTestRequest = {}) {
 }
 
 /**
- * GET /test/tentativi/{idTentativo}/domande
- * Ottiene le domande relative a un tentativo.
+ * GET /api/test/tentativi/{idTentativo}/domande
+ * Domande di un tentativo.
  */
 export function getDomandeTentativo(idTentativo: number) {
     return getJson<GetDomandeResponse>(
@@ -63,8 +73,8 @@ export function getDomandeTentativo(idTentativo: number) {
 }
 
 /**
- * POST /test/tentativi/{idTentativo}/risposte
- * Invia tutte le risposte e ottiene punteggio + esito.
+ * POST /api/test/tentativi/{idTentativo}/risposte
+ * Invio risposte e calcolo esito.
  */
 export function inviaRisposte(
     idTentativo: number,
@@ -77,8 +87,8 @@ export function inviaRisposte(
 }
 
 /**
- * GET /test/tentativi/{idTentativo}/risultati
- * Ottiene i risultati dettagliati del tentativo.
+ * GET /api/test/tentativi/{idTentativo}/risultati
+ * Risultato dettagliato del tentativo.
  */
 export function getRisultatoTentativo(idTentativo: number) {
     return getJson<RisultatoTentativoDettaglio>(

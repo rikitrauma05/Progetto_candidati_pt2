@@ -1,110 +1,89 @@
+// /frontend/app/NavLinks.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
+import { useMemo } from "react";
 
-function classNames(...classes: Array<string | false | null | undefined>) {
-    return classes.filter(Boolean).join(" ");
-}
+type LinkItem = {
+    href: string;
+    label: string;
+};
+
+const publicLinks: LinkItem[] = [
+    { href: "/auth/login", label: "Login" },
+    { href: "/auth/register", label: "Registrati" },
+];
+
+const candidatoLinks: LinkItem[] = [
+    { href: "/candidati/posizioni", label: "Posizioni" },
+    { href: "/candidati/candidature", label: "Candidature" },
+    { href: "/candidati/test", label: "Test" },       // sezione Test per i candidati
+    { href: "/candidati/profili", label: "Profilo" },
+];
+
+const hrLinks: LinkItem[] = [
+    { href: "/hr/dashboard", label: "Dashboard" },
+    { href: "/hr/posizioni", label: "Posizioni" },
+    { href: "/hr/candidati", label: "Candidati" },
+    { href: "/hr/test", label: "Test" },
+    { href: "/hr/analisi", label: "Analisi" },
+];
 
 export default function NavLinks() {
     const pathname = usePathname();
-    const { user, isAuthenticated } = useAuthStore();
+    const { user, isAuthenticated, logout } = useAuth();
 
-    const ruolo = user?.ruolo; // "CANDIDATO" | "HR" | "ADMIN"
-    const isHR = ruolo === "HR";
-    const isCandidato = ruolo === "CANDIDATO";
+    const links = useMemo<LinkItem[]>(() => {
+        if (!isAuthenticated) {
+            return publicLinks;
+        }
 
-    type NavItem = {
-        href: string;
-        label: string;
-        show: boolean;
-    };
+        const roleCode =
+            (user as any)?.ruoloCodice ??
+            (user as any)?.roleCode ??
+            (user as any)?.ruolo?.codice ??
+            (user as any)?.ruolo ??
+            (user as any)?.role;
 
-    // Link principali della navbar
-    const items: NavItem[] = [
-        { href: "/", label: "Home", show: true },
-        { href: "/candidati/posizioni", label: "Posizioni aperte", show: isAuthenticated && isCandidato }, // si vede solo quando si ci logga
-        { href: "/candidati/candidature", label: "Le mie candidature", show: isCandidato },
-        { href: "/hr/posizioni", label: "Posizioni HR", show: isHR },
-        { href: "/hr/candidati", label: "Candidati", show: isHR },
-        { href: "/hr/test", label: "Test", show: isHR },
-        { href: "/hr/analisi", label: "Analisi", show: isHR },
+        if (roleCode === "HR") {
+            return hrLinks;
+        }
 
-
-    ];
-
-    // Funzione helper per generare i link uniformi
-    const navLinkClasses = (href: string) =>
-        classNames(
-            "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-            pathname === href ? "bg-blue-500 text-white" : "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-white/5"
-        );
+        // Default → candidato
+        return candidatoLinks;
+    }, [isAuthenticated, user]);
 
     return (
-        <div className="flex items-center gap-2">
-            {/* Link di navigazione principali */}
-            <div className="flex items-center gap-2">
-                {items.filter((item) => item.show).map((item) => (
-                    <Link key={item.href} href={item.href} className={navLinkClasses(item.href)}>
-                        {item.label}
-                    </Link>
-                ))}
-            </div>
+        <div className="flex items-center gap-3">
+            {links.map((link) => {
+                const isActive =
+                    pathname === link.href || pathname.startsWith(link.href);
 
-            {/* Spacer */}
-            <div className="w-px h-6 bg-white/10 mx-1" />
-
-            {/* Area autenticazione */}
-            {!isAuthenticated && (
-                <div className="flex items-center gap-2">
-                    <Link href="/auth/login" className={navLinkClasses("/auth/login")}>
-                        Login
+                return (
+                    <Link
+                        key={link.href}
+                        href={link.href}
+                        className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+                            isActive
+                                ? "bg-blue-500 text-white"
+                                : "text-[var(--muted)] hover:bg-blue-500/10 hover:text-[var(--foreground)]"
+                        }`}
+                    >
+                        {link.label}
                     </Link>
-                    <Link href="/auth/register" className={navLinkClasses("/auth/register")}>
-                        Registrati
-                    </Link>
-                </div>
-            )}
+                );
+            })}
 
             {isAuthenticated && (
-                <div className="flex items-center gap-2">
-                    {/* Info utente compatta */}
-                    {user && (
-                        <div className="hidden sm:flex flex-col items-end mr-1">
-                            <span className="text-xs font-semibold leading-tight">
-                                {user.nome} {user.cognome}
-                            </span>
-                            <span className="text-[10px] uppercase tracking-wide text-[var(--muted)]">
-                                {ruolo === "HR" ? "HR" : ruolo === "CANDIDATO" ? "Candidato" : ruolo}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Link aggiuntivi a seconda del ruolo */}
-                    {isCandidato && (
-                        <Link href="/candidati/profili" className={navLinkClasses("/candidati/profili")}>
-                            Profilo
-                        </Link>
-                    )}
-                    {isHR && (
-                        <Link href="/hr/dashboard" className={navLinkClasses("/hr/dashboard")}>
-                             HR
-                        </Link>
-                    )}
-
-                    {/* Logout */}
-                    <Link
-                        href="/auth/logout"
-                        className={classNames(
-                            "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                            "text-red-400 hover:text-white hover:bg-red-500"
-                        )}
-                    >
-                        Logout
-                    </Link>
-                </div>
+                <button
+                    type="button"
+                    onClick={logout}
+                    className="rounded-full px-3 py-1 text-xs font-medium text-[var(--muted)] hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                >
+                    Logout
+                </button>
             )}
         </div>
     );
