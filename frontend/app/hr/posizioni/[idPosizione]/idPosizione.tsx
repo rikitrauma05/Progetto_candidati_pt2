@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
-import { getJson, deleteJson } from "@/services/api";
+import { getJson, postJson } from "@/services/api";
 
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
@@ -12,22 +12,24 @@ import Textarea from "@/components/ui/textarea";
 
 type Stato = "APERTA" | "CHIUSA";
 
-type Posizione = {
+type PosizioneCreata = {
     idPosizione: number;
     titolo: string;
-    descrizione?: string;
-    sede?: string;
-    contratto?: string;
-    // altri campi se ti servono
 };
 
-export default function HrPosizioneDettaglio() {
-    const { idPosizione } = useParams<{ idPosizione: string }>();
+type TestItem = {
+    idTest: number;
+    titolo: string;
+    descrizione?: string | null;
+    durataMinuti?: number | null;
+    punteggioMax?: number | null;
+};
+
+export default function NuovaPosizionePage() {
     const router = useRouter();
 
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [errore, setErrore] = useState<string | null>(null);
-    const [editing, setEditing] = useState(false);
 
     const [titolo, setTitolo] = useState("");
     const [sede, setSede] = useState("");
@@ -36,182 +38,210 @@ export default function HrPosizioneDettaglio() {
     const [stato, setStato] = useState<Stato>("APERTA");
     const [descrizione, setDescrizione] = useState("");
 
+    // RAL indicativa
+    const [ral, setRal] = useState<number | "" | null>("");
+
+    // TEST DISPONIBILI
+    const [tests, setTests] = useState<TestItem[]>([]);
+    const [testsLoading, setTestsLoading] = useState(false);
+    const [testsErrore, setTestsErrore] = useState<string | null>(null);
+    const [selectedTestId, setSelectedTestId] = useState<number | null>(null);
+
     useEffect(() => {
-        if (!idPosizione) return;
-
-        const loadData = async () => {
+        const loadTests = async () => {
             try {
-                setLoading(true);
-                setErrore(null);
-
-                const data = await getJson<Posizione>(`/posizioni/${idPosizione}`);
-
-                setTitolo(data.titolo ?? "");
-                setDescrizione(data.descrizione ?? "");
-                setSede(data.sede ?? "");
-                setContratto(data.contratto ?? "");
-                // se in futuro hai stato/settore da backend li setti qui
-            } catch {
-                setErrore("Impossibile caricare la posizione.");
+                setTestsLoading(true);
+                setTestsErrore(null);
+                const data = await getJson<TestItem[]>("/test/disponibili");
+                setTests(data);
+            } catch (err) {
+                console.error("Errore caricamento test:", err);
+                setTestsErrore("Impossibile caricare la lista dei test.");
             } finally {
-                setLoading(false);
+                setTestsLoading(false);
             }
         };
 
-        loadData();
-    }, [idPosizione]);
+        loadTests();
+    }, []);
 
-    async function salvaModifiche(e: FormEvent) {
+    async function handleSubmit(e: FormEvent) {
         e.preventDefault();
-        try {
-            setLoading(true);
-            setErrore(null);
-            // TODO: chiamata PUT/PATCH per aggiornare la posizione
-            setEditing(false);
-        } catch {
-            setErrore("Errore durante il salvataggio.");
-        } finally {
-            setLoading(false);
-        }
-    }
 
-    async function toggleStato() {
-        try {
-            setLoading(true);
-            const nuovo: Stato = stato === "APERTA" ? "CHIUSA" : "APERTA";
-            // TODO: chiamata PATCH per aggiornare solo lo stato
-            setStato(nuovo);
-        } catch {
-            setErrore("Errore durante l'aggiornamento dello stato.");
-        } finally {
-            setLoading(false);
+        if (!titolo.trim()) {
+            setErrore("Il titolo della posizione è obbligatorio.");
+            return;
         }
-    }
-
-    async function eliminaPosizione() {
-        if (!confirm("Confermi l'eliminazione della posizione?")) return;
 
         try {
             setLoading(true);
             setErrore(null);
 
-            await deleteJson<void>(`/posizioni/${idPosizione}`);
+            const payload: any = {
+                titolo: titolo.trim(),
+                sede: sede.trim() || null,
+                contratto: contratto.trim() || null,
+                settore: settore.trim() || null,
+                descrizione: descrizione.trim() || null,
+                stato: stato, // se il tuo backend lo gestisce
+                ral: ral === "" ? null : ral, // RAL inviata al backend
+            };
 
+            // se è stato selezionato un test, aggiungiamo il campo
+            if (selectedTestId != null) {
+                // questo nome può essere adattato al tuo DTO backend
+                payload.idTest = selectedTestId;
+            }
+
+            const creata = await postJson<PosizioneCreata>("/posizioni", payload);
+
+            // dopo la creazione torniamo alla lista posizioni
+            // oppure potresti fare router.push(`/hr/posizioni/${creata.idPosizione}`)
+            console.log("Posizione creata:", creata);
             router.push("/hr/posizioni");
         } catch (err) {
-            console.error(err);
-            setErrore("Errore durante l'eliminazione.");
+            console.error("Errore creazione posizione:", err);
+            setErrore("Errore durante la creazione della posizione.");
         } finally {
             setLoading(false);
         }
-    }
-
-    function tornaAllePosizioni() {
-        router.push("/hr/posizioni");
-    }
-
-    if (loading) {
-        return (
-            <section className="rounded-2xl p-6 bg-surface border border-border shadow-card text-center">
-                <p className="text-muted">Caricamento...</p>
-            </section>
-        );
     }
 
     return (
-        <section className="space-y-8">
-            {/* barra superiore con bottone TORNA ALLE POSIZIONI */}
-            <div className="flex items-center justify-between">
-                <Button variant="outline" onClick={tornaAllePosizioni}>
-                    ← Torna alle posizioni
-                </Button>
-            </div>
-
-            <div className="rounded-2xl p-6 bg-surface border border-border shadow-card flex items-center justify-between">
-                <div>
-                    <h2 className="text-2xl font-semibold">Dettaglio posizione HR</h2>
-                    <p className="text-sm text-muted">
-                        Posizione: <span className="font-mono">{titolo}</span>
-                    </p>
-                </div>
-
-                <div className="flex gap-2">
-                    {/* Se in futuro riattivi la modifica, basta scommentare */}
-                    {/*<Button variant="outline" onClick={() => setEditing((v) => !v)}>*/}
-                    {/*    {editing ? "Annulla" : "Modifica"}*/}
-                    {/*</Button>*/}
-                    <Button variant="primary" onClick={toggleStato}>
-                        {stato === "APERTA" ? "Chiudi posizione" : "Riapri posizione"}
-                    </Button>
-                    <Button variant="danger" onClick={eliminaPosizione}>
-                        Elimina
-                    </Button>
-                </div>
-            </div>
-
-            <form
-                onSubmit={salvaModifiche}
-                className="rounded-2xl p-6 bg-surface border border-border shadow-card space-y-4"
-            >
-                {errore && (
-                    <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
-                        {errore}
+        <main className="min-h-dvh bg-slate-950 text-slate-50">
+            <section className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+                {/* HEADER */}
+                <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p className="text-xs font-semibold tracking-[0.2em] text-sky-400/80 uppercase">
+                            area hr
+                        </p>
+                        <h1 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">
+                            Nuova posizione
+                        </h1>
+                        <p className="mt-1 text-sm text-slate-400 max-w-xl">
+                            Crea una nuova posizione e, se vuoi, associa direttamente un test
+                            di valutazione ai candidati.
+                        </p>
                     </div>
-                )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                        label="Titolo"
-                        value={titolo}
-                        onChange={(e) => setTitolo(e.target.value)}
-                        disabled={!editing}
-                    />
-                    <Input
-                        label="Sede"
-                        value={sede}
-                        onChange={(e) => setSede(e.target.value)}
-                        disabled={!editing}
-                    />
-                    <Input
-                        label="Contratto"
-                        value={contratto}
-                        onChange={(e) => setContratto(e.target.value)}
-                        disabled={!editing}
-                    />
-                    <Input
-                        label="Settore"
-                        value={settore}
-                        onChange={(e) => setSettore(e.target.value)}
-                        disabled={!editing}
-                    />
-                    <Select
-                        label="Stato"
-                        value={stato}
-                        onChangeAction={(val: string) => setStato(val as Stato)}
-                        options={[
-                            { value: "APERTA", label: "APERTA" },
-                            { value: "CHIUSA", label: "CHIUSA" },
-                        ]}
-                        disabled={!editing}
-                    />
-                </div>
+                    <Button variant="outline" onClick={() => router.push("/hr/posizioni")}>
+                        ← Torna alle posizioni
+                    </Button>
+                </header>
 
-                <Textarea
-                    label="Descrizione"
-                    value={descrizione}
-                    onChangeAction={(val: string) => setDescrizione(val)}
-                    disabled={!editing}
-                    minRows={7}
-                />
+                {/* FORM CREAZIONE */}
+                <form
+                    onSubmit={handleSubmit}
+                    className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 space-y-5 shadow-card"
+                >
+                    {errore && (
+                        <div className="rounded-lg border border-red-500/70 bg-red-950/40 px-3 py-2 text-sm text-red-100">
+                            {errore}
+                        </div>
+                    )}
 
-                {editing && (
-                    <div className="flex justify-end">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                            label="Titolo posizione"
+                            value={titolo}
+                            onChange={(e) => setTitolo(e.target.value)}
+                            required
+                        />
+                        <Input
+                            label="Sede"
+                            value={sede}
+                            onChange={(e) => setSede(e.target.value)}
+                        />
+                        <Input
+                            label="Contratto"
+                            value={contratto}
+                            onChange={(e) => setContratto(e.target.value)}
+                        />
+                        <Input
+                            label="Settore"
+                            value={settore}
+                            onChange={(e) => setSettore(e.target.value)}
+                        />
+
+                        {/* RAL indicativa */}
+                        <Input
+                            label="RAL indicativa"
+                            type="number"
+                            value={ral === "" || ral == null ? "" : ral}
+                            onChange={(e) =>
+                                setRal(e.target.value === "" ? "" : Number(e.target.value))
+                            }
+                        />
+
+                        <Select
+                            label="Stato"
+                            value={stato}
+                            onChangeAction={(val: string) => setStato(val as Stato)}
+                            options={[
+                                { value: "APERTA", label: "APERTA" },
+                                { value: "CHIUSA", label: "CHIUSA" },
+                            ]}
+                        />
+                    </div>
+
+                    {/* SEZIONE TEST ASSOCIATO */}
+                    <div className="space-y-2">
+                        <Select
+                            label="Test associato alla posizione"
+                            value={selectedTestId ? String(selectedTestId) : ""}
+                            onChangeAction={(val: string) => {
+                                if (!val) {
+                                    setSelectedTestId(null);
+                                } else {
+                                    setSelectedTestId(Number(val));
+                                }
+                            }}
+                            options={[
+                                { value: "", label: "Nessun test associato" },
+                                ...tests.map((t) => ({
+                                    value: String(t.idTest),
+                                    label: t.titolo,
+                                })),
+                            ]}
+                        />
+                        {testsLoading && (
+                            <p className="text-[11px] text-slate-400">
+                                Caricamento elenco test…
+                            </p>
+                        )}
+                        {testsErrore && (
+                            <p className="text-[11px] text-red-300">{testsErrore}</p>
+                        )}
+                        {!testsLoading && !testsErrore && tests.length === 0 && (
+                            <p className="text-[11px] text-slate-400">
+                                Non è presente ancora nessun test configurato. Puoi crearne uno
+                                dalla sezione Test HR.
+                            </p>
+                        )}
+                    </div>
+
+                    <Textarea
+                        label="Descrizione"
+                        value={descrizione}
+                        onChangeAction={(val: string) => setDescrizione(val)}
+                        minRows={7}
+                    />
+
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => router.push("/hr/posizioni")}
+                        >
+                            Annulla
+                        </Button>
                         <Button type="submit" disabled={loading}>
-                            Salva modifiche
+                            {loading ? "Salvataggio…" : "Crea posizione"}
                         </Button>
                     </div>
-                )}
-            </form>
-        </section>
+                </form>
+            </section>
+        </main>
     );
 }

@@ -8,16 +8,17 @@ import EmptyState from "@/components/empty/EmptyState";
 import PosizioneCard from "@/components/cards/posizioneCard";
 import { getJson } from "@/services/api";
 
-type Posizione = {
+type PosizioneListItem = {
     idPosizione: number;
     titolo: string;
     sede?: string;
     contratto?: string;
     candidatureRicevute?: number;
+    ral?: number | null;
 };
 
 export default function PosizioniHR() {
-    const [posizioni, setPosizioni] = useState<Posizione[]>([]);
+    const [posizioni, setPosizioni] = useState<PosizioneListItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
 
@@ -26,7 +27,9 @@ export default function PosizioniHR() {
             try {
                 setLoading(true);
                 setErrore(null);
-                const data = await getJson<Posizione[]>("/posizioni/hr/mie");
+
+                // Ora l'HR vede tutte le posizioni presenti nel DB
+                const data = await getJson<PosizioneListItem[]>("/posizioni");
                 setPosizioni(data ?? []);
             } catch (e) {
                 console.error(e);
@@ -47,7 +50,9 @@ export default function PosizioniHR() {
             />
 
             {loading && (
-                <p className="text-sm text-[var(--muted)]">Caricamento posizioni…</p>
+                <p className="text-sm text-[var(--muted)]">
+                    Caricamento posizioni…
+                </p>
             )}
 
             {errore && (
@@ -79,6 +84,8 @@ export default function PosizioniHR() {
                                 sede={p.sede}
                                 contratto={p.contratto}
                                 candidature={p.candidatureRicevute}
+                                // se in futuro vuoi mostrare la RAL nella card,
+                                // potrai estendere PosizioneCard con una prop "ral"
                                 rightSlot={
                                     <Button asChild>
                                         <Link href={`/hr/posizioni/${p.idPosizione}`}>Dettaglio</Link>

@@ -18,7 +18,7 @@ interface RequestOptions extends RequestInit {
  */
 async function request<T>(
     path: string,
-    options: RequestOptions = {}
+    options: RequestOptions = {},
 ): Promise<T> {
     const url = `${API_BASE_URL}${path}`;
 
@@ -54,8 +54,8 @@ async function request<T>(
             const data = await response.json();
             if (typeof data === "string") {
                 message = data;
-            } else if (data?.message) {
-                message = data.message;
+            } else if ((data as any)?.message) {
+                message = (data as any).message;
             }
         } catch {
             // se non è JSON, lascio il messaggio generico
