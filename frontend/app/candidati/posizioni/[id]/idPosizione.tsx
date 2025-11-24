@@ -129,7 +129,6 @@ export default function IdPosizionePage() {
 
                         {posizione.idStatoPosizione && (
                             <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-muted">
-                                {/* se nel tipo è un oggetto con descrizione */}
                                 {(posizione as any).idStatoPosizione?.descrizione ??
                                     "Attiva"}
                             </span>
@@ -175,7 +174,7 @@ export default function IdPosizionePage() {
                         </section>
                     </div>
 
-                    {/* Bottone candidatura riusabile */}
+                    {/* Bottone candidatura + Vai al test */}
                     <div className="mt-6 flex justify-end">
                         <ApplyButton
                             idPosizione={posizione.idPosizione}

@@ -38,4 +38,7 @@ export type Posizione = {
     createdByHR?: Utente;
     idStatoPosizione?: StatoPosizione;
     idSettore?: Settore;
+
+    // id del test associato alla posizione (colonna idTest in backend)
+    idTest?: number | null;
 };
