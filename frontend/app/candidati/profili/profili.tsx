@@ -156,8 +156,20 @@ export default function ProfiloCandidato() {
                         type="file"
                         accept=".pdf,.doc,.docx"
                         onChange={handleCvChange}
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border file:border-border file:text-sm file:font-semibold file:bg-[var(--card)] hover:file:bg-[var(--border)]"
-                    />
+                        className="
+                                    block w-full text-sm text-white
+
+                                    file:mr-4 file:py-2 file:px-4
+                                    file:rounded-lg
+                                    file:border file:border-white
+                                    file:text-sm file:font-semibold
+
+                                    file:bg-[var(--card)]
+                                    file:text-white
+
+                                    hover:file:bg-[var(--border)]
+                                    transition-all duration-200"
+                        />
                     {cvFile && <p className="mt-2 text-sm text-green-600">File selezionato: {cvFile.name}</p>}
                     {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
                     {uploadSuccess && <p className="mt-2 text-sm text-green-600">CV caricato con successo!</p>}
