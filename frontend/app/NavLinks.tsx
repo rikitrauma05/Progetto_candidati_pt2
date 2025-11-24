@@ -30,6 +30,8 @@ export default function NavLinks() {
         { href: "/hr/posizioni", label: "Posizioni HR", show: isHR },
         { href: "/hr/candidati", label: "Candidati", show: isHR },
         { href: "/hr/test", label: "Test", show: isHR },
+        { href: "/hr/analisi", label: "Analisi", show: isHR },
+
 
     ];
 

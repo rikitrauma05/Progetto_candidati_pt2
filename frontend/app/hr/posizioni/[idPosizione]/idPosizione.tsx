@@ -116,14 +116,14 @@ export default function HrPosizioneDettaglio() {
                 <div>
                     <h2 className="text-2xl font-semibold">Dettaglio posizione HR</h2>
                     <p className="text-sm text-muted">
-                        ID: <span className="font-mono">{String(idPosizione)}</span>
+                        Posizione: <span className="font-mono">{titolo}</span>
                     </p>
                 </div>
 
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setEditing((v) => !v)}>
-                        {editing ? "Annulla" : "Modifica"}
-                    </Button>
+                    {/*<Button variant="outline" onClick={() => setEditing((v) => !v)}>*/}
+                    {/*    {editing ? "Annulla" : "Modifica"}*/}
+                    {/*</Button>*/}
                     <Button variant="primary" onClick={toggleStato}>
                         {stato === "APERTA" ? "Chiudi posizione" : "Riapri posizione"}
                     </Button>

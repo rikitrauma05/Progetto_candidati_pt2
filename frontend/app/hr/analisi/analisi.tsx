@@ -14,7 +14,7 @@ export default function AnalisiHR() {
             {/* intestazione pagina */}
             <PageHeader
                 title="Analisi e report"
-                subtitle="Statistiche sulle candidature e risultati dei test"
+                subtitle="Analisi dei vari CV attraverso l'utilizzo di un tool"
                 actions={[
                     { label: "Esporta dati", href: "#" },
                 ]}
