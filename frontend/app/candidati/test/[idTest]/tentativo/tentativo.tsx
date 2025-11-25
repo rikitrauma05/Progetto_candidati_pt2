@@ -1,4 +1,3 @@
-// app/candidati/test/[idTest]/tentativo/tentativo.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -41,7 +40,6 @@ export default function TentativoTestPage() {
     const [staInviando, setStaInviando] = useState(false);
     const [tempoScaduto, setTempoScaduto] = useState(false);
 
-    // indice della domanda corrente (0-based)
     const [indiceDomandaCorrente, setIndiceDomandaCorrente] = useState(0);
 
     // 1) Avvio tentativo + caricamento domande
@@ -53,14 +51,12 @@ export default function TentativoTestPage() {
                 setErrore(null);
                 setStato("CREAZIONE_TENTATIVO");
 
-                // POST /test/{idTest}/tentativi/avvia
                 const avvio = await avviaTest(idTest);
                 const nuovoIdTentativo = avvio.idTentativo;
                 setIdTentativo(nuovoIdTentativo);
 
                 setStato("CARICAMENTO_DOMANDE");
 
-                // GET /test/tentativi/{idTentativo}/domande
                 const datiDomande: GetDomandeResponse =
                     await getDomandeTentativo(nuovoIdTentativo);
 
@@ -68,33 +64,39 @@ export default function TentativoTestPage() {
                 setDurataMinuti(datiDomande.durataMinuti);
                 setDomande(datiDomande.domande);
 
-                // inizializza risposte: tutte null
                 const iniziali: RisposteUtente = {};
                 for (const d of datiDomande.domande) {
                     iniziali[d.idDomanda] = null;
                 }
                 setRisposte(iniziali);
 
-                // timer in secondi
                 const seconds = (datiDomande.durataMinuti ?? 0) * 60;
                 setTempoRimanente(seconds);
-
-                // reset indice prima domanda
                 setIndiceDomandaCorrente(0);
 
                 setStato("PRONTO");
-            } catch (e) {
+            } catch (e: any) {
                 console.error(e);
-                setErrore(
-                    "Non è stato possibile avviare il test. Riprova più tardi."
-                );
+                if (e?.status === 409) {
+                    setErrore(
+                        "Hai già svolto questo test e non puoi ripeterlo."
+                    );
+                    // ci mettiamo in uno stato 'stabile'
+                    setStato("PRONTO");
+                    setTempoRimanente(0);
+                    setDomande([]);
+                } else {
+                    setErrore(
+                        "Non è stato possibile avviare il test. Riprova più tardi."
+                    );
+                }
             }
         }
 
         initTentativo();
     }, [idTest]);
 
-    // 2) Timer che scala ogni secondo
+    // 2) Timer
     useEffect(() => {
         if (stato !== "PRONTO") return;
         if (tempoRimanente <= 0 || tempoScaduto) return;
@@ -142,7 +144,6 @@ export default function TentativoTestPage() {
                 })
             );
 
-            // POST /test/tentativi/{idTentativo}/risposte
             await inviaRisposte(idTentativo, {
                 idTentativo,
                 risposte: payloadRisposte,
@@ -161,7 +162,6 @@ export default function TentativoTestPage() {
         }
     }
 
-    // bottone unico "Avanti / Invia" per domanda singola
     function onNextOrSubmit() {
         if (stato !== "PRONTO") return;
         if (domande.length === 0) return;
@@ -169,19 +169,18 @@ export default function TentativoTestPage() {
         const ultimaIndex = domande.length - 1;
 
         if (indiceDomandaCorrente < ultimaIndex) {
-            // vai solo avanti, nessun ritorno indietro
             setIndiceDomandaCorrente((prev) =>
                 prev < ultimaIndex ? prev + 1 : prev
             );
         } else {
-            // ultima domanda -> invia il test
             if (!staInviando) {
                 onInviaTest();
             }
         }
     }
 
-    const testInCaricamento = stato !== "PRONTO" || !idTentativo;
+    const testInCaricamento =
+        (stato !== "PRONTO" || !idTentativo) && errore === null;
     const domandaCorrente =
         !testInCaricamento && domande.length > 0
             ? domande[indiceDomandaCorrente]
@@ -226,16 +225,13 @@ export default function TentativoTestPage() {
                 ]}
             />
 
-            {/* Stato / errori */}
             {errore && (
                 <div className="max-w-3xl mx-auto rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-800 dark:text-red-100">
                     {errore}
                 </div>
             )}
 
-            {/* Box principale */}
             <section className="max-w-4xl mx-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm space-y-6">
-                {/* Intestazione con timer */}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="space-y-1">
                         <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
@@ -243,7 +239,7 @@ export default function TentativoTestPage() {
                         </p>
                         <p
                             className={`font-mono text-xl ${
-                                tempoRimanente <= 60
+                                tempoRimanente <= 60 && tempoRimanente > 0
                                     ? "text-red-600"
                                     : "text-[var(--foreground)]"
                             }`}
@@ -252,9 +248,7 @@ export default function TentativoTestPage() {
                         </p>
                         {tempoScaduto && (
                             <p className="text-xs text-red-600">
-                                Il tempo è scaduto: puoi comunque provare a
-                                inviare le risposte, se non è già stato fatto
-                                in automatico dal sistema.
+                                Il tempo è scaduto.
                             </p>
                         )}
                     </div>
@@ -278,7 +272,6 @@ export default function TentativoTestPage() {
                     </div>
                 </div>
 
-                {/* Stato di caricamento */}
                 {testInCaricamento && (
                     <div className="mt-4 space-y-3 text-sm text-[var(--muted)]">
                         <p>
@@ -293,7 +286,6 @@ export default function TentativoTestPage() {
                     </div>
                 )}
 
-                {/* Domanda singola per pagina */}
                 {!testInCaricamento && domandaCorrente && (
                     <div className="space-y-4">
                         <div className="flex items-center justify-between text-xs text-[var(--muted)]">
@@ -357,7 +349,7 @@ export default function TentativoTestPage() {
                     </div>
                 )}
 
-                {!testInCaricamento && !domandaCorrente && (
+                {!testInCaricamento && !domandaCorrente && !errore && (
                     <p className="text-sm text-[var(--muted)]">
                         Non ci sono domande associate a questo test. Contatta il
                         supporto per segnalare il problema.

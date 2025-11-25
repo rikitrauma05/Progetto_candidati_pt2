@@ -5,319 +5,243 @@ import Link from "next/link";
 
 import PageHeader from "@/components/layout/pageHeader";
 import Button from "@/components/ui/button";
-import EmptyState from "@/components/empty/EmptyState";
-
 import {
     getTestDisponibili,
     getTentativiCandidato,
 } from "@/services/test.service";
 import type { TestListItem, TentativoListItem } from "@/types/test";
 
-type Tab = "disponibili" | "storico";
+type Stato = "LOADING" | "OK" | "ERROR";
 
-export default function TestCandidatoHome() {
-    const [tab, setTab] = useState<Tab>("disponibili");
-
-    const [testDisponibili, setTestDisponibili] = useState<TestListItem[]>([]);
-    const [storicoTentativi, setStoricoTentativi] = useState<TentativoListItem[]>([]);
-
-    const [loading, setLoading] = useState(true);
+export default function TestCandidatoPage() {
+    const [stato, setStato] = useState<Stato>("LOADING");
     const [errore, setErrore] = useState<string | null>(null);
+
+    const [tests, setTests] = useState<TestListItem[]>([]);
+    const [tentativi, setTentativi] = useState<TentativoListItem[]>([]);
 
     useEffect(() => {
         async function load() {
-            setLoading(true);
-            setErrore(null);
-
             try {
-                const disponibili = await getTestDisponibili();
-                const storico = await getTentativiCandidato();
+                setErrore(null);
+                setStato("LOADING");
 
-                setTestDisponibili(disponibili ?? []);
-                setStoricoTentativi(storico ?? []);
+                const [testsRes, tentativiRes] = await Promise.all([
+                    getTestDisponibili(),
+                    getTentativiCandidato(),
+                ]);
+
+                setTests(testsRes);
+                setTentativi(tentativiRes);
+                setStato("OK");
             } catch (e) {
+                console.error(e);
                 setErrore(
-                    "Non è stato possibile caricare i test. Riprova tra qualche minuto."
+                    "Non è stato possibile caricare i test. Riprova più tardi."
                 );
-            } finally {
-                setLoading(false);
+                setStato("ERROR");
             }
         }
 
         load();
     }, []);
 
+    const testSvoltiIds = new Set(
+        tentativi
+            .filter((t) => t.idTest != null)
+            .map((t) => t.idTest as number)
+    );
+
+    const tentativoPerTest = new Map<number, TentativoListItem>();
+    for (const t of tentativi) {
+        if (t.idTest == null) continue;
+        const key = t.idTest as number;
+        const existing = tentativoPerTest.get(key);
+
+        if (!existing) {
+            tentativoPerTest.set(key, t);
+        } else {
+            if (t.completatoAt && existing.completatoAt) {
+                if (t.completatoAt.localeCompare(existing.completatoAt) > 0) {
+                    tentativoPerTest.set(key, t);
+                }
+            } else if (t.completatoAt && !existing.completatoAt) {
+                tentativoPerTest.set(key, t);
+            }
+        }
+    }
+
+    const tentativiOrdinati: TentativoListItem[] = [...tentativi].sort(
+        (a, b) => {
+            if (!a.completatoAt && !b.completatoAt) return 0;
+            if (!a.completatoAt) return 1;
+            if (!b.completatoAt) return -1;
+            return b.completatoAt.localeCompare(a.completatoAt);
+        }
+    );
+
     return (
         <div className="space-y-6">
             <PageHeader
-                title="Test di selezione"
-                subtitle="Consulta i test disponibili e lo storico dei tentativi."
+                title="Test disponibili"
+                subtitle="Visualizza i test assegnati e consulta lo storico dei tentativi."
             />
 
-            <section className="max-w-5xl mx-auto space-y-4">
-                {/* TABS */}
-                <div className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1">
-                    <button
-                        type="button"
-                        onClick={() => setTab("disponibili")}
-                        className={`px-4 py-2 text-sm rounded-lg ${
-                            tab === "disponibili"
-                                ? "bg-[var(--accent)] text-white"
-                                : "text-[var(--muted)] hover:bg-white/5"
-                        }`}
-                    >
-                        Test disponibili
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => setTab("storico")}
-                        className={`px-4 py-2 text-sm rounded-lg ${
-                            tab === "storico"
-                                ? "bg-[var(--accent)] text-white"
-                                : "text-[var(--muted)] hover:bg-white/5"
-                        }`}
-                    >
-                        Storico test
-                    </button>
+            {errore && (
+                <div className="max-w-4xl mx-auto rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+                    {errore}
                 </div>
+            )}
 
-                {loading && (
-                    <p className="text-sm text-[var(--muted)]">Caricamento…</p>
+            {/* TEST DISPONIBILI */}
+            <section className="max-w-5xl mx-auto space-y-4">
+                <h2 className="text-lg font-semibold">Test assegnati</h2>
+
+                {stato === "LOADING" && (
+                    <p className="text-sm text-[var(--muted)]">
+                        Caricamento in corso…
+                    </p>
                 )}
 
-                {errore && !loading && (
-                    <div className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
-                        {errore}
-                    </div>
+                {stato === "OK" && tests.length === 0 && (
+                    <p className="text-sm text-[var(--muted)]">
+                        Al momento non hai test disponibili.
+                    </p>
                 )}
 
-                {!loading && !errore && (
-                    <>
-                        {tab === "disponibili" && (
-                            <SezioneTestDisponibili items={testDisponibili} />
-                        )}
-                        {tab === "storico" && (
-                            <SezioneStoricoTentativi items={storicoTentativi} />
-                        )}
-                    </>
-                )}
-            </section>
-        </div>
-    );
-}
+                {stato === "OK" && tests.length > 0 && (
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {tests.map((test) => {
+                            const svolto = testSvoltiIds.has(test.idTest);
+                            const tentativo = tentativoPerTest.get(
+                                test.idTest
+                            );
 
-function SezioneTestDisponibili({ items }: { items: TestListItem[] }) {
-    if (!items || items.length === 0) {
-        return (
-            <EmptyState
-                title="Nessun test disponibile"
-                subtitle="Al momento non ci sono test assegnati."
-            />
-        );
-    }
+                            const hrefRisultati = tentativo
+                                ? `/candidati/test/${test.idTest}/risultati?tentativo=${tentativo.idTentativo}`
+                                : `/candidati/test/${test.idTest}/risultati`;
 
-    return (
-        <div className="space-y-4">
-            {items.map((t, idx) => {
-                const anyT = t as any;
+                            const hrefAzione = svolto
+                                ? hrefRisultati
+                                : `/candidati/test/${test.idTest}/introduzione`;
 
-                const idTest: number =
-                    anyT.idTest ?? anyT.testId ?? idx;
-
-                const titolo: string =
-                    anyT.titolo ??
-                    anyT.nome ??
-                    "Test senza titolo";
-
-                const descrizione: string | null =
-                    anyT.descrizione ??
-                    anyT.descrizioneBreve ??
-                    anyT.sommario ??
-                    null;
-
-                const tipo: string | null =
-                    anyT.tipoTestNome ??
-                    anyT.tipoTest?.nome ??
-                    anyT.tipo ??
-                    null;
-
-                const settore: string | null =
-                    anyT.settoreNome ??
-                    anyT.settore?.nome ??
-                    null;
-
-                const durataMinuti: number | null =
-                    anyT.durataMinuti ??
-                    anyT.durata ??
-                    null;
-
-                const punteggioMax: number | null =
-                    anyT.punteggioMax ??
-                    anyT.punteggioTotaleMax ??
-                    null;
-
-                const numDomande: number | null =
-                    anyT.numeroDomande ??
-                    anyT.numDomande ??
-                    null;
-
-                const difficolta: string | null =
-                    anyT.difficolta ??
-                    anyT.livelloDifficolta ??
-                    null;
-
-                return (
-                    <article
-                        key={idTest}
-                        className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm flex flex-col gap-3 md:flex-row md:items-stretch md:justify-between"
-                    >
-                        <div className="flex-1 space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                                <h3 className="text-base font-semibold">
-                                    {titolo}
-                                </h3>
-
-                                {(tipo || difficolta) && (
-                                    <div className="flex flex-wrap justify-end gap-2 text-[10px] uppercase tracking-wide text-[var(--muted)]">
-                                        {tipo && (
-                                            <span className="inline-flex items-center rounded-full border border-[var(--border)] px-2 py-0.5">
-                                                {tipo}
+                            return (
+                                <article
+                                    key={test.idTest}
+                                    className="flex flex-col justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm"
+                                >
+                                    <div className="space-y-2">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h3 className="text-base font-semibold">
+                                                {test.titolo}
+                                            </h3>
+                                            <span
+                                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                                    svolto
+                                                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/40"
+                                                        : "bg-sky-500/10 text-sky-500 border border-sky-500/40"
+                                                }`}
+                                            >
+                                                {svolto
+                                                    ? "Svolto"
+                                                    : "Disponibile"}
                                             </span>
-                                        )}
-                                        {difficolta && (
-                                            <span className="inline-flex items-center rounded-full border border-[var(--border)] px-2 py-0.5">
-                                                Diff. {difficolta}
-                                            </span>
+                                        </div>
+                                        {test.descrizione && (
+                                            <p className="text-sm text-[var(--muted)] line-clamp-3">
+                                                {test.descrizione}
+                                            </p>
                                         )}
                                     </div>
-                                )}
-                            </div>
 
-                            {descrizione && (
-                                <p className="text-sm text-[var(--muted)]">
-                                    {descrizione}
-                                </p>
-                            )}
+                                    <div className="mt-4 flex items-center justify-between text-xs text-[var(--muted)]">
+                                        <div className="space-x-2">
+                                            {test.durataMinuti != null && (
+                                                <span>
+                                                    Durata:{" "}
+                                                    {test.durataMinuti} min
+                                                </span>
+                                            )}
+                                            {test.punteggioMax != null && (
+                                                <span>
+                                                    · Max:{" "}
+                                                    {test.punteggioMax} pt
+                                                </span>
+                                            )}
+                                        </div>
 
-                            {(settore ||
-                                durataMinuti ||
-                                numDomande ||
-                                punteggioMax) && (
-                                <div className="flex flex-wrap gap-2 text-xs text-[var(--muted)] pt-1">
-                                    {settore && (
-                                        <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5">
-                                            Settore:{" "}
-                                            <span className="ml-1 font-medium">
-                                                {settore}
-                                            </span>
-                                        </span>
-                                    )}
-                                    {durataMinuti && (
-                                        <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5">
-                                            Durata:{" "}
-                                            <span className="ml-1 font-medium">
-                                                {durataMinuti} min
-                                            </span>
-                                        </span>
-                                    )}
-                                    {numDomande && (
-                                        <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5">
-                                            Domande:{" "}
-                                            <span className="ml-1 font-medium">
-                                                {numDomande}
-                                            </span>
-                                        </span>
-                                    )}
-                                    {punteggioMax && (
-                                        <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5">
-                                            Max:{" "}
-                                            <span className="ml-1 font-medium">
-                                                {punteggioMax} pt
-                                            </span>
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                                        <div>
+                                            <Link href={hrefAzione}>
+                                                <Button
+                                                    variant={
+                                                        svolto
+                                                            ? "outline"
+                                                            : "primary"
+                                                    }
+                                                    size="sm"
+                                                >
+                                                    {svolto
+                                                        ? "Vedi risultati"
+                                                        : "Inizia test"}
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </article>
+                            );
+                        })}
+                    </div>
+                )}
+            </section>
 
-                        <div className="flex items-center justify-end md:justify-center md:pl-6">
-                            <Button asChild>
-                                <Link href={`/candidati/test/${idTest}/introduzione`}>
-                                    Inizia
-                                </Link>
-                            </Button>
-                        </div>
-                    </article>
-                );
-            })}
-        </div>
-    );
-}
+            {/* STORICO TENTATIVI */}
+            <section className="max-w-5xl mx-auto space-y-4">
+                <h2 className="text-lg font-semibold">Storico tentativi</h2>
 
-function SezioneStoricoTentativi({ items }: { items: TentativoListItem[] }) {
-    if (!items || items.length === 0) {
-        return (
-            <EmptyState
-                title="Nessun test svolto"
-                subtitle="Quando completerai un test, comparirà qui."
-            />
-        );
-    }
+                {stato === "LOADING" && (
+                    <p className="text-sm text-[var(--muted)]">
+                        Caricamento in corso…
+                    </p>
+                )}
 
-    return (
-        <div className="space-y-4">
-            {items.map((t, idx) => {
-                const anyT = t as any;
+                {stato === "OK" && tentativiOrdinati.length === 0 && (
+                    <p className="text-sm text-[var(--muted)]">
+                        Non hai ancora svolto alcun test.
+                    </p>
+                )}
 
-                const idTentativo = anyT.idTentativo ?? idx;
-                const idTest = anyT.idTest ?? idx;
-                const titolo =
-                    anyT.titoloTest ??
-                    anyT.titolo ??
-                    "Test";
-
-                const punteggioTotale: number | null =
-                    anyT.punteggioTotale ?? null;
-
-                const esito: string | null =
-                    anyT.esito ?? null;
-
-                return (
-                    <article
-                        key={idTentativo}
-                        className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-                    >
-                        <div className="space-y-1">
-                            <h3 className="text-base font-semibold">{titolo}</h3>
-
-                            <div className="flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-                                {typeof punteggioTotale === "number" && (
-                                    <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5">
+                {stato === "OK" && tentativiOrdinati.length > 0 && (
+                    <div className="space-y-2 text-sm">
+                        {tentativiOrdinati.map((t) => (
+                            <div
+                                key={t.idTentativo}
+                                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface-soft)] px-3 py-2"
+                            >
+                                <div className="space-y-0.5">
+                                    <p className="font-medium">
+                                        {t.titoloTest}
+                                    </p>
+                                    <p className="text-[11px] text-[var(--muted)]">
                                         Punteggio:{" "}
-                                        <span className="ml-1 font-medium">
-                                            {punteggioTotale}
-                                        </span>
-                                    </span>
-                                )}
-                                {esito && (
-                                    <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 font-medium">
-                                        {esito}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-end">
-                            <Button variant="secondary" asChild>
-                                <Link href={`/candidati/test/${idTest}/risultati`}>
-                                    Dettaglio
+                                        {t.punteggioTotale ?? 0}/
+                                        {t.punteggioMax ?? "-"} · Esito:{" "}
+                                        {t.esito ?? "IN_VALUTAZIONE"}
+                                        {t.completatoAt &&
+                                            ` · Completato il ${t.completatoAt}`}
+                                    </p>
+                                </div>
+                                <Link
+                                    href={`/candidati/test/${t.idTest}/risultati?tentativo=${t.idTentativo}`}
+                                >
+                                    <Button variant="outline" size="sm">
+                                        Vedi dettaglio
+                                    </Button>
                                 </Link>
-                            </Button>
-                        </div>
-                    </article>
-                );
-            })}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </section>
         </div>
     );
 }

@@ -15,8 +15,12 @@ import type {
     TestCreateRequest,
 } from "@/types/test";
 
+/* ============================================================
+ *  LISTE TEST
+ * ============================================================*/
+
 /**
- * Lista di TUTTI i test (uso generico, lato HR o debug).
+ * Lista di TUTTI i test (uso HR/admin).
  * GET /api/test
  */
 export function getTests() {
@@ -31,16 +35,28 @@ export function getTestDisponibili() {
     return getJson<TestListItem[]>("/test/disponibili");
 }
 
+/* ============================================================
+ *  TENTATIVI CANDIDATO
+ * ============================================================*/
+
 /**
  * Storico tentativi del candidato loggato.
  * GET /api/test/tentativi/miei
+ *
+ * Restituisce solo gli ULTIMI 10 tentativi.
  */
-export function getTentativiCandidato() {
-    return getJson<TentativoListItem[]>("/test/tentativi/miei");
+export async function getTentativiCandidato(): Promise<TentativoListItem[]> {
+    // NB: niente /api qui, ci pensa API_BASE_URL in api.ts
+    const tentativi = await getJson<TentativoListItem[]>("/test/tentativi/miei");
+    return tentativi.slice(0, 10);
 }
 
+/* ============================================================
+ *  GESTIONE TEST (HR/Admin)
+ * ============================================================*/
+
 /**
- * Creazione di un nuovo test (HR/admin).
+ * Creazione di un nuovo test.
  * POST /api/test
  */
 export function creaTest(payload: TestCreateRequest) {
@@ -48,12 +64,16 @@ export function creaTest(payload: TestCreateRequest) {
 }
 
 /**
- * Struttura completa test (intro + domande) lato HR.
+ * Struttura completa test lato HR (intro + domande).
  * GET /api/test/{idTest}/struttura
  */
 export function getStrutturaTest(idTest: number) {
     return getJson<StrutturaTestDto>(`/test/${idTest}/struttura`);
 }
+
+/* ============================================================
+ *  AVVIO E SVOLGIMENTO TEST (Candidato)
+ * ============================================================*/
 
 /**
  * Avvio tentativo test per il candidato.
@@ -67,17 +87,15 @@ export function avviaTest(idTest: number, payload?: AvviaTestRequest) {
 }
 
 /**
- * Domande per un tentativo specifico.
+ * Elenco domande per un tentativo specifico.
  * GET /api/test/tentativi/{idTentativo}/domande
  */
 export function getDomandeTentativo(idTentativo: number) {
-    return getJson<GetDomandeResponse>(
-        `/test/tentativi/${idTentativo}/domande`
-    );
+    return getJson<GetDomandeResponse>(`/test/tentativi/${idTentativo}/domande`);
 }
 
 /**
- * Invio di TUTTE le risposte in un colpo solo (flusso attuale).
+ * Invio in blocco di TUTTE le risposte del test.
  * POST /api/test/tentativi/{idTentativo}/risposte
  */
 export function inviaRisposte(
@@ -90,18 +108,18 @@ export function inviaRisposte(
     );
 }
 
-/**
- * Tipo per eventuale invio risposta singola (se in futuro la useremo).
- */
+/* ============================================================
+ *  RISPOSTA SINGOLA (eventuale)
+ * ============================================================*/
+
 export type InviaRispostaSingolaRequest = {
     idDomanda: number;
     idOpzione: number | null;
 };
 
 /**
- * Invio di UNA sola risposta alla volta.
+ * Invio risposta SINGOLA.
  * POST /api/test/tentativi/{idTentativo}/risposte/singola
- * (endpoint da aggiungere nel backend se/quando lo useremo)
  */
 export function inviaRispostaSingola(
     idTentativo: number,
@@ -116,14 +134,14 @@ export function inviaRispostaSingola(
 /**
  * Completa il test (fine tempo o ultima domanda).
  * POST /api/test/tentativi/{idTentativo}/completa
- * (endpoint da aggiungere nel backend se/quando lo useremo)
  */
 export function completaTest(idTentativo: number) {
-    return postJson<void, {}>(
-        `/test/tentativi/${idTentativo}/completa`,
-        {}
-    );
+    return postJson<void, {}>(`/test/tentativi/${idTentativo}/completa`, {});
 }
+
+/* ============================================================
+ *  RISULTATI TEST
+ * ============================================================*/
 
 /**
  * Risultato dettagliato del tentativo.

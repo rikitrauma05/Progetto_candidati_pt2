@@ -7,13 +7,24 @@ import Link from "next/link";
 
 import PageHeader from "@/components/layout/pageHeader";
 import Button from "@/components/ui/button";
-import { getStrutturaTest, StrutturaTest } from "@/services/test.service";
+import { getStrutturaTest } from "@/services/test.service";
+
+// Tipo locale minimale, allineato a quello che usiamo nella pagina
+type StrutturaTestClient = {
+    idTest: number;
+    titolo: string;
+    descrizione?: string | null;
+    durataMinuti: number;
+    numeroDomande: number;
+    punteggioMax: number;
+    punteggioMin?: number | null;
+};
 
 export default function IntroduzioneTestPage() {
     const params = useParams<{ idTest: string }>();
     const idTest = Number(params?.idTest ?? "0");
 
-    const [test, setTest] = useState<StrutturaTest | null>(null);
+    const [test, setTest] = useState<StrutturaTestClient | null>(null);
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
 
@@ -25,10 +36,13 @@ export default function IntroduzioneTestPage() {
             setErrore(null);
             try {
                 const data = await getStrutturaTest(idTest);
-                setTest(data);
+                // cast perché il servizio non esporta il tipo
+                setTest(data as StrutturaTestClient);
             } catch (e) {
                 console.error(e);
-                setErrore("Non è stato possibile caricare i dettagli del test.");
+                setErrore(
+                    "Non è stato possibile caricare i dettagli del test."
+                );
             } finally {
                 setLoading(false);
             }
@@ -37,7 +51,6 @@ export default function IntroduzioneTestPage() {
         load();
     }, [idTest]);
 
-    // idTest non valido
     if (!idTest) {
         return (
             <div className="space-y-6">
@@ -55,7 +68,6 @@ export default function IntroduzioneTestPage() {
         );
     }
 
-    // stato di caricamento
     if (loading) {
         return (
             <div className="space-y-6">
@@ -73,7 +85,6 @@ export default function IntroduzioneTestPage() {
         );
     }
 
-    // errore o nessun test
     if (errore || !test) {
         return (
             <div className="space-y-6">
@@ -89,7 +100,8 @@ export default function IntroduzioneTestPage() {
                 />
                 <div className="max-w-3xl mx-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm">
                     <p className="text-sm text-[var(--muted)]">
-                        Riprova più tardi. Se il problema persiste, contatta il supporto.
+                        Riprova più tardi. Se il problema persiste, contatta il
+                        supporto.
                     </p>
                 </div>
             </div>
@@ -113,16 +125,15 @@ export default function IntroduzioneTestPage() {
             />
 
             <section className="max-w-3xl mx-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm space-y-6">
-                {/* Panoramica */}
                 <div className="space-y-2">
                     <h2 className="text-lg font-semibold">Panoramica del test</h2>
                     <p className="text-sm text-[var(--muted)]">
-                        Questo test fa parte del processo di selezione. Le domande servono a
-                        valutare le tue competenze in modo oggettivo e uniforme per tutti i candidati.
+                        Questo test fa parte del processo di selezione. Le
+                        domande servono a valutare le tue competenze in modo
+                        oggettivo e uniforme per tutti i candidati.
                     </p>
                 </div>
 
-                {/* Info principali */}
                 <div className="grid gap-3 text-sm text-[var(--muted)] sm:grid-cols-2">
                     <div className="rounded-xl bg-[var(--surface-soft)] p-3">
                         <p className="text-[0.7rem] uppercase tracking-wide">
@@ -163,34 +174,32 @@ export default function IntroduzioneTestPage() {
                     )}
                 </div>
 
-                {/* Regole generali */}
                 <div className="space-y-2">
                     <h3 className="text-sm font-semibold">
                         Regole e suggerimenti
                     </h3>
                     <ul className="list-disc list-inside text-sm text-[var(--muted)] space-y-1">
                         <li>
-                            Una volta avviato il test, il tempo inizierà a scorrere e non potrà
-                            essere messo in pausa.
+                            Una volta avviato il test, il tempo inizierà a
+                            scorrere e non potrà essere messo in pausa.
                         </li>
                         <li>
-                            Rispondi a tutte le domande nel limite di tempo indicato. Se non sei
-                            sicuro di una risposta, prova comunque a selezionare l'opzione che
-                            ritieni più corretta.
+                            Rispondi a tutte le domande nel limite di tempo
+                            indicato. Se non sei sicuro di una risposta, prova
+                            comunque a selezionare l&apos;opzione che ritieni
+                            più corretta.
                         </li>
                         <li>
-                            Assicurati di avere una connessione stabile prima di iniziare e
-                            evita di chiudere la pagina durante lo svolgimento.
+                            Assicurati di avere una connessione stabile prima di
+                            iniziare e evita di chiudere la pagina durante lo
+                            svolgimento.
                         </li>
                     </ul>
                 </div>
 
-                {/* Pulsante per iniziare il test */}
                 <div className="flex justify-end pt-2">
                     <Link href={`/candidati/test/${idTest}/tentativo`}>
-                        <Button variant="primary">
-                            Inizia il test
-                        </Button>
+                        <Button variant="primary">Inizia il test</Button>
                     </Link>
                 </div>
             </section>

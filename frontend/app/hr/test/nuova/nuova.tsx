@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createTest } from "@/services/test.service";
+import { creaTest } from "@/services/test.service";
 import type { TestCreateRequest, TestType } from "@/types/test";
 
 type OpzioneForm = {
@@ -165,7 +165,7 @@ export default function NuovaTest() {
         };
 
         try {
-            await createTest(payload);
+            await creaTest(payload);
             router.push("/hr/test");
         } catch (error) {
             console.error("Errore creazione test:", error);
@@ -202,7 +202,9 @@ export default function NuovaTest() {
                     </div>
 
                     <div>
-                        <label className="text-sm font-medium">Descrizione</label>
+                        <label className="text-sm font-medium">
+                            Descrizione
+                        </label>
                         <textarea
                             value={descrizione}
                             onChange={(e) => setDescrizione(e.target.value)}
@@ -276,8 +278,6 @@ export default function NuovaTest() {
                 </div>
 
                 {/* Domande */}
-                {/* (tutta la parte domande/opzioni identica a prima, già inclusa sopra) */}
-
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-semibold">
