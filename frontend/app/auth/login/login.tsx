@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
+import { useUserStore } from "@/store/userStore";
 import { login as loginService } from "@/services/auth.service";
 import type { LoginRequest, LoginResponse } from "@/types/auth";
 import PageHeader from "@/components/layout/pageHeader";
@@ -12,6 +13,7 @@ import Button from "@/components/ui/button";
 export default function LoginPage() {
     const router = useRouter();
     const { isAuthenticated, user, login: loginStore } = useAuthStore();
+    const fetchProfilo = useUserStore((s) => s.fetchProfilo);
 
     const [form, setForm] = useState<LoginRequest>({
         email: "",
@@ -44,19 +46,18 @@ export default function LoginPage() {
     const getErrorMessage = (err: any): string => {
         const errorMessage = String(err?.message || "");
 
-        // Gestione errori specifici dal backend
-        if (errorMessage.includes("CREDENZIALI_NON_VALIDE") ||
+        if (
+            errorMessage.includes("CREDENZIALI_NON_VALIDE") ||
             errorMessage.includes("401") ||
-            errorMessage.includes("Unauthorized")) {
+            errorMessage.includes("Unauthorized")
+        ) {
             return "Email o password non corretti.";
         }
 
-        //TODO: Da controllare
         if (errorMessage.includes("UTENTE_NON_TROVATO")) {
             return "Non esiste un account con questa email.";
         }
 
-        // Messaggio generico per errori non gestiti
         return "Si è verificato un errore durante l'accesso. Riprova.";
     };
 
@@ -68,11 +69,14 @@ export default function LoginPage() {
         try {
             const response: LoginResponse = await loginService(form);
 
-            // Salva i dati nello store
+            // Aggiorna authStore
             loginStore(response.user, {
                 accessToken: response.accessToken,
                 refreshToken: response.refreshToken,
             });
+
+            // Aggiorna userStore con il profilo dettagliato
+            await fetchProfilo();
 
             // Redirect in base al ruolo
             const redirectPath =

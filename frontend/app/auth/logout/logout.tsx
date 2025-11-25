@@ -4,27 +4,32 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { logout as logoutApi } from "@/services/auth.service";
 import { useAuthStore } from "@/store/authStore";
+import { useUserStore } from "@/store/userStore";
 
 export default function Logout() {
     const router = useRouter();
     const logout = useAuthStore((s) => s.logout);
+    const clearUser = useUserStore((s) => s.clear); // <-- clear userStore
 
     useEffect(() => {
         async function doLogout() {
             try {
-                await logoutApi(); // chiama /api/auth/logout se lo implementi
+                // Chiamata al backend per logout (opzionale)
+                await logoutApi();
             } catch {
-                // possiamo anche ignorare errori qui
+                // Possiamo ignorare eventuali errori
             } finally {
-                logout(); // svuota lo store
-                const t = setTimeout(() => {
-                    router.replace("/auth/login");
-                }, 300);
-                return () => clearTimeout(t);
+                // Puliamo entrambi gli store
+                logout();      // svuota authStore
+                clearUser();   // svuota userStore
+
+                // Redirect alla pagina login
+                router.replace("/auth/login");
             }
         }
+
         void doLogout();
-    }, [logout, router]);
+    }, [logout, clearUser, router]);
 
     return (
         <section className="max-w-md mx-auto">
@@ -33,9 +38,12 @@ export default function Logout() {
                 <p className="text-[var(--muted)] mb-6">Attendi qualche istante.</p>
 
                 <div className="flex items-center justify-center gap-3">
-                    {/* Link di fallback ASSOLUTI corretti (se l'auto-redirect non partisse) */}
-                    <a href="/auth/login" className="rounded-xl border px-4 py-2">Vai al login</a>
-                    <a href="/auth/register" className="rounded-xl border px-4 py-2">Crea account</a>
+                    <a href="/auth/login" className="rounded-xl border px-4 py-2">
+                        Vai al login
+                    </a>
+                    <a href="/auth/register" className="rounded-xl border px-4 py-2">
+                        Crea account
+                    </a>
                 </div>
             </div>
         </section>
