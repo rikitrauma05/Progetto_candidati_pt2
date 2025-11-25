@@ -41,6 +41,9 @@ export default function TentativoTestPage() {
     const [staInviando, setStaInviando] = useState(false);
     const [tempoScaduto, setTempoScaduto] = useState(false);
 
+    // indice della domanda corrente (0-based)
+    const [indiceDomandaCorrente, setIndiceDomandaCorrente] = useState(0);
+
     // 1) Avvio tentativo + caricamento domande
     useEffect(() => {
         if (!idTest) return;
@@ -75,6 +78,9 @@ export default function TentativoTestPage() {
                 // timer in secondi
                 const seconds = (datiDomande.durataMinuti ?? 0) * 60;
                 setTempoRimanente(seconds);
+
+                // reset indice prima domanda
+                setIndiceDomandaCorrente(0);
 
                 setStato("PRONTO");
             } catch (e) {
@@ -155,7 +161,34 @@ export default function TentativoTestPage() {
         }
     }
 
+    // bottone unico "Avanti / Invia" per domanda singola
+    function onNextOrSubmit() {
+        if (stato !== "PRONTO") return;
+        if (domande.length === 0) return;
+
+        const ultimaIndex = domande.length - 1;
+
+        if (indiceDomandaCorrente < ultimaIndex) {
+            // vai solo avanti, nessun ritorno indietro
+            setIndiceDomandaCorrente((prev) =>
+                prev < ultimaIndex ? prev + 1 : prev
+            );
+        } else {
+            // ultima domanda -> invia il test
+            if (!staInviando) {
+                onInviaTest();
+            }
+        }
+    }
+
     const testInCaricamento = stato !== "PRONTO" || !idTentativo;
+    const domandaCorrente =
+        !testInCaricamento && domande.length > 0
+            ? domande[indiceDomandaCorrente]
+            : null;
+    const totaleDomande = domande.length;
+    const isUltimaDomanda =
+        totaleDomande > 0 && indiceDomandaCorrente === totaleDomande - 1;
 
     if (!idTest) {
         return (
@@ -188,7 +221,7 @@ export default function TentativoTestPage() {
                     {
                         label: "Esci",
                         href: "/candidati/test",
-                        variant: "dark", // OK per PageHeader ("primary" | "dark" | "success")
+                        variant: "dark",
                     },
                 ]}
             />
@@ -228,7 +261,7 @@ export default function TentativoTestPage() {
 
                     <div className="flex gap-2">
                         <Button
-                            variant="outline" // variante valida del Button
+                            variant="outline"
                             disabled={testInCaricamento || staInviando}
                             onClick={() => {
                                 if (
@@ -241,13 +274,6 @@ export default function TentativoTestPage() {
                             }}
                         >
                             Aggiorna pagina
-                        </Button>
-                        <Button
-                            variant="primary"
-                            disabled={testInCaricamento || staInviando}
-                            onClick={onInviaTest}
-                        >
-                            {staInviando ? "Invio in corso…" : "Invia test"}
                         </Button>
                     </div>
                 </div>
@@ -267,55 +293,71 @@ export default function TentativoTestPage() {
                     </div>
                 )}
 
-                {/* Domande */}
-                {!testInCaricamento && domande.length > 0 && (
-                    <div className="space-y-6">
-                        {domande.map((domanda, index) => (
-                            <div
-                                key={domanda.idDomanda}
-                                className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-soft)] p-4 space-y-3"
-                            >
-                                <div className="flex items-start justify-between gap-3">
-                                    <p className="text-sm font-medium text-[var(--foreground)]">
-                                        <span className="mr-2 text-[var(--muted)]">
-                                            {index + 1}.
-                                        </span>
-                                        {domanda.testo}
-                                    </p>
-                                </div>
+                {/* Domanda singola per pagina */}
+                {!testInCaricamento && domandaCorrente && (
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between text-xs text-[var(--muted)]">
+                            <span>
+                                Domanda {indiceDomandaCorrente + 1} di{" "}
+                                {totaleDomande}
+                            </span>
+                            {durataMinuti > 0 && (
+                                <span>Durata test: {durataMinuti} min</span>
+                            )}
+                        </div>
 
-                                <div className="space-y-2">
-                                    {domanda.opzioni.map((opzione) => (
-                                        <label
-                                            key={opzione.idOpzione}
-                                            className="flex cursor-pointer items-center gap-2 rounded-lg border border-transparent px-2 py-1 text-sm hover:border-[var(--border)] hover:bg-[var(--surface)]"
-                                        >
-                                            <input
-                                                type="radio"
-                                                name={`domanda-${domanda.idDomanda}`}
-                                                className="h-4 w-4"
-                                                checked={
-                                                    risposte[
-                                                        domanda.idDomanda
-                                                        ] === opzione.idOpzione
-                                                }
-                                                onChange={() =>
-                                                    onSelezionaRisposta(
-                                                        domanda.idDomanda,
-                                                        opzione.idOpzione
-                                                    )
-                                                }
-                                            />
-                                            <span>{opzione.testoOpzione}</span>
-                                        </label>
-                                    ))}
-                                </div>
+                        <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-soft)] p-4 space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                                <p className="text-sm font-medium text-[var(--foreground)]">
+                                    {domandaCorrente.testo}
+                                </p>
                             </div>
-                        ))}
+
+                            <div className="space-y-2">
+                                {domandaCorrente.opzioni.map((opzione) => (
+                                    <label
+                                        key={opzione.idOpzione}
+                                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-transparent px-2 py-1 text-sm hover:border-[var(--border)] hover:bg-[var(--surface)]"
+                                    >
+                                        <input
+                                            type="radio"
+                                            name={`domanda-${domandaCorrente.idDomanda}`}
+                                            className="h-4 w-4"
+                                            checked={
+                                                risposte[
+                                                    domandaCorrente.idDomanda
+                                                    ] === opzione.idOpzione
+                                            }
+                                            onChange={() =>
+                                                onSelezionaRisposta(
+                                                    domandaCorrente.idDomanda,
+                                                    opzione.idOpzione
+                                                )
+                                            }
+                                        />
+                                        <span>{opzione.testoOpzione}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <Button
+                                variant="primary"
+                                disabled={testInCaricamento || staInviando}
+                                onClick={onNextOrSubmit}
+                            >
+                                {isUltimaDomanda
+                                    ? staInviando
+                                        ? "Invio in corso…"
+                                        : "Conferma e invia test"
+                                    : "Prossima domanda"}
+                            </Button>
+                        </div>
                     </div>
                 )}
 
-                {!testInCaricamento && domande.length === 0 && (
+                {!testInCaricamento && !domandaCorrente && (
                     <p className="text-sm text-[var(--muted)]">
                         Non ci sono domande associate a questo test. Contatta il
                         supporto per segnalare il problema.
