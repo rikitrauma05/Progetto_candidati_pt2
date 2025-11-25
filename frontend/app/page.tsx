@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
+import DateTimeCard from "@/components/cards/DateTimeCard";
 
 export default function HomePage() {
     const { isAuthenticated, user } = useAuthStore();
@@ -10,7 +11,11 @@ export default function HomePage() {
     const isCandidato = user?.ruolo === "CANDIDATO";
 
     return (
-        <main className="min-h-dvh flex flex-col items-center justify-center px-4 text-center">
+        <main className="min-h-dvh flex flex-col items-center justify-center px-4 text-center space-y-8">
+
+            {/* 🔥 WIDGET DATA + ORA */}
+            <DateTimeCard />
+
             <h1 className="text-4xl font-bold tracking-tight mb-4">
                 Benvenuto in <span className="text-blue-600">CandidAI</span>
             </h1>
