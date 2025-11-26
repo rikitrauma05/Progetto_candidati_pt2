@@ -1,4 +1,3 @@
-// app/candidati/test/[idTest]/risultati/risultati.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -8,13 +7,6 @@ import PageHeader from "@/components/layout/pageHeader";
 import Button from "@/components/ui/button";
 import { getRisultatoTentativo } from "@/services/test.service";
 import type { RisultatoTentativoDettaglio } from "@/types/test";
-
-function formatDateTime(iso: string | null | undefined) {
-    if (!iso) return "-";
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleString();
-}
 
 function esitoLabel(esito: string) {
     switch (esito) {
@@ -54,9 +46,7 @@ export default function RisultatiTestPage() {
 
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
-    const [risultato, setRisultato] = useState<RisultatoTentativoDettaglio | null>(
-        null
-    );
+    const [risultato, setRisultato] = useState<RisultatoTentativoDettaglio | null>(null);
 
     useEffect(() => {
         if (!idTest || !idTentativo || Number.isNaN(idTentativo)) {
@@ -115,11 +105,7 @@ export default function RisultatiTestPage() {
     return (
         <div className="space-y-6">
             <PageHeader
-                title={
-                    risultato
-                        ? `Risultati: ${risultato.titoloTest}`
-                        : "Risultati del test"
-                }
+                title={risultato ? `Risultati: ${risultato.titoloTest}` : "Risultati del test"}
                 subtitle={
                     loading
                         ? "Caricamento dei risultati in corso…"
@@ -149,18 +135,17 @@ export default function RisultatiTestPage() {
                     {
                         label: "Torna ai test",
                         href: "/candidati/test",
-                        variant: "dark", // valido per PageHeader
+                        variant: "dark",
                     },
                 ]}
             />
 
-            {/* Error state */}
             {errore && (
                 <section className="max-w-3xl mx-auto rounded-2xl border border-red-500/40 bg-red-500/10 p-6 text-sm text-red-800 dark:text-red-100 space-y-2">
                     <p>{errore}</p>
                     <div className="pt-2">
                         <Button
-                            variant="primary" // qui prima era "dark": ora usiamo "primary" (valido per Button)
+                            variant="primary"
                             onClick={() => router.push("/candidati/test")}
                         >
                             Vai alla lista test
@@ -169,7 +154,6 @@ export default function RisultatiTestPage() {
                 </section>
             )}
 
-            {/* Loading skeleton */}
             {loading && !errore && (
                 <section className="max-w-3xl mx-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 space-y-4">
                     <div className="h-4 w-1/2 rounded bg-[var(--surface-soft)]" />
@@ -179,25 +163,15 @@ export default function RisultatiTestPage() {
                 </section>
             )}
 
-            {/* Contenuto principale */}
             {!loading && !errore && risultato && (
                 <section className="max-w-4xl mx-auto space-y-6">
-                    {/* Esito principale */}
-                    <div
-                        className={`rounded-2xl border p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${esitoClass(
-                            risultato.esito
-                        )}`}
-                    >
+                    <div className={`rounded-2xl border p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${esitoClass(risultato.esito)}`}>
                         <div>
                             <p className="text-xs uppercase tracking-wide">
                                 Esito del tentativo
                             </p>
                             <p className="mt-1 text-lg font-semibold">
                                 {esitoLabel(risultato.esito)}
-                            </p>
-                            <p className="mt-1 text-xs opacity-80">
-                                Completato il:{" "}
-                                {formatDateTime(risultato.completatoAt)}
                             </p>
                         </div>
 
@@ -206,8 +180,7 @@ export default function RisultatiTestPage() {
                                 Punteggio ottenuto
                             </p>
                             <p className="text-xl font-semibold">
-                                {risultato.punteggioTotale} /{" "}
-                                {risultato.punteggioMax}
+                                {risultato.punteggioTotale} / {risultato.punteggioMax}
                             </p>
                             {typeof percentuale === "number" && (
                                 <p className="text-xs opacity-80">
@@ -217,77 +190,34 @@ export default function RisultatiTestPage() {
                         </div>
                     </div>
 
-                    {/* Dettaglio domande */}
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 space-y-2">
-                            <h3 className="text-sm font-semibold">
-                                Riepilogo domande
-                            </h3>
+                            <h3 className="text-sm font-semibold">Riepilogo domande</h3>
                             <p className="text-sm text-[var(--muted)]">
-                                Il test comprendeva{" "}
-                                <span className="font-semibold">
-                                    {risultato.numeroDomande}
-                                </span>{" "}
-                                domande.
+                                Il test comprendeva <span className="font-semibold">{risultato.numeroDomande}</span> domande.
                             </p>
                             <ul className="mt-2 space-y-1 text-sm text-[var(--muted)]">
-                                <li>
-                                    ✅ Corrette:{" "}
-                                    <span className="font-semibold text-emerald-600">
-                                        {risultato.numeroCorrette}
-                                    </span>
-                                </li>
-                                <li>
-                                    ❌ Errate:{" "}
-                                    <span className="font-semibold text-red-600">
-                                        {risultato.numeroErrate}
-                                    </span>
-                                </li>
-                                <li>
-                                    ⏭ Non risposte:{" "}
-                                    <span className="font-semibold text-[var(--foreground)]">
-                                        {risultato.numeroNonRisposte}
-                                    </span>
-                                </li>
+                                <li>✅ Corrette: <span className="font-semibold text-emerald-600">{risultato.numeroCorrette}</span></li>
+                                <li>❌ Errate: <span className="font-semibold text-red-600">{risultato.numeroErrate}</span></li>
+                                <li>⏭ Non risposte: <span className="font-semibold text-[var(--foreground)]">{risultato.numeroNonRisposte}</span></li>
                             </ul>
                         </div>
 
                         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 space-y-2">
-                            <h3 className="text-sm font-semibold">
-                                Informazioni sul tentativo
-                            </h3>
-                            {/*<p className="text-sm text-[var(--muted)]">*/}
-                            {/*    Identificativo tentativo:{" "}*/}
-                            {/*    <span className="font-mono">*/}
-                            {/*        #{risultato.idTentativo}*/}
-                            {/*    </span>*/}
-                            {/*</p> */}
-                            <p className="text-sm text-[var(--muted)]">
-                                Data e ora completamento:{" "}
-                                <span className="font-medium">
-                                    {formatDateTime(risultato.completatoAt)}
-                                </span>
-                            </p>
+                            <h3 className="text-sm font-semibold">Informazioni sul tentativo</h3>
                             {typeof risultato.durataUsataMinuti === "number" && (
                                 <p className="text-sm text-[var(--muted)]">
-                                    Durata effettiva:{" "}
-                                    <span className="font-medium">
-                                        {risultato.durataUsataMinuti} minuti
-                                    </span>
+                                    Durata effettiva: <span className="font-medium">{risultato.durataUsataMinuti} minuti</span>
                                 </p>
                             )}
                             {typeof risultato.punteggioMin === "number" && (
                                 <p className="text-sm text-[var(--muted)]">
-                                    Punteggio minimo per superare:{" "}
-                                    <span className="font-medium">
-                                        {risultato.punteggioMin}
-                                    </span>
+                                    Punteggio minimo per superare: <span className="font-medium">{risultato.punteggioMin}</span>
                                 </p>
                             )}
                         </div>
                     </div>
 
-                    {/* Azioni finali */}
                     <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
                         <Button
                             variant="primary"
@@ -299,21 +229,13 @@ export default function RisultatiTestPage() {
                         <div className="flex flex-wrap gap-2">
                             <Button
                                 variant="outline"
-                                onClick={() =>
-                                    router.push(
-                                        `/candidati/test/${idTest}/introduzione`
-                                    )
-                                }
+                                onClick={() => router.push(`/candidati/test/${idTest}/introduzione`)}
                             >
                                 Rivedi informazioni sul test
                             </Button>
                             <Button
                                 variant="success"
-                                onClick={() =>
-                                    router.push(
-                                        `/candidati/test/${idTest}/tentativo`
-                                    )
-                                }
+                                onClick={() => router.push(`/candidati/test/${idTest}/tentativo`)}
                             >
                                 Ripeti il test (se consentito)
                             </Button>
