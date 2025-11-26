@@ -173,6 +173,11 @@ export default function RisultatiTestPage() {
                             <p className="mt-1 text-lg font-semibold">
                                 {esitoLabel(risultato.esito)}
                             </p>
+                            {risultato.completatoAt && (
+                                <p className="text-xs text-[var(--muted)]">
+                                    Completato il: {new Date(risultato.completatoAt).toLocaleString()}
+                                </p>
+                            )}
                         </div>
 
                         <div className="flex flex-col items-start sm:items-end gap-1">
