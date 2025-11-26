@@ -90,13 +90,6 @@ export default function RisultatiTestPage() {
                 <PageHeader
                     title="Test non valido"
                     subtitle="L'identificativo del test non è corretto."
-                    actions={[
-                        {
-                            label: "Torna ai test",
-                            href: "/candidati/test",
-                            variant: "primary",
-                        },
-                    ]}
                 />
             </div>
         );
@@ -131,13 +124,6 @@ export default function RisultatiTestPage() {
                         ]
                         : []
                 }
-                actions={[
-                    {
-                        label: "Torna ai test",
-                        href: "/candidati/test",
-                        variant: "dark",
-                    },
-                ]}
             />
 
             {errore && (
@@ -223,28 +209,19 @@ export default function RisultatiTestPage() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
+                    <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 pt-2">
                         <Button
                             variant="primary"
                             onClick={() => router.push("/candidati/test")}
                         >
                             Torna alla lista test
                         </Button>
-
-                        <div className="flex flex-wrap gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => router.push(`/candidati/test/${idTest}/introduzione`)}
-                            >
-                                Rivedi informazioni sul test
-                            </Button>
-                            <Button
-                                variant="success"
-                                onClick={() => router.push(`/candidati/test/${idTest}/tentativo`)}
-                            >
-                                Ripeti il test (se consentito)
-                            </Button>
-                        </div>
+                        <Button
+                            variant="outline"
+                            onClick={() => router.push(`/candidati/test/${idTest}/introduzione`)}
+                        >
+                            Rivedi informazioni sul test
+                        </Button>
                     </div>
                 </section>
             )}
