@@ -1,128 +1,72 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 
-import { getJson, postJson } from "@/services/api";
-
+import { getJson } from "@/services/api";
 import Button from "@/components/ui/button";
-import Input from "@/components/ui/input";
-import Select from "@/components/ui/select";
-import Textarea from "@/components/ui/textarea";
 
-//type Stato = "APERTA" | "CHIUSA";
-
-type PosizioneCreata = {
+type Posizione = {
     idPosizione: number;
     titolo: string;
-};
-
-type TestItem = {
-    idTest: number;
-    titolo: string;
+    sede?: string | null;
+    contratto?: string | null;
+    settore?: string | null;
     descrizione?: string | null;
-    durataMinuti?: number | null;
-    punteggioMax?: number | null;
+    ral?: number | null;
+    testAssociato?: {
+        idTest: number;
+        titolo: string;
+    } | null;
 };
 
-export default function NuovaPosizionePage() {
+export default function DettaglioPosizionePage() {
+    const params = useParams<{ idPosizione: string }>();
+    const idPosizione = Number(params?.idPosizione ?? 0);
+
     const router = useRouter();
 
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
-
-    const [titolo, setTitolo] = useState("");
-    const [sede, setSede] = useState("");
-    const [contratto, setContratto] = useState("");
-    const [settore, setSettore] = useState("");
-    //const [stato, setStato] = useState<Stato>("APERTA");
-    const [descrizione, setDescrizione] = useState("");
-
-    // RAL indicativa
-    const [ral, setRal] = useState<number | "" | null>("");
-
-    // TEST DISPONIBILI
-    const [tests, setTests] = useState<TestItem[]>([]);
-    const [testsLoading, setTestsLoading] = useState(false);
-    const [testsErrore, setTestsErrore] = useState<string | null>(null);
-    const [selectedTestId, setSelectedTestId] = useState<number | null>(null);
+    const [posizione, setPosizione] = useState<Posizione | null>(null);
 
     useEffect(() => {
-        const loadTests = async () => {
-            try {
-                setTestsLoading(true);
-                setTestsErrore(null);
-                const data = await getJson<TestItem[]>("/test/disponibili");
-                setTests(data);
-            } catch (err) {
-                console.error("Errore caricamento test:", err);
-                setTestsErrore("Impossibile caricare la lista dei test.");
-            } finally {
-                setTestsLoading(false);
-            }
-        };
-
-        loadTests();
-    }, []);
-
-    async function handleSubmit(e: FormEvent) {
-        e.preventDefault();
-
-        if (!titolo.trim()) {
-            setErrore("Il titolo della posizione è obbligatorio.");
+        if (!idPosizione) {
+            setErrore("ID posizione non valido.");
+            setLoading(false);
             return;
         }
 
-        try {
-            setLoading(true);
-            setErrore(null);
+        async function load() {
+            try {
+                setErrore(null);
+                setLoading(true);
 
-            const payload: any = {
-                titolo: titolo.trim(),
-                sede: sede.trim() || null,
-                contratto: contratto.trim() || null,
-                settore: settore.trim() || null,
-                descrizione: descrizione.trim() || null,
-                //stato: stato, // se il tuo backend lo gestisce
-                ral: ral === "" ? null : ral, // RAL inviata al backend
-            };
-
-            // se è stato selezionato un test, aggiungiamo il campo
-            if (selectedTestId != null) {
-                // questo nome può essere adattato al tuo DTO backend
-                payload.idTest = selectedTestId;
+                const data = await getJson<Posizione>(`/posizioni/${idPosizione}`);
+                setPosizione(data);
+            } catch (e) {
+                console.error(e);
+                setErrore("Impossibile caricare i dettagli della posizione.");
+            } finally {
+                setLoading(false);
             }
-
-            const creata = await postJson<PosizioneCreata>("/posizioni", payload);
-
-            // dopo la creazione torniamo alla lista posizioni
-            // oppure potresti fare router.push(`/hr/posizioni/${creata.idPosizione}`)
-            console.log("Posizione creata:", creata);
-            router.push("/hr/posizioni");
-        } catch (err) {
-            console.error("Errore creazione posizione:", err);
-            setErrore("Errore durante la creazione della posizione.");
-        } finally {
-            setLoading(false);
         }
-    }
+
+        load();
+    }, [idPosizione]);
 
     return (
         <main className="min-h-dvh bg-slate-950 text-slate-50">
             <section className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-                {/* HEADER */}
-                <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+
+                <header className="flex items-center justify-between">
                     <div>
-                        <p className="text-xs font-semibold tracking-[0.2em] text-sky-400/80 uppercase">
+                        <p className="text-xs uppercase text-sky-400/80 tracking-[0.2em]">
                             area hr
                         </p>
-                        <h1 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">
-                            Nuova posizione
+                        <h1 className="mt-2 text-2xl font-semibold">
+                            Dettaglio posizione
                         </h1>
-                        <p className="mt-1 text-sm text-slate-400 max-w-xl">
-                            Crea una nuova posizione e, se vuoi, associa direttamente un test
-                            di valutazione ai candidati.
-                        </p>
                     </div>
 
                     <Button variant="outline" onClick={() => router.push("/hr/posizioni")}>
@@ -130,108 +74,51 @@ export default function NuovaPosizionePage() {
                     </Button>
                 </header>
 
-                {/* FORM CREAZIONE */}
-                <form
-                    onSubmit={handleSubmit}
-                    className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 space-y-5 shadow-card"
-                >
-                    {errore && (
-                        <div className="rounded-lg border border-red-500/70 bg-red-950/40 px-3 py-2 text-sm text-red-100">
-                            {errore}
+                {loading && (
+                    <p className="text-slate-400 text-sm">Caricamento…</p>
+                )}
+
+                {errore && (
+                    <div className="rounded-lg border border-red-500 bg-red-950/40 px-3 py-2 text-red-100">
+                        {errore}
+                    </div>
+                )}
+
+                {!loading && !errore && posizione && (
+                    <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
+
+                        <div>
+                            <h2 className="text-lg font-semibold">{posizione.titolo}</h2>
+                            {posizione.descrizione && (
+                                <p className="text-sm text-slate-300 mt-1">
+                                    {posizione.descrizione}
+                                </p>
+                            )}
                         </div>
-                    )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input
-                            label="Titolo posizione"
-                            value={titolo}
-                            onChange={(e) => setTitolo(e.target.value)}
-                            required
-                        />
-                        <Input
-                            label="Sede"
-                            value={sede}
-                            onChange={(e) => setSede(e.target.value)}
-                        />
-                        <Input
-                            label="Contratto"
-                            value={contratto}
-                            onChange={(e) => setContratto(e.target.value)}
-                        />
-                        <Input
-                            label="Settore"
-                            value={settore}
-                            onChange={(e) => setSettore(e.target.value)}
-                        />
-
-                        {/* RAL indicativa */}
-                        <Input
-                            label="RAL indicativa"
-                            type="number"
-                            value={ral === "" || ral == null ? "" : ral}
-                            onChange={(e) =>
-                                setRal(e.target.value === "" ? "" : Number(e.target.value))
-                            }
-                        />
-
-                    </div>
-
-                    {/* SEZIONE TEST ASSOCIATO */}
-                    <div className="space-y-2">
-                        <Select
-                            label="Test associato alla posizione"
-                            value={selectedTestId ? String(selectedTestId) : ""}
-                            onChangeAction={(val: string) => {
-                                if (!val) {
-                                    setSelectedTestId(null);
-                                } else {
-                                    setSelectedTestId(Number(val));
-                                }
-                            }}
-                            options={[
-                                { value: "", label: "Nessun test associato" },
-                                ...tests.map((t) => ({
-                                    value: String(t.idTest),
-                                    label: t.titolo,
-                                })),
-                            ]}
-                        />
-                        {testsLoading && (
-                            <p className="text-[11px] text-slate-400">
-                                Caricamento elenco test…
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <p><span className="font-semibold">Sede:</span> {posizione.sede || "—"}</p>
+                            <p><span className="font-semibold">Contratto:</span> {posizione.contratto || "—"}</p>
+                            <p><span className="font-semibold">Settore:</span> {posizione.settore || "—"}</p>
+                            <p>
+                                <span className="font-semibold">RAL indicativa:</span>{" "}
+                                {posizione.ral ? `€ ${posizione.ral}` : "—"}
                             </p>
-                        )}
-                        {testsErrore && (
-                            <p className="text-[11px] text-red-300">{testsErrore}</p>
-                        )}
-                        {!testsLoading && !testsErrore && tests.length === 0 && (
-                            <p className="text-[11px] text-slate-400">
-                                Non è presente ancora nessun test configurato. Puoi crearne uno
-                                dalla sezione Test HR.
-                            </p>
-                        )}
-                    </div>
+                        </div>
 
-                    <Textarea
-                        label="Descrizione"
-                        value={descrizione}
-                        onChangeAction={(val: string) => setDescrizione(val)}
-                        minRows={7}
-                    />
+                        <div>
+                            <h3 className="text-sm font-semibold">Test associato</h3>
+                            {posizione.testAssociato ? (
+                                <p className="mt-1 text-slate-300">
+                                    {posizione.testAssociato.titolo} (ID {posizione.testAssociato.idTest})
+                                </p>
+                            ) : (
+                                <p className="mt-1 text-slate-400 text-sm">Nessun test associato</p>
+                            )}
+                        </div>
 
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => router.push("/hr/posizioni")}
-                        >
-                            Annulla
-                        </Button>
-                        <Button type="submit" disabled={loading}>
-                            {loading ? "Salvataggio…" : "Crea posizione"}
-                        </Button>
                     </div>
-                </form>
+                )}
             </section>
         </main>
     );
