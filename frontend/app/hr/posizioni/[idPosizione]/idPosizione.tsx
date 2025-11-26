@@ -10,7 +10,7 @@ import Input from "@/components/ui/input";
 import Select from "@/components/ui/select";
 import Textarea from "@/components/ui/textarea";
 
-type Stato = "APERTA" | "CHIUSA";
+//type Stato = "APERTA" | "CHIUSA";
 
 type PosizioneCreata = {
     idPosizione: number;
@@ -35,7 +35,7 @@ export default function NuovaPosizionePage() {
     const [sede, setSede] = useState("");
     const [contratto, setContratto] = useState("");
     const [settore, setSettore] = useState("");
-    const [stato, setStato] = useState<Stato>("APERTA");
+    //const [stato, setStato] = useState<Stato>("APERTA");
     const [descrizione, setDescrizione] = useState("");
 
     // RAL indicativa
@@ -83,7 +83,7 @@ export default function NuovaPosizionePage() {
                 contratto: contratto.trim() || null,
                 settore: settore.trim() || null,
                 descrizione: descrizione.trim() || null,
-                stato: stato, // se il tuo backend lo gestisce
+                //stato: stato, // se il tuo backend lo gestisce
                 ral: ral === "" ? null : ral, // RAL inviata al backend
             };
 
@@ -174,15 +174,6 @@ export default function NuovaPosizionePage() {
                             }
                         />
 
-                        <Select
-                            label="Stato"
-                            value={stato}
-                            onChangeAction={(val: string) => setStato(val as Stato)}
-                            options={[
-                                { value: "APERTA", label: "APERTA" },
-                                { value: "CHIUSA", label: "CHIUSA" },
-                            ]}
-                        />
                     </div>
 
                     {/* SEZIONE TEST ASSOCIATO */}

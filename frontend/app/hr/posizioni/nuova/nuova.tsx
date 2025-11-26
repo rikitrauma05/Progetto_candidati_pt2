@@ -10,7 +10,10 @@ import Input from "@/components/ui/input";
 import Select from "@/components/ui/select";
 import Textarea from "@/components/ui/textarea";
 
-type Stato = "APERTA" | "CHIUSA";
+type Sede = "LODI" | "FIRENZE" | "PARMA" | "RAPALLO";
+type Contratto = "STAGE" | "PART TIME" | "CONTRATTO" | "DETERMINATO" | "INDETERMINATO"
+type Settore = "IT" | "CYBER SECURITY" | "RETI"
+
 
 type PosizioneCreata = {
     idPosizione: number;
@@ -32,14 +35,12 @@ export default function NuovaPosizionePage() {
     const [errore, setErrore] = useState<string | null>(null);
 
     const [titolo, setTitolo] = useState("");
-    const [sede, setSede] = useState("");
-    const [contratto, setContratto] = useState("");
-    const [settore, setSettore] = useState("");
-    const [stato, setStato] = useState<Stato>("APERTA");
+    const [sede, setSede] = useState<Sede>("LODI");
+    const [contratto, setContratto] = useState<Contratto>("INDETERMINATO");
+    const [settore, setSettore] = useState<Settore>("IT");
     const [descrizione, setDescrizione] = useState("");
-
-    // RAL indicativa
     const [ral, setRal] = useState<number | "" | null>("");
+
 
     // TEST DISPONIBILI
     const [tests, setTests] = useState<TestItem[]>([]);
@@ -79,11 +80,11 @@ export default function NuovaPosizionePage() {
 
             const payload: any = {
                 titolo: titolo.trim(),
-                sede: sede.trim() || null,
-                contratto: contratto.trim() || null,
-                settore: settore.trim() || null,
+                sede: sede,
+                contratto: contratto,
+                settore: settore,
                 descrizione: descrizione.trim() || null,
-                stato: stato,
+                //stato: stato,
                 ral: ral === "" ? null : ral, // <<< QUI INVIO LA RAL
             };
 
@@ -144,20 +145,42 @@ export default function NuovaPosizionePage() {
                             onChange={(e) => setTitolo(e.target.value)}
                             required
                         />
-                        <Input
+                        <Select
                             label="Sede"
                             value={sede}
-                            onChange={(e) => setSede(e.target.value)}
+                            onChangeAction={(val: string) => setSede(val as Sede)}
+                            options={[
+                                { value: "Lodi", label: "LODI" },
+                                { value: "Firenze", label: "FIRENZE" },
+                                { value: "Parma", label: "PARMA" },
+                                { value: "Rapallo", label: "RAPALLO" },
+                            ]}
+                            required
                         />
-                        <Input
+                        <Select
                             label="Contratto"
                             value={contratto}
-                            onChange={(e) => setContratto(e.target.value)}
+                            onChangeAction={(val: string) => setContratto(val as Contratto)}
+                            options={[
+                                { value: "Stage", label: "Stage" },
+                                { value: "Part Time", label: "Part Time" },
+                                { value: "Contratto", label: "Contratto" },
+                                { value: "Determinato", label: "Determinato" },
+                                { value: "Indeterminato", label: "Indeterminato" },
+                            ]}
+                            required
                         />
-                        <Input
+                        <Select
                             label="Settore"
                             value={settore}
-                            onChange={(e) => setSettore(e.target.value)}
+                            onChangeAction={(val: string) => setSettore(val as Settore)}
+                            options={[
+                                { value: "Lodi", label: "IT" },
+                                { value: "Cyber", label: "CYBER SECURITY" },
+                                { value: "Reti", label: "RETI" },
+                            ]}
+                            required
+
                         />
 
                         {/* RAL indicativa */}
@@ -167,10 +190,9 @@ export default function NuovaPosizionePage() {
                             </label>
 
                             <div className="relative">
-    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-semibold">
-      €
-    </span>
-
+                            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-semibold">
+                              €
+                            </span>
                                 <input
                                     type="text"
                                     inputMode="numeric"
@@ -184,17 +206,6 @@ export default function NuovaPosizionePage() {
                                 />
                             </div>
                         </div>
-
-
-                        <Select
-                            label="Stato"
-                            value={stato}
-                            onChangeAction={(val: string) => setStato(val as Stato)}
-                            options={[
-                                { value: "APERTA", label: "APERTA" },
-                                { value: "CHIUSA", label: "CHIUSA" },
-                            ]}
-                        />
                     </div>
 
                     {/* SEZIONE TEST ASSOCIATO */}
@@ -216,6 +227,7 @@ export default function NuovaPosizionePage() {
                                     label: t.titolo,
                                 })),
                             ]}
+                            required
                         />
                         {testsLoading && (
                             <p className="text-[11px] text-slate-400">
@@ -237,7 +249,8 @@ export default function NuovaPosizionePage() {
                         label="Descrizione"
                         value={descrizione}
                         onChangeAction={(val: string) => setDescrizione(val)}
-                        minRows={7}
+                        minRows={10}
+                        required
                     />
 
                     <div className="flex justify-end gap-2">
