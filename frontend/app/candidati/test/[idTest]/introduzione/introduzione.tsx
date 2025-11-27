@@ -1,15 +1,11 @@
-// app/candidati/test/[idTest]/introduzione/introduzione.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-
+import { useParams, useRouter } from "next/navigation";
 import PageHeader from "@/components/layout/pageHeader";
 import Button from "@/components/ui/button";
 import { getStrutturaTest } from "@/services/test.service";
 
-// Tipo locale minimale, allineato a quello che usiamo nella pagina
 type StrutturaTestClient = {
     idTest: number;
     titolo: string;
@@ -23,6 +19,7 @@ type StrutturaTestClient = {
 export default function IntroduzioneTestPage() {
     const params = useParams<{ idTest: string }>();
     const idTest = Number(params?.idTest ?? "0");
+    const router = useRouter();
 
     const [test, setTest] = useState<StrutturaTestClient | null>(null);
     const [loading, setLoading] = useState(true);
@@ -36,12 +33,11 @@ export default function IntroduzioneTestPage() {
             setErrore(null);
             try {
                 const data = await getStrutturaTest(idTest);
-                // cast perché il servizio non esporta il tipo
                 setTest(data as StrutturaTestClient);
             } catch (e) {
                 console.error(e);
                 setErrore(
-                    "Non è stato possibile caricare i dettagli del test."
+                    "Non è stato possibile caricare i dettagli del test.",
                 );
             } finally {
                 setLoading(false);
@@ -106,6 +102,16 @@ export default function IntroduzioneTestPage() {
                 </div>
             </div>
         );
+    }
+
+    function handleStartTest() {
+        if (!idTest) return;
+        const conferma = window.confirm(
+            "Una volta iniziato il test il tempo inizierà a scorrere e non potrai metterlo in pausa. Vuoi davvero iniziare?",
+        );
+        if (!conferma) return;
+
+        router.push(`/candidati/test/${idTest}/tentativo`);
     }
 
     return (
@@ -175,9 +181,7 @@ export default function IntroduzioneTestPage() {
                 </div>
 
                 <div className="space-y-2">
-                    <h3 className="text-sm font-semibold">
-                        Regole e suggerimenti
-                    </h3>
+                    <h3 className="text-sm font-semibold">Regole e suggerimenti</h3>
                     <ul className="list-disc list-inside text-sm text-[var(--muted)] space-y-1">
                         <li>
                             Una volta avviato il test, il tempo inizierà a
@@ -198,9 +202,9 @@ export default function IntroduzioneTestPage() {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                    <Link href={`/candidati/test/${idTest}/tentativo`}>
-                        <Button variant="primary">Inizia il test</Button>
-                    </Link>
+                    <Button variant="primary" onClick={handleStartTest}>
+                        Inizia il test
+                    </Button>
                 </div>
             </section>
         </div>

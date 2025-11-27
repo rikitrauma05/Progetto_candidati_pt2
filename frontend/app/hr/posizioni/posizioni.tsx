@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+
 import PageHeader from "@/components/layout/pageHeader";
 import Button from "@/components/ui/button";
 import EmptyState from "@/components/empty/EmptyState";
 import PosizioneCard from "@/components/cards/posizioneCard";
-import { getJson } from "@/services/api";
+import { getJson, deleteJson } from "@/services/api";
 
 type PosizioneListItem = {
     idPosizione: number;
@@ -21,6 +22,7 @@ export default function PosizioniHR() {
     const [posizioni, setPosizioni] = useState<PosizioneListItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<number | null>(null);
 
     useEffect(() => {
         const load = async () => {
@@ -28,25 +30,64 @@ export default function PosizioniHR() {
                 setLoading(true);
                 setErrore(null);
 
-                // Ora l'HR vede tutte le posizioni presenti nel DB
+                // L’HR vede tutte le posizioni presenti a DB
                 const data = await getJson<PosizioneListItem[]>("/posizioni");
                 setPosizioni(data ?? []);
-            } catch (e) {
+            } catch (e: any) {
                 console.error(e);
-                setErrore("Errore durante il caricamento delle posizioni.");
+                setErrore(
+                    e?.message ||
+                    "Errore durante il caricamento delle posizioni."
+                );
             } finally {
                 setLoading(false);
             }
         };
-        load();
+
+        void load();
     }, []);
+
+    async function handleDelete(idPosizione: number) {
+        if (
+            !window.confirm(
+                "Sei sicuro di voler eliminare questa posizione? L'operazione non è reversibile."
+            )
+        ) {
+            return;
+        }
+
+        try {
+            setDeletingId(idPosizione);
+            setErrore(null);
+
+            await deleteJson(`/posizioni/${idPosizione}`);
+
+            setPosizioni((prev) =>
+                prev.filter((p) => p.idPosizione !== idPosizione)
+            );
+        } catch (e: any) {
+            console.error("Errore eliminazione posizione:", e);
+            // Messaggio generico leggibile lato HR
+            setErrore(
+                e?.message ||
+                "Non è stato possibile eliminare la posizione. Verifica che non sia collegata a test o candidature."
+            );
+        } finally {
+            setDeletingId(null);
+        }
+    }
 
     return (
         <div className="space-y-6">
             <PageHeader
                 title="Posizioni aperte"
                 subtitle="Gestisci le posizioni lavorative pubblicate"
-                actions={[{ label: "Nuova posizione", href: "/hr/posizioni/nuova" }]}
+                actions={[
+                    {
+                        label: "Nuova posizione",
+                        href: "/hr/posizioni/nuova",
+                    },
+                ]}
             />
 
             {loading && (
@@ -65,10 +106,12 @@ export default function PosizioniHR() {
                 {!loading && !errore && posizioni.length === 0 && (
                     <EmptyState
                         title="Nessuna posizione trovata"
-                        subtitle="Non sono presenti posizioni attive al momento."
+                        subtitle="Non sono presenti posizioni al momento."
                         actionSlot={
                             <Button asChild>
-                                <Link href="/hr/posizioni/nuova">Crea nuova posizione</Link>
+                                <Link href="/hr/posizioni/nuova">
+                                    Crea nuova posizione
+                                </Link>
                             </Button>
                         }
                     />
@@ -84,12 +127,32 @@ export default function PosizioniHR() {
                                 sede={p.sede}
                                 contratto={p.contratto}
                                 candidature={p.candidatureRicevute}
-                                // se in futuro vuoi mostrare la RAL nella card,
-                                // potrai estendere PosizioneCard con una prop "ral"
                                 rightSlot={
-                                    <Button asChild>
-                                        <Link href={`/hr/posizioni/${p.idPosizione}`}>Dettaglio</Link>
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button asChild>
+                                            <Link
+                                                href={`/hr/posizioni/${p.idPosizione}`}
+                                            >
+                                                Dettaglio
+                                            </Link>
+                                        </Button>
+
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="border-red-500/60 text-red-600 hover:bg-red-500/10"
+                                            disabled={
+                                                deletingId === p.idPosizione
+                                            }
+                                            onClick={() =>
+                                                handleDelete(p.idPosizione)
+                                            }
+                                        >
+                                            {deletingId === p.idPosizione
+                                                ? "Eliminazione…"
+                                                : "Elimina"}
+                                        </Button>
+                                    </div>
                                 }
                             />
                         ))}
