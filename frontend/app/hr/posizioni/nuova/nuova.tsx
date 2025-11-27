@@ -8,7 +8,8 @@ import type { TestListItem } from "@/types/test";
 
 type Sede = "LODI" | "FIRENZE" | "PARMA" | "RAPALLO";
 type Contratto = "STAGE" | "PART TIME" | "CONTRATTO" | "DETERMINATO" | "INDETERMINATO";
-type Settore = "IT" | "CYBER SECURITY" | "RETI";
+//TODO: Realizzarli tramite select dal db
+type Settore = "Informatica" | "Cybersecurity" | "Sistemistica" | "Sviluppo";
 
 type PosizioneCreata = {
     idPosizione: number;
@@ -21,7 +22,7 @@ export default function NuovaPosizionePage() {
     const [titolo, setTitolo] = useState("");
     const [sede, setSede] = useState<Sede>("LODI");
     const [contratto, setContratto] = useState<Contratto>("INDETERMINATO");
-    const [settore, setSettore] = useState<Settore>("IT");
+    const [settore, setSettore] = useState<Settore>("Informatica");
     const [descrizione, setDescrizione] = useState("");
     const [ral, setRal] = useState<string>("");
 
@@ -187,9 +188,10 @@ export default function NuovaPosizionePage() {
                                 }
                                 className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
                             >
-                                <option value="IT">IT</option>
-                                <option value="CYBER SECURITY">Cyber security</option>
-                                <option value="RETI">Reti</option>
+                                <option value="Informatica">Informatica</option>ù
+                                <option value="Cybersecurity">Cybersecurity</option>ù
+                                <option value="Sistemistica">Sistemistica</option>ù
+                                <option value="Sviluppo">Sviluppo</option>ù
                             </select>
                         </div>
                     </div>
