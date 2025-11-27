@@ -16,8 +16,6 @@ type Posizione = {
     ral?: number;
 
     // campi opzionali per future evoluzioni:
-    // - test associato
-    // - stato candidatura per il candidato corrente
     testAssociato?: {
         idTest: number;
         titolo: string;
@@ -29,8 +27,16 @@ type Posizione = {
     } | null;
 };
 
+type CandidaturaMia = {
+    idCandidatura: number;
+    posizione?: {
+        idPosizione: number;
+    } | null;
+};
+
 export default function PosizioniCandidato() {
     const [posizioni, setPosizioni] = useState<Posizione[]>([]);
+    const [idPosizioniCandidate, setIdPosizioniCandidate] = useState<number[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [errore, setErrore] = useState<string | null>(null);
 
@@ -45,9 +51,21 @@ export default function PosizioniCandidato() {
                 setLoading(true);
                 setErrore(null);
 
-                // endpoint per le posizioni visibili al candidato
-                const data = await getJson<Posizione[]>("/posizioni");
-                setPosizioni(data ?? []);
+                // Carico posizioni e mie candidature insieme
+                const [posizioniApi, candidatureApi] = await Promise.all([
+                    getJson<Posizione[]>("/posizioni"),
+                    getJson<CandidaturaMia[]>("/candidature/mie"),
+                ]);
+
+                setPosizioni(posizioniApi ?? []);
+
+                // estraggo gli id delle posizioni per cui SONO già candidato
+                const ids = (candidatureApi ?? [])
+                    .map((c) => c.posizione?.idPosizione)
+                    .filter((id): id is number => typeof id === "number");
+
+                // rimuovo eventuali duplicati
+                setIdPosizioniCandidate(Array.from(new Set(ids)));
             } catch (e: any) {
                 console.error("Errore durante il caricamento delle posizioni:", e);
                 setErrore(
@@ -90,6 +108,12 @@ export default function PosizioniCandidato() {
     const posizioniFiltrate = useMemo(
         () =>
             posizioni.filter((p) => {
+                // 1) escludo subito le posizioni per cui sono già candidato
+                if (idPosizioniCandidate.includes(p.idPosizione)) {
+                    return false;
+                }
+
+                // 2) applico i filtri di ricerca
                 const matchTitolo = p.titolo
                     .toLowerCase()
                     .includes(search.toLowerCase().trim());
@@ -104,7 +128,7 @@ export default function PosizioniCandidato() {
 
                 return matchTitolo && matchSede && matchContratto;
             }),
-        [posizioni, search, filtroSede, filtroContratto],
+        [posizioni, search, filtroSede, filtroContratto, idPosizioniCandidate],
     );
 
     if (loading) {
@@ -198,7 +222,7 @@ export default function PosizioniCandidato() {
                         subtitle={
                             posizioni.length === 0
                                 ? "Quando saranno pubblicate nuove posizioni le troverai qui."
-                                : "Nessuna posizione corrisponde ai filtri impostati. Prova a modificarli."
+                                : "Nessuna posizione corrisponde ai filtri impostati o sei già candidato per tutte quelle visibili."
                         }
                     />
                 )}
@@ -215,11 +239,7 @@ export default function PosizioniCandidato() {
                                 candidature={p.candidatureRicevute}
                                 clickable
                                 href={`/candidati/posizioni/${p.idPosizione}`}
-                                rightSlot={
-                                    // Il comportamento di ApplyButton verrà gestito
-                                    // (candidabile / già candidato / ecc.)
-                                    <ApplyButton idPosizione={p.idPosizione} />
-                                }
+                                rightSlot={<ApplyButton idPosizione={p.idPosizione} />}
                             />
                         ))}
                     </div>

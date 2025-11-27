@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { getJson } from "@/services/api";
 import Button from "@/components/ui/button";
@@ -11,13 +12,16 @@ type Posizione = {
     titolo: string;
     sede?: string | null;
     contratto?: string | null;
-    settore?: string | null;
     descrizione?: string | null;
     ral?: number | null;
-    testAssociato?: {
-        idTest: number;
-        titolo: string;
+
+    // come da backend: oggetto settore + id test numerico
+    idSettore?: {
+        idSettore: number;
+        nome: string;
     } | null;
+
+    idTest?: number | null;
 };
 
 export default function DettaglioPosizionePage() {
@@ -52,13 +56,12 @@ export default function DettaglioPosizionePage() {
             }
         }
 
-        load();
+        void load();
     }, [idPosizione]);
 
     return (
         <main className="min-h-dvh bg-slate-950 text-slate-50">
             <section className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-
                 <header className="flex items-center justify-between">
                     <div>
                         <p className="text-xs uppercase text-sky-400/80 tracking-[0.2em]">
@@ -86,7 +89,6 @@ export default function DettaglioPosizionePage() {
 
                 {!loading && !errore && posizione && (
                     <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
-
                         <div>
                             <h2 className="text-lg font-semibold">{posizione.titolo}</h2>
                             {posizione.descrizione && (
@@ -97,9 +99,18 @@ export default function DettaglioPosizionePage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <p><span className="font-semibold">Sede:</span> {posizione.sede || "—"}</p>
-                            <p><span className="font-semibold">Contratto:</span> {posizione.contratto || "—"}</p>
-                            <p><span className="font-semibold">Settore:</span> {posizione.settore || "—"}</p>
+                            <p>
+                                <span className="font-semibold">Sede:</span>{" "}
+                                {posizione.sede || "—"}
+                            </p>
+                            <p>
+                                <span className="font-semibold">Contratto:</span>{" "}
+                                {posizione.contratto || "—"}
+                            </p>
+                            <p>
+                                <span className="font-semibold">Settore:</span>{" "}
+                                {posizione.idSettore?.nome || "—"}
+                            </p>
                             <p>
                                 <span className="font-semibold">RAL indicativa:</span>{" "}
                                 {posizione.ral ? `€ ${posizione.ral}` : "—"}
@@ -108,15 +119,22 @@ export default function DettaglioPosizionePage() {
 
                         <div>
                             <h3 className="text-sm font-semibold">Test associato</h3>
-                            {posizione.testAssociato ? (
-                                <p className="mt-1 text-slate-300">
-                                    {posizione.testAssociato.titolo} (ID {posizione.testAssociato.idTest})
+                            {typeof posizione.idTest === "number" ? (
+                                <p className="mt-1 text-slate-300 text-sm">
+                                    Test ID {posizione.idTest}{" "}
+                                    <Link
+                                        href={`/hr/test/${posizione.idTest}`}
+                                        className="ml-2 text-sky-400 hover:underline"
+                                    >
+                                        Vai al dettaglio →
+                                    </Link>
                                 </p>
                             ) : (
-                                <p className="mt-1 text-slate-400 text-sm">Nessun test associato</p>
+                                <p className="mt-1 text-slate-400 text-sm">
+                                    Nessun test associato
+                                </p>
                             )}
                         </div>
-
                     </div>
                 )}
             </section>
