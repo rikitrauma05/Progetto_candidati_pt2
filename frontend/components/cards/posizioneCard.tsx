@@ -13,7 +13,7 @@ export type PosizioneCardProps = {
     punteggio?: number;
 
     /**
-     * Slot per bottoni/azioni extra (es. "Candidati").
+     * Slot per bottoni/azioni extra (es. "Candidati", "Vai al test").
      */
     rightSlot?: React.ReactNode;
 
@@ -69,21 +69,22 @@ export default function PosizioneCard({
             onClick={handleActivate}
             onKeyDown={handleKeyDown}
             className="
-        group
-        rounded-2xl border border-[color-mix(in_srgb,var(--border)_70%,transparent)]
-        bg-[color-mix(in_srgb,var(--surface)_85%,transparent)]
-        px-4 py-3 md:px-5 md:py-4
-        shadow-sm
-        flex items-center justify-between gap-4
-        hover:border-[var(--accent)]
-        hover:bg-[color-mix(in_srgb,var(--surface)_95%,transparent)]
-        hover:shadow-md
-        hover:-translate-y-0.5
-        transition-all duration-200
-        outline-none
-        focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2
-        focus-visible:ring-offset-[var(--background)]
-      "
+                group
+                rounded-2xl border border-[color-mix(in_srgb,var(--border)_70%,transparent)]
+                bg-[color-mix(in_srgb,var(--surface)_85%,transparent)]
+                px-4 py-3 md:px-5 md:py-4
+                shadow-sm
+                flex flex-col gap-3
+                sm:flex-row sm:items-start sm:justify-between
+                hover:border-[var(--accent)]
+                hover:bg-[color-mix(in_srgb,var(--surface)_95%,transparent)]
+                hover:shadow-md
+                hover:-translate-y-0.5
+                transition-all duration-200
+                outline-none
+                focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2
+                focus-visible:ring-offset-[var(--background)]
+            "
             style={canNavigate ? { cursor: "pointer" } : undefined}
         >
             {/* LEFT: info posizione */}
@@ -96,57 +97,61 @@ export default function PosizioneCard({
                     {sede && (
                         <span
                             className="
-                inline-flex items-center gap-1 rounded-full
-                bg-white/5 px-2.5 py-1
-                text-[var(--muted)]
-                border border-white/5
-              "
+                                inline-flex items-center gap-1 rounded-full
+                                bg-white/5 px-2.5 py-1
+                                text-[var(--muted)]
+                                border border-white/5
+                            "
                         >
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-              <span className="truncate">{sede}</span>
-            </span>
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+                            <span className="truncate">{sede}</span>
+                        </span>
                     )}
 
                     {contratto && (
                         <span
                             className="
-                inline-flex items-center gap-1 rounded-full
-                bg-white/5 px-2.5 py-1
-                text-[var(--muted)]
-                border border-white/5
-              "
+                                inline-flex items-center gap-1 rounded-full
+                                bg-white/5 px-2.5 py-1
+                                text-[var(--muted)]
+                                border border-white/5
+                            "
                         >
-              <span className="h-1.5 w-1.5 rounded-full bg-white/40" />
-              <span className="truncate">{contratto}</span>
-            </span>
+                            <span className="h-1.5 w-1.5 rounded-full bg-white/40" />
+                            <span className="truncate">{contratto}</span>
+                        </span>
                     )}
 
                     {typeof candidature === "number" && (
                         <span className="inline-flex items-center gap-1 text-[var(--muted)]">
-              <span className="h-1 w-1 rounded-full bg-[var(--muted)]" />
+                            <span className="h-1 w-1 rounded-full bg-[var(--muted)]" />
                             {candidature} candidature
-            </span>
+                        </span>
                     )}
 
                     {typeof punteggio === "number" && (
                         <span className="inline-flex items-center gap-1 text-[var(--muted)]">
-              <span className="h-1 w-1 rounded-full bg-[var(--muted)]" />
-              Punteggio: <span className="font-medium">{punteggio}</span>
-            </span>
+                            <span className="h-1 w-1 rounded-full bg-[var(--muted)]" />
+                            Punteggio: <span className="font-medium">{punteggio}</span>
+                        </span>
                     )}
                 </div>
             </div>
 
             {/* RIGHT: preferiti + azioni extra */}
             {(togglePreferitaAction || rightSlot) && (
-                <div className="shrink-0 flex items-center gap-2">
+                <div
+                    className="
+                        shrink-0
+                        flex flex-col items-end gap-2
+                        sm:items-end
+                    "
+                    onClick={(e) => e.stopPropagation()}
+                >
                     {togglePreferitaAction && (
                         <button
                             type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                togglePreferitaAction();
-                            }}
+                            onClick={() => togglePreferitaAction()}
                             aria-pressed={isPreferita}
                             aria-label={
                                 isPreferita
@@ -154,15 +159,15 @@ export default function PosizioneCard({
                                     : "Aggiungi ai preferiti"
                             }
                             className={`
-                inline-flex h-9 w-9 items-center justify-center
-                rounded-full border transition-all duration-150
-                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]
-                ${
+                                inline-flex h-9 w-9 items-center justify-center
+                                rounded-full border transition-all duration-150
+                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]
+                                ${
                                 isPreferita
                                     ? "bg-[var(--accent)]/15 border-[var(--accent)] text-[var(--accent)]"
                                     : "bg-transparent border-[color-mix(in_srgb,var(--border)_70%,transparent)] text-[var(--muted)] hover:bg-white/5"
                             }
-              `}
+                            `}
                         >
                             <Star
                                 size={20}
@@ -173,10 +178,7 @@ export default function PosizioneCard({
                     )}
 
                     {rightSlot && (
-                        <div
-                            className="inline-flex items-center gap-1"
-                            onClick={(e) => e.stopPropagation()}
-                        >
+                        <div className="flex flex-wrap justify-end gap-1 w-full">
                             {rightSlot}
                         </div>
                     )}

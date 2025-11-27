@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/button";
-import { getJson, postJson, deleteJson } from "@/services/api";
+import { getJson, postJson } from "@/services/api";
 
 type Candidatura = {
     idCandidatura: number;
@@ -27,7 +27,6 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
 
     const [loading, setLoading] = useState(false);
     const [alreadyApplied, setAlreadyApplied] = useState(false);
-    const [candidaturaId, setCandidaturaId] = useState<number | null>(null);
     const [idTest, setIdTest] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -46,13 +45,7 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
                     (c) => c.posizione?.idPosizione === idPosizione,
                 );
 
-                if (found) {
-                    setAlreadyApplied(true);
-                    setCandidaturaId(found.idCandidatura);
-                } else {
-                    setAlreadyApplied(false);
-                    setCandidaturaId(null);
-                }
+                setAlreadyApplied(!!found);
 
                 // 2) Dettaglio posizione → idTest
                 const pos = await getJson<PosizioneApi>(`/posizioni/${idPosizione}`);
@@ -80,15 +73,12 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
             setLoading(true);
             setError(null);
 
-            const nuova = await postJson<Candidatura, { idPosizione: number }>(
+            await postJson<Candidatura, { idPosizione: number }>(
                 "/candidature",
                 { idPosizione },
             );
 
-            if (nuova) {
-                setAlreadyApplied(true);
-                setCandidaturaId(nuova.idCandidatura);
-            }
+            setAlreadyApplied(true);
 
             // Se esiste un test associato, dopo esserti candidato puoi andare al test
             if (idTest) {
@@ -99,28 +89,6 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
             setError(
                 e?.message ??
                 "Si è verificato un errore durante l'invio della candidatura.",
-            );
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function handleWithdraw() {
-        if (!candidaturaId || loading) return;
-
-        try {
-            setLoading(true);
-            setError(null);
-
-            await deleteJson(`/candidature/${candidaturaId}`);
-
-            setAlreadyApplied(false);
-            setCandidaturaId(null);
-        } catch (e: any) {
-            console.error("Errore ritiro candidatura:", e);
-            setError(
-                e?.message ??
-                "Si è verificato un errore durante il ritiro della candidatura.",
             );
         } finally {
             setLoading(false);
@@ -138,12 +106,12 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
                 fullWidth ? "w-full" : ""
             }`}
         >
-            {/* Bottone principale: Candidati / Candidato */}
+            {/* Bottone principale: Candidati / Candidato (non più cliccabile) */}
             <Button
                 type="button"
                 className={fullWidth ? "flex-1" : ""}
                 variant={alreadyApplied ? "outline" : "primary"}
-                disabled={loading}
+                disabled={loading || alreadyApplied}
                 onClick={alreadyApplied ? undefined : handleApply}
             >
                 {alreadyApplied
@@ -152,19 +120,6 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
                         ? "Invio in corso…"
                         : "Candidati"}
             </Button>
-
-            {/* Se sei già candidato → puoi ritirare la candidatura */}
-            {alreadyApplied && (
-                <Button
-                    type="button"
-                    variant="ghost"
-                    disabled={loading}
-                    onClick={handleWithdraw}
-                    className="text-xs md:text-sm"
-                >
-                    Ritira candidatura
-                </Button>
-            )}
 
             {/* Se sei candidato e la posizione ha un test → mostra "Vai al test" */}
             {alreadyApplied && idTest && (
