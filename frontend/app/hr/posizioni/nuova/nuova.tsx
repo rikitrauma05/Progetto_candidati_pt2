@@ -1,272 +1,291 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-import { getJson, postJson } from "@/services/api";
-
-import Button from "@/components/ui/button";
-import Input from "@/components/ui/input";
-import Select from "@/components/ui/select";
-import Textarea from "@/components/ui/textarea";
+import { postJson } from "@/services/api";
+import { getTestDisponibili } from "@/services/test.service";
+import type { TestListItem } from "@/types/test";
 
 type Sede = "LODI" | "FIRENZE" | "PARMA" | "RAPALLO";
-type Contratto = "STAGE" | "PART TIME" | "CONTRATTO" | "DETERMINATO" | "INDETERMINATO"
-type Settore = "IT" | "CYBER SECURITY" | "RETI"
-
+type Contratto = "STAGE" | "PART TIME" | "CONTRATTO" | "DETERMINATO" | "INDETERMINATO";
+type Settore = "IT" | "CYBER SECURITY" | "RETI";
 
 type PosizioneCreata = {
     idPosizione: number;
-    titolo: string;
-};
-
-type TestItem = {
-    idTest: number;
-    titolo: string;
-    descrizione?: string | null;
-    durataMinuti?: number | null;
-    punteggioMax?: number | null;
 };
 
 export default function NuovaPosizionePage() {
     const router = useRouter();
 
-    const [loading, setLoading] = useState(false);
-    const [errore, setErrore] = useState<string | null>(null);
-
+    // campi posizione
     const [titolo, setTitolo] = useState("");
     const [sede, setSede] = useState<Sede>("LODI");
     const [contratto, setContratto] = useState<Contratto>("INDETERMINATO");
     const [settore, setSettore] = useState<Settore>("IT");
     const [descrizione, setDescrizione] = useState("");
-    const [ral, setRal] = useState<number | "" | null>("");
+    const [ral, setRal] = useState<string>("");
 
-
-    // TEST DISPONIBILI
-    const [tests, setTests] = useState<TestItem[]>([]);
+    // test
+    const [tests, setTests] = useState<TestListItem[]>([]);
+    const [selectedTestId, setSelectedTestId] = useState<string>("");
     const [testsLoading, setTestsLoading] = useState(false);
-    const [testsErrore, setTestsErrore] = useState<string | null>(null);
-    const [selectedTestId, setSelectedTestId] = useState<number | null>(null);
+    const [testsError, setTestsError] = useState<string | null>(null);
+
+    // stato form
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const loadTests = async () => {
             try {
                 setTestsLoading(true);
-                setTestsErrore(null);
-                const data = await getJson<TestItem[]>("/test/disponibili");
-                setTests(data);
-            } catch (err) {
-                console.error("Errore caricamento test:", err);
-                setTestsErrore("Impossibile caricare la lista dei test.");
+                setTestsError(null);
+                const data = await getTestDisponibili();
+                setTests(data ?? []);
+            } catch (e: any) {
+                console.error("Errore caricamento test:", e);
+                setTestsError(
+                    e?.message || "Impossibile caricare la lista dei test disponibili."
+                );
             } finally {
                 setTestsLoading(false);
             }
         };
 
-        loadTests();
+        void loadTests();
     }, []);
 
-    async function handleSubmit(e: FormEvent) {
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
 
         if (!titolo.trim()) {
-            setErrore("Il titolo della posizione è obbligatorio.");
+            setError("Il titolo della posizione è obbligatorio.");
             return;
         }
 
         try {
             setLoading(true);
-            setErrore(null);
+            setError(null);
 
             const payload: any = {
                 titolo: titolo.trim(),
-                sede: sede,
-                contratto: contratto,
-                settore: settore,
+                sede,
+                contratto,
+                settore,
                 descrizione: descrizione.trim() || null,
-                //stato: stato,
-                ral: ral === "" ? null : ral, // <<< QUI INVIO LA RAL
+                ral: ral === "" ? null : Number(ral),
             };
 
-            if (selectedTestId != null) {
-                payload.idTest = selectedTestId;
+            // se è stato scelto un test lo aggiungo al payload
+            if (selectedTestId !== "") {
+                payload.idTest = Number(selectedTestId);
             }
 
-            const creata = await postJson<PosizioneCreata>("/posizioni", payload);
+            const risposta = await postJson<PosizioneCreata>("/posizioni", payload);
 
-            console.log("Posizione creata:", creata);
-            router.push("/hr/posizioni");
-        } catch (err) {
-            console.error("Errore creazione posizione:", err);
-            setErrore("Errore durante la creazione della posizione.");
+            if (risposta?.idPosizione) {
+                router.push(`/hr/posizioni/${risposta.idPosizione}`);
+            } else {
+                router.push("/hr/posizioni");
+            }
+        } catch (e: any) {
+            console.error("Errore creazione posizione:", e);
+            setError(
+                e?.message || "Si è verificato un errore durante la creazione della posizione."
+            );
         } finally {
             setLoading(false);
         }
     }
 
     return (
-        <main className="min-h-dvh bg-slate-950 text-slate-50">
-            <section className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-                {/* HEADER */}
-                <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <p className="text-xs font-semibold tracking-[0.2em] text-sky-400/80 uppercase">
-                            area hr
-                        </p>
-                        <h1 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">
-                            Nuova posizione
-                        </h1>
-                        <p className="mt-1 text-sm text-slate-400 max-w-xl">
-                            Crea una nuova posizione e, se vuoi, associa direttamente un test
-                            di valutazione ai candidati.
-                        </p>
-                    </div>
+        <section className="max-w-4xl mx-auto space-y-6">
+            {/* HEADER */}
+            <header className="flex items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-semibold">Nuova posizione</h1>
+                    <p className="text-sm text-[var(--muted)]">
+                        Crea una nuova posizione e, se vuoi, associa un test di valutazione.
+                    </p>
+                </div>
 
-                    <Button variant="outline" onClick={() => router.push("/hr/posizioni")}>
-                        ← Torna alle posizioni
-                    </Button>
-                </header>
-
-                {/* FORM CREAZIONE */}
-                <form
-                    onSubmit={handleSubmit}
-                    className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 space-y-5 shadow-card"
+                <button
+                    type="button"
+                    onClick={() => router.push("/hr/posizioni")}
+                    className="px-4 py-2 rounded-lg border border-[var(--border)] font-medium hover:bg-[var(--accent)]/10"
                 >
-                    {errore && (
-                        <div className="rounded-lg border border-red-500/70 bg-red-950/40 px-3 py-2 text-sm text-red-100">
-                            {errore}
-                        </div>
-                    )}
+                    Torna alle posizioni
+                </button>
+            </header>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input
-                            label="Titolo posizione"
+            {/* FORM */}
+            <form
+                onSubmit={handleSubmit}
+                className="space-y-6 p-6 border rounded-xl bg-[var(--card)]"
+            >
+                {error && (
+                    <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                        {error}
+                    </div>
+                )}
+
+                {/* dati base */}
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-sm font-medium">Titolo</label>
+                        <input
                             value={titolo}
                             onChange={(e) => setTitolo(e.target.value)}
+                            className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                            placeholder="Es. Junior Developer"
                             required
                         />
-                        <Select
-                            label="Sede"
-                            value={sede}
-                            onChangeAction={(val: string) => setSede(val as Sede)}
-                            options={[
-                                { value: "Lodi", label: "LODI" },
-                                { value: "Firenze", label: "FIRENZE" },
-                                { value: "Parma", label: "PARMA" },
-                                { value: "Rapallo", label: "RAPALLO" },
-                            ]}
-                            required
-                        />
-                        <Select
-                            label="Contratto"
-                            value={contratto}
-                            onChangeAction={(val: string) => setContratto(val as Contratto)}
-                            options={[
-                                { value: "Stage", label: "Stage" },
-                                { value: "Part Time", label: "Part Time" },
-                                { value: "Contratto", label: "Contratto" },
-                                { value: "Determinato", label: "Determinato" },
-                                { value: "Indeterminato", label: "Indeterminato" },
-                            ]}
-                            required
-                        />
-                        <Select
-                            label="Settore"
-                            value={settore}
-                            onChangeAction={(val: string) => setSettore(val as Settore)}
-                            options={[
-                                { value: "Lodi", label: "IT" },
-                                { value: "Cyber", label: "CYBER SECURITY" },
-                                { value: "Reti", label: "RETI" },
-                            ]}
-                            required
+                    </div>
 
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label className="text-sm font-medium">Sede</label>
+                            <select
+                                value={sede}
+                                onChange={(e) => setSede(e.target.value as Sede)}
+                                className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                            >
+                                <option value="LODI">Lodi</option>
+                                <option value="FIRENZE">Firenze</option>
+                                <option value="PARMA">Parma</option>
+                                <option value="RAPALLO">Rapallo</option>
+                            </select>
+                        </div>
 
-                        {/* RAL indicativa */}
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-medium text-slate-300">
-                                RAL indicativa
-                            </label>
+                        <div>
+                            <label className="text-sm font-medium">Contratto</label>
+                            <select
+                                value={contratto}
+                                onChange={(e) =>
+                                    setContratto(e.target.value as Contratto)
+                                }
+                                className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                            >
+                                <option value="STAGE">Stage</option>
+                                <option value="PART TIME">Part time</option>
+                                <option value="CONTRATTO">Contratto</option>
+                                <option value="DETERMINATO">
+                                    Tempo determinato
+                                </option>
+                                <option value="INDETERMINATO">
+                                    Tempo indeterminato
+                                </option>
+                            </select>
+                        </div>
 
-                            <div className="relative">
-                            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-semibold">
-                              €
-                            </span>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    placeholder="0"
-                                    className="w-full rounded-md bg-slate-900 border border-slate-700 px-3 py-2 pl-7 text-slate-50 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
-                                    value={ral === "" || ral == null ? "" : ral}
-                                    onChange={(e) => {
-                                        const val = e.target.value.replace(/\D/g, ""); // accetta solo numeri
-                                        setRal(val === "" ? "" : Number(val));
-                                    }}
-                                />
-                            </div>
+                        <div>
+                            <label className="text-sm font-medium">Settore</label>
+                            <select
+                                value={settore}
+                                onChange={(e) =>
+                                    setSettore(e.target.value as Settore)
+                                }
+                                className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                            >
+                                <option value="IT">IT</option>
+                                <option value="CYBER SECURITY">Cyber security</option>
+                                <option value="RETI">Reti</option>
+                            </select>
                         </div>
                     </div>
 
-                    {/* SEZIONE TEST ASSOCIATO */}
-                    <div className="space-y-2">
-                        <Select
-                            label="Test associato alla posizione"
-                            value={selectedTestId ? String(selectedTestId) : ""}
-                            onChangeAction={(val: string) => {
-                                if (!val) {
-                                    setSelectedTestId(null);
-                                } else {
-                                    setSelectedTestId(Number(val));
-                                }
-                            }}
-                            options={[
-                                { value: "", label: "Nessun test associato" },
-                                ...tests.map((t) => ({
-                                    value: String(t.idTest),
-                                    label: t.titolo,
-                                })),
-                            ]}
-                            required
+                    <div>
+                        <label className="text-sm font-medium">Descrizione</label>
+                        <textarea
+                            value={descrizione}
+                            onChange={(e) => setDescrizione(e.target.value)}
+                            className="w-full px-3 py-2 rounded-md border bg-[var(--input)] h-24"
+                            placeholder="Descrivi le attività e i requisiti della posizione…"
                         />
-                        {testsLoading && (
-                            <p className="text-[11px] text-slate-400">
-                                Caricamento elenco test…
-                            </p>
-                        )}
-                        {testsErrore && (
-                            <p className="text-[11px] text-red-300">{testsErrore}</p>
-                        )}
-                        {!testsLoading && !testsErrore && tests.length === 0 && (
-                            <p className="text-[11px] text-slate-400">
-                                Non è presente ancora nessun test configurato. Puoi crearne uno
-                                dalla sezione Test HR.
-                            </p>
-                        )}
                     </div>
 
-                    <Textarea
-                        label="Descrizione"
-                        value={descrizione}
-                        onChangeAction={(val: string) => setDescrizione(val)}
-                        minRows={10}
-                        required
-                    />
-
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => router.push("/hr/posizioni")}
-                        >
-                            Annulla
-                        </Button>
-                        <Button type="submit" disabled={loading}>
-                            {loading ? "Salvataggio…" : "Crea posizione"}
-                        </Button>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label className="text-sm font-medium">RAL (opzionale)</label>
+                            <input
+                                type="number"
+                                value={ral}
+                                onChange={(e) => setRal(e.target.value)}
+                                className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                                placeholder="Es. 28000"
+                            />
+                        </div>
                     </div>
-                </form>
-            </section>
-        </main>
+                </div>
+
+                {/* test associato */}
+                <div className="border-t border-[var(--border)] pt-4 space-y-3">
+                    <h2 className="text-sm font-semibold">
+                        Test di valutazione (opzionale)
+                    </h2>
+                    <p className="text-xs text-[var(--muted)]">
+                        Seleziona un test da associare alla posizione. I candidati dovranno
+                        svolgerlo durante il processo di selezione.
+                    </p>
+
+                    {testsLoading && (
+                        <p className="text-xs text-[var(--muted)]">
+                            Caricamento test disponibili…
+                        </p>
+                    )}
+
+                    {testsError && (
+                        <p className="text-xs text-destructive">
+                            {testsError}
+                        </p>
+                    )}
+
+                    {!testsLoading && !testsError && tests.length === 0 && (
+                        <p className="text-xs text-[var(--muted)]">
+                            Non ci sono test disponibili. Puoi crearne uno dalla sezione
+                            &quot;Test&quot;.
+                        </p>
+                    )}
+
+                    {!testsLoading && !testsError && tests.length > 0 && (
+                        <div>
+                            <label className="text-sm font-medium">Test associato</label>
+                            <select
+                                value={selectedTestId}
+                                onChange={(e) => setSelectedTestId(e.target.value)}
+                                className="mt-1 w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                            >
+                                <option value="">Nessun test (lascia vuoto)</option>
+                                {tests.map((t) => (
+                                    <option key={t.idTest} value={t.idTest}>
+                                        {t.titolo}
+                                        {t.durataMinuti
+                                            ? ` – ${t.durataMinuti} min`
+                                            : ""}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex justify-end gap-3">
+                    <button
+                        type="button"
+                        onClick={() => router.push("/hr/posizioni")}
+                        className="px-4 py-2 rounded-lg border border-[var(--border)] font-medium hover:bg-[var(--accent)]/10"
+                    >
+                        Annulla
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white font-medium hover:opacity-90 disabled:opacity-60"
+                    >
+                        {loading ? "Salvataggio in corso…" : "Crea posizione"}
+                    </button>
+                </div>
+            </form>
+        </section>
     );
 }
