@@ -11,7 +11,7 @@ import { useAuthStore } from "@/store/authStore";
  * - login
  * - registrazione
  */
-const PUBLIC_ROUTES = ["/", "/auth/login", "/auth/register"];
+const PUBLIC_ROUTES = ["/", "/auth/login", "/auth/register", "/privacy"];
 
 export function useAuth() {
     return useAuthStore();

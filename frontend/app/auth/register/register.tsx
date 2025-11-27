@@ -269,7 +269,6 @@ export default function Register() {
                             Accetto l'
                             <Link
                                 href="/privacy"
-                                target="_blank"
                                 className="underline font-medium hover:text-[var(--accent)]"
                             >
                                 informativa sulla privacy
