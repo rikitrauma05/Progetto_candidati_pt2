@@ -28,6 +28,7 @@ export default function NuovaTest() {
     const [descrizione, setDescrizione] = useState("");
     const [durataMinuti, setDurataMinuti] = useState<number>(20);
     const [punteggioMax, setPunteggioMax] = useState<number>(100);
+    const [punteggioMin, setPunteggioMin] = useState<number>(60); // nuovo campo
     const [tipoTest, setTipoTest] = useState<TestType>("SOFT_SKILLS");
 
     const [domande, setDomande] = useState<DomandaForm[]>([
@@ -40,6 +41,9 @@ export default function NuovaTest() {
             ],
         },
     ]);
+
+    const [error, setError] = useState<string | null>(null);
+    const [saving, setSaving] = useState(false);
 
     const aggiungiDomanda = () => {
         setDomande((prev) => [
@@ -98,7 +102,10 @@ export default function NuovaTest() {
         );
     };
 
-    const setOpzioneCorretta = (indexDomanda: number, indexOpzione: number) => {
+    const setOpzioneCorretta = (
+        indexDomanda: number,
+        indexOpzione: number
+    ) => {
         setDomande((prev) =>
             prev.map((d, i) =>
                 i === indexDomanda
@@ -136,7 +143,9 @@ export default function NuovaTest() {
                 i === indexDomanda
                     ? {
                         ...d,
-                        opzioni: d.opzioni.filter((_, j) => j !== indexOpzione),
+                        opzioni: d.opzioni.filter(
+                            (_, j) => j !== indexOpzione
+                        ),
                     }
                     : d
             )
@@ -146,13 +155,22 @@ export default function NuovaTest() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (punteggioMin > punteggioMax) {
+            setError(
+                "Il punteggio minimo non può essere maggiore del punteggio massimo."
+            );
+            return;
+        }
+
+        setError(null);
+
         const payload: TestCreateRequest = {
             titolo,
             descrizione,
             durataMinuti,
             numeroDomande: domande.length,
             punteggioMax,
-            punteggioMin: 0,
+            punteggioMin, // ora usiamo il valore inserito
             codiceTipoTest: tipoTest,
             domande: domande.map((d) => ({
                 testo: d.testo,
@@ -165,10 +183,18 @@ export default function NuovaTest() {
         };
 
         try {
+            setSaving(true);
             await creaTest(payload);
             router.push("/hr/test");
-        } catch (error) {
-            console.error("Errore creazione test:", error);
+        } catch (err) {
+            console.error("Errore creazione test:", err);
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Si è verificato un errore durante il salvataggio del test."
+            );
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -189,6 +215,12 @@ export default function NuovaTest() {
                 onSubmit={handleSubmit}
                 className="space-y-6 p-6 border rounded-xl bg-[var(--card)]"
             >
+                {error && (
+                    <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                        {error}
+                    </div>
+                )}
+
                 {/* Meta test */}
                 <div className="space-y-4">
                     <div>
@@ -213,7 +245,7 @@ export default function NuovaTest() {
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <div>
                             <label className="text-sm font-medium">
                                 Durata (minuti)
@@ -238,6 +270,21 @@ export default function NuovaTest() {
                                 value={punteggioMax}
                                 onChange={(e) =>
                                     setPunteggioMax(Number(e.target.value))
+                                }
+                                className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium">
+                                Punteggio minimo
+                            </label>
+                            <input
+                                type="number"
+                                value={punteggioMin}
+                                onChange={(e) =>
+                                    setPunteggioMin(Number(e.target.value))
                                 }
                                 className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
                                 required
@@ -310,12 +357,13 @@ export default function NuovaTest() {
                                                     onClick={() =>
                                                         rimuoviDomanda(idx)
                                                     }
-                                                    className="text-xs text-red-500 hover:underline"
+                                                    className="text-xs text-destructive hover:underline"
                                                 >
                                                     Rimuovi domanda
                                                 </button>
                                             )}
                                         </div>
+
                                         <textarea
                                             value={domanda.testo}
                                             onChange={(e) =>
@@ -325,7 +373,7 @@ export default function NuovaTest() {
                                                     e.target.value
                                                 )
                                             }
-                                            className="w-full px-3 py-2 rounded-md border bg-[var(--input)] h-20"
+                                            className="w-full px-3 py-2 rounded-md border bg-[var(--input)] text-sm"
                                             placeholder="Testo della domanda"
                                             required
                                         />
@@ -345,7 +393,7 @@ export default function NuovaTest() {
                                                     e.target.value
                                                 )
                                             }
-                                            className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                                            className="mt-1 w-full px-2 py-1.5 rounded-md border bg-[var(--input)] text-sm"
                                             required
                                         />
                                     </div>
@@ -353,68 +401,73 @@ export default function NuovaTest() {
 
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium">
+                                        <span className="text-xs font-medium">
                                             Opzioni di risposta
                                         </span>
                                         <button
                                             type="button"
-                                            onClick={() =>
-                                                aggiungiOpzione(idx)
-                                            }
-                                            className="text-xs font-medium hover:underline"
+                                            onClick={() => aggiungiOpzione(idx)}
+                                            className="text-xs text-[var(--accent)] hover:underline"
                                         >
                                             + Aggiungi opzione
                                         </button>
                                     </div>
 
                                     <div className="space-y-2">
-                                        {domanda.opzioni.map((opzione, j) => (
-                                            <div
-                                                key={j}
-                                                className="flex items-center gap-2"
-                                            >
-                                                <input
-                                                    type="radio"
-                                                    name={`corretta-${idx}`}
-                                                    checked={opzione.corretta}
-                                                    onChange={() =>
-                                                        setOpzioneCorretta(
-                                                            idx,
-                                                            j
-                                                        )
-                                                    }
-                                                />
-                                                <input
-                                                    value={opzione.testoOpzione}
-                                                    onChange={(e) =>
-                                                        handleOpzioneChange(
-                                                            idx,
-                                                            j,
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    className="flex-1 px-3 py-2 rounded-md border bg-[var(--input)]"
-                                                    placeholder={`Opzione ${
-                                                        j + 1
-                                                    }`}
-                                                    required
-                                                />
-                                                {domanda.opzioni.length > 2 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            rimuoviOpzione(
+                                        {domanda.opzioni.map(
+                                            (opzione, idxOpzione) => (
+                                                <div
+                                                    key={idxOpzione}
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name={`domanda-${idx}`}
+                                                        checked={
+                                                            opzione.corretta
+                                                        }
+                                                        onChange={() =>
+                                                            setOpzioneCorretta(
                                                                 idx,
-                                                                j
+                                                                idxOpzione
                                                             )
                                                         }
-                                                        className="text-xs text-red-500 hover:underline"
-                                                    >
-                                                        Rimuovi
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
+                                                    />
+                                                    <input
+                                                        value={
+                                                            opzione.testoOpzione
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleOpzioneChange(
+                                                                idx,
+                                                                idxOpzione,
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        className="flex-1 px-3 py-1.5 rounded-md border bg-[var(--input)] text-sm"
+                                                        placeholder={`Opzione ${
+                                                            idxOpzione + 1
+                                                        }`}
+                                                        required
+                                                    />
+                                                    {domanda.opzioni.length >
+                                                        2 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    rimuoviOpzione(
+                                                                        idx,
+                                                                        idxOpzione
+                                                                    )
+                                                                }
+                                                                className="text-xs text-destructive hover:underline"
+                                                            >
+                                                                Rimuovi
+                                                            </button>
+                                                        )}
+                                                </div>
+                                            )
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -427,14 +480,16 @@ export default function NuovaTest() {
                         type="button"
                         onClick={() => router.push("/hr/test")}
                         className="px-4 py-2 rounded-lg border border-[var(--border)] font-medium hover:bg-[var(--accent)]/10"
+                        disabled={saving}
                     >
                         Annulla
                     </button>
                     <button
                         type="submit"
-                        className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white font-medium hover:opacity-90"
+                        className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white font-medium hover:opacity-90 disabled:opacity-60"
+                        disabled={saving}
                     >
-                        Salva test
+                        {saving ? "Salvataggio…" : "Salva test"}
                     </button>
                 </div>
             </form>
