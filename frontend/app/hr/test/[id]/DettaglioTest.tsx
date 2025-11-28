@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getStrutturaTest } from "@/services/test.service";
-import type { StrutturaTestDto } from "@/types/test";
+import type { StrutturaTestDto } from "@/types/test/test";
 
 type DettaglioTestProps = {
     idTest: number;

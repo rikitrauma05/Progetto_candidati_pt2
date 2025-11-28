@@ -3,17 +3,21 @@
 import { getJson, postJson } from "./api";
 
 import type {
-    TestListItem,
     TentativoListItem,
     AvviaTestRequest,
     AvviaTestResponse,
     GetDomandeResponse,
     InviaRisposteRequest,
     InviaRisposteResponse,
-    StrutturaTestDto,
     RisultatoTentativoDettaglio,
+} from "@/types/test/tentativo-test";
+
+
+import type {
+    TestListItem,
+    StrutturaTestDto,
     TestCreateRequest,
-} from "@/types/test";
+} from "@/types/test/test"
 
 /* ============================================================
  *  LISTE TEST

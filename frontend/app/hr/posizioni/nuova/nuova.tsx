@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { postJson } from "@/services/api";
 import { getTestDisponibili } from "@/services/test.service";
-import type { TestListItem } from "@/types/test";
+import type { TestListItem } from "@/types/test/test";
 
 type Sede = "LODI" | "FIRENZE" | "PARMA" | "RAPALLO";
 type Contratto =
@@ -21,9 +21,9 @@ type PosizioneCreata = {
 // ATTENZIONE: questi ID devono corrispondere a quelli della tabella SETTORE nel DB
 const SETTORI = [
     { id: 1, label: "Informatica" },
-    { id: 6, label: "Cybersecurity" },
-    { id: 7, label: "Sistemistica" },
-    { id: 8, label: "Sviluppo" },
+    { id: 2, label: "Cybersecurity" },
+    { id: 3, label: "Sistemistica" },
+    { id: 4, label: "Sviluppo" },
 ];
 
 export default function NuovaPosizionePage() {

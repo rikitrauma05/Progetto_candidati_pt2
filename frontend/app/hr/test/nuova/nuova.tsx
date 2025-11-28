@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { creaTest } from "@/services/test.service";
-import type { TestCreateRequest, TestType } from "@/types/test";
+import type { TestCreateRequest, TestType } from "@/types/test/test";
 
 type OpzioneForm = {
     testoOpzione: string;
@@ -354,10 +354,8 @@ export default function NuovaTest() {
                                             {domande.length > 1 && (
                                                 <button
                                                     type="button"
-                                                    onClick={() =>
-                                                        rimuoviDomanda(idx)
-                                                    }
-                                                    className="text-xs text-destructive hover:underline"
+                                                    onClick={() => rimuoviDomanda(idx)}
+                                                    className="text-xs text-red-600 hover:underline hover:text-red-700"
                                                 >
                                                     Rimuovi domanda
                                                 </button>

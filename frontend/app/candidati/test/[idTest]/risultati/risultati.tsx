@@ -6,7 +6,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import PageHeader from "@/components/layout/pageHeader";
 import Button from "@/components/ui/button";
 import { getRisultatoTentativo } from "@/services/test.service";
-import type { RisultatoTentativoDettaglio } from "@/types/test";
+import type { RisultatoTentativoDettaglio } from "@/types/test/tentativo-test";
 
 function esitoLabel(esito: string) {
     switch (esito) {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getTestDisponibili } from "@/services/test.service";
-import type { TestListItem } from "@/types/test";
+import type { TestListItem } from "@/types/test/test";
 
 export default function TestPage() {
     const [tests, setTests] = useState<TestListItem[]>([]);

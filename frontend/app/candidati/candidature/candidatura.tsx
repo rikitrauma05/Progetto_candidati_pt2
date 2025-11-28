@@ -134,9 +134,7 @@ export default function CandidatureCandidato() {
                             </th>
                             <th className="px-4 py-3">Punteggio test</th>
                             <th className="px-4 py-3">Stato candidatura</th>
-                            <th className="px-4 py-3 text-right">
-                                Azioni
-                            </th>
+                            <th className="px-4 py-3 text-right">Azioni</th>
                         </tr>
                         </thead>
                         <tbody>

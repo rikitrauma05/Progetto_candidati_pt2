@@ -14,9 +14,13 @@ import {
 
 import type {
     DomandaTest,
-    GetDomandeResponse,
+} from "@/types/test/test";
+
+import type {
+
     RispostaDTO,
-} from "@/types/test";
+    GetDomandeResponse,
+} from "@/types/test/tentativo-test";
 
 type StatoCaricamento = "CREAZIONE_TENTATIVO" | "CARICAMENTO_DOMANDE" | "PRONTO";
 type RisposteUtente = Record<number, number | null>; // idDomanda -> idOpzione
