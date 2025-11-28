@@ -166,10 +166,6 @@ export default function IdPosizionePage() {
                                     {(posizione as any).idStatoPosizione?.descrizione ||
                                         "Attiva"}
                                 </li>
-                                <li>
-                                    <strong>Candidature ricevute:</strong>{" "}
-                                    {posizione.candidatureRicevute ?? 0}
-                                </li>
                             </ul>
                         </section>
                     </div>
