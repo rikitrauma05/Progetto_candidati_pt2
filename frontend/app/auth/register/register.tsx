@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { register as registerApi } from "@/services/auth.service";
 import type { RuoloCodice } from "@/types/auth";
@@ -8,33 +8,26 @@ import PageHeader from "@/components/layout/pageHeader";
 import Input from "@/components/ui/input";
 import Button from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
+import { useRegisterStore } from "@/store/registerFormStore";
 import Link from "next/link";
 
 export default function Register() {
     const router = useRouter();
     const login = useAuthStore((s) => s.login);
 
-    const [form, setForm] = useState({
-        nome: "",
-        cognome: "",
-        email: "",
-        password: "",
-        conferma: "",
-        dataNascita: "",
-        telefono: "",
-        citta: "",
-    });
+    const {
+        form,
+        setFormField,
+        cvFile,
+        setCvFile,
+        consensoPrivacy,
+        setConsensoPrivacy,
+        reset
+    } = useRegisterStore();
 
-    const [cvFile, setCvFile] = useState<File | null>(null);
-    const [consensoPrivacy, setConsensoPrivacy] = useState(false);
-    const [cvError, setCvError] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
-    const [busy, setBusy] = useState(false);
-
-
-    function onChange<K extends keyof typeof form>(key: K, val: string) {
-        setForm((f) => ({ ...f, [key]: val }));
-    }
+    const [cvError, setCvError] = React.useState<string | null>(null);
+    const [error, setError] = React.useState<string | null>(null);
+    const [busy, setBusy] = React.useState(false);
 
     function onCvChange(e: React.ChangeEvent<HTMLInputElement>) {
         setCvError(null);
@@ -70,7 +63,7 @@ export default function Register() {
             return;
         }
 
-        if(!cvFile){
+        if (!cvFile) {
             setError("Devi caricare il cv");
             return;
         }
@@ -102,9 +95,10 @@ export default function Register() {
                 citta: form.citta || null,
             };
 
-            const resp = await registerApi(payload,cvFile);
+            const resp = await registerApi(payload, cvFile);
 
             login(resp.user);
+            reset(); // pulisce il form dopo il successo
             router.push("/candidati/profili");
         } catch (err: any) {
             const msg = String(err?.message || "");
@@ -139,7 +133,7 @@ export default function Register() {
                             id="nome"
                             value={form.nome}
                             onChange={(e) =>
-                                onChange("nome", e.currentTarget.value)
+                                setFormField("nome", e.currentTarget.value)
                             }
                             required
                         />
@@ -153,7 +147,7 @@ export default function Register() {
                             id="cognome"
                             value={form.cognome}
                             onChange={(e) =>
-                                onChange("cognome", e.currentTarget.value)
+                                setFormField("cognome", e.currentTarget.value)
                             }
                             required
                         />
@@ -169,7 +163,7 @@ export default function Register() {
                         type="email"
                         value={form.email}
                         onChange={(e) =>
-                            onChange("email", e.currentTarget.value)
+                            setFormField("email", e.currentTarget.value)
                         }
                         required
                     />
@@ -177,10 +171,7 @@ export default function Register() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <label
-                            htmlFor="dataNascita"
-                            className="text-sm font-medium"
-                        >
+                        <label htmlFor="dataNascita" className="text-sm font-medium">
                             Data di nascita
                         </label>
                         <Input
@@ -188,16 +179,13 @@ export default function Register() {
                             type="date"
                             value={form.dataNascita}
                             onChange={(e) =>
-                                onChange("dataNascita", e.currentTarget.value)
+                                setFormField("dataNascita", e.currentTarget.value)
                             }
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <label
-                            htmlFor="telefono"
-                            className="text-sm font-medium"
-                        >
+                        <label htmlFor="telefono" className="text-sm font-medium">
                             Numero di telefono
                         </label>
                         <Input
@@ -205,7 +193,7 @@ export default function Register() {
                             type="tel"
                             value={form.telefono}
                             onChange={(e) =>
-                                onChange("telefono", e.currentTarget.value)
+                                setFormField("telefono", e.currentTarget.value)
                             }
                         />
                     </div>
@@ -219,7 +207,7 @@ export default function Register() {
                         id="citta"
                         value={form.citta}
                         onChange={(e) =>
-                            onChange("citta", e.currentTarget.value)
+                            setFormField("citta", e.currentTarget.value)
                         }
                     />
                 </div>
@@ -235,22 +223,13 @@ export default function Register() {
                         onChange={onCvChange}
                         className="block w-full text-sm text-[var(--foreground)] file:mr-4 file:rounded-lg file:border-0 file:bg-[var(--accent)] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-[var(--accent)]/90"
                     />
-                    <p className="text-xs text-[var(--muted)]">
-                        Carica il tuo CV in formato PDF (dimensione massima 5 MB).
-                    </p>
+
                     {cvFile && !cvError && (
                         <p className="text-xs text-[var(--muted)]">
-                            File selezionato:{" "}
-                            <span className="font-medium">
-                                {cvFile.name}
-                            </span>
+                            File selezionato: <span className="font-medium">{cvFile.name}</span>
                         </p>
                     )}
-                    {cvError && (
-                        <p className="text-xs text-red-600">
-                            {cvError}
-                        </p>
-                    )}
+                    {cvError && <p className="text-xs text-red-600">{cvError}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -280,10 +259,7 @@ export default function Register() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <label
-                            htmlFor="password"
-                            className="text-sm font-medium"
-                        >
+                        <label htmlFor="password" className="text-sm font-medium">
                             Password
                         </label>
                         <Input
@@ -291,7 +267,7 @@ export default function Register() {
                             type="password"
                             value={form.password}
                             onChange={(e) =>
-                                onChange("password", e.currentTarget.value)
+                                setFormField("password", e.currentTarget.value)
                             }
                             required
                             minLength={6}
@@ -299,10 +275,7 @@ export default function Register() {
                     </div>
 
                     <div className="space-y-2">
-                        <label
-                            htmlFor="conferma"
-                            className="text-sm font-medium"
-                        >
+                        <label htmlFor="conferma" className="text-sm font-medium">
                             Conferma password
                         </label>
                         <Input
@@ -310,7 +283,7 @@ export default function Register() {
                             type="password"
                             value={form.conferma}
                             onChange={(e) =>
-                                onChange("conferma", e.currentTarget.value)
+                                setFormField("conferma", e.currentTarget.value)
                             }
                             required
                             minLength={6}
@@ -318,11 +291,7 @@ export default function Register() {
                     </div>
                 </div>
 
-                {error && (
-                    <p className="text-sm text-red-600">
-                        {error}
-                    </p>
-                )}
+                {error && <p className="text-sm text-red-600">{error}</p>}
 
                 <div className="pt-2">
                     <Button type="submit" className="w-full" disabled={busy}>
