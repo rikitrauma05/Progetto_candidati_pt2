@@ -53,13 +53,6 @@ export default function CandidaturePerPosizioneHR() {
             <PageHeader
                 title="Candidature per posizione"
                 subtitle="Seleziona una posizione per vedere i migliori candidati in base al punteggio."
-                actions={[
-                    {
-                        label: "Nuova posizione",
-                        href: "/hr/posizioni/nuova",
-                        variant: "primary",
-                    },
-                ]}
             />
 
             {loading && (
