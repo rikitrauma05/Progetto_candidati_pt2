@@ -1,6 +1,7 @@
 // frontend/services/user.service.ts
-import {deleteJson, getJson, postJson, putJson} from "./api"; // presuppone che tu abbia queste funzioni
+import {API_BASE_URL, deleteJson, getJson, postJson, putJson} from "./api"; // presuppone che tu abbia queste funzioni
 import type { UserProfile } from "@/store/userStore";
+import type { UpdateProfiloCandidatoRequest, UpdatePasswordRequest } from "@/types/user";
 import { useAuthStore } from "@/store/authStore";
 
 export type Candidato = {
@@ -48,15 +49,73 @@ export async function getProfiloCandidato(): Promise<UserProfile> {
  * Backend atteso:
  *   PUT /api/utenti/{id}
  */
-export async function updateProfiloCandidato(profilo: Partial<UserProfile>): Promise<UserProfile> {
-    const { user } = useAuthStore.getState();
+export async function updateProfiloCandidato(    payload: UpdateProfiloCandidatoRequest,
+                                                 cvFile?: File | null): Promise<UserProfile> {
+    const { user, accessToken} = useAuthStore.getState();
     if (!user) throw new Error("Utente non loggato");
 
     const id = (user as any).idUtente;
     if (!id) throw new Error("ID utente mancante");
 
-    return putJson<UserProfile>(`/utenti/${id}`, profilo);
+    const formData = new FormData();
+    formData.append(
+        "payload",
+        new Blob([JSON.stringify(payload)], { type: "application/json" })
+    );
+    if (cvFile) {
+        formData.append("cv", cvFile);
+    }
+
+    const resp = await fetch(`${API_BASE_URL}/utenti/${id}`, {
+        method: "PUT",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+    });
+
+    if (!resp.ok) {
+        let message = `Errore HTTP ${resp.status}`;
+        try {
+            const data = await resp.json();
+            if ((data as any)?.message) message = (data as any).message;
+        } catch {
+            // ignore
+        }
+        throw new Error(message);
+    }
+
+    return (await resp.json()) as UserProfile;
 }
+
+export async function updatePassword(
+    body: UpdatePasswordRequest
+): Promise<void> {
+    const { user, accessToken } = useAuthStore.getState();
+    if (!user) throw new Error("Utente non loggato");
+
+    const id = (user as any).idUtente;
+    if (!id) throw new Error("ID utente mancante");
+
+    const resp = await fetch(`${API_BASE_URL}/utenti/${id}/password`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (!resp.ok) {
+        let message = `Errore HTTP ${resp.status}`;
+        try {
+            const data = await resp.json();
+            if ((data as any)?.message) message = (data as any).message;
+        } catch {}
+        throw new Error(message);
+    }
+}
+
 
 /**
  * Upload del CV dell'utente loggato.

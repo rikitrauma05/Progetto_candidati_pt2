@@ -1,17 +1,49 @@
 "use client";
 
 import { useUser } from "@/hooks/useUser";
-import { useState } from "react";
-import { useAuthStore } from "@/store/authStore";
-import { API_BASE_URL } from "@/services/api";
+import { useEffect,useState } from "react";
+import { updateProfiloCandidato, updatePassword } from "@/services/user.service";
+import type { UpdateProfiloCandidatoRequest } from "@/types/user";
 
 export default function ProfiloCandidato() {
     const { profilo, loading, error, reload } = useUser();
+
+    // campi profilo modificabili
+    const [nome, setNome] = useState("");
+    const [cognome, setCognome] = useState("");
+    const [telefono, setTelefono] = useState("");
+    const [citta, setCitta] = useState("");
+    const [dataNascita, setDataNascita] = useState("");
+    const [lingua, setLingua] = useState("");
+    const [consensoPrivacy, setConsensoPrivacy] = useState(false);
+
+    // CV
     const [cvFile, setCvFile] = useState<File | null>(null);
-    const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState(false);
-    const { accessToken } = useAuthStore();
+
+    // stato salvataggio profilo
+    const [savingProfile, setSavingProfile] = useState(false);
+    const [profileError, setProfileError] = useState<string | null>(null);
+    const [profileSuccess, setProfileSuccess] = useState(false);
+
+    // stato cambio password
+    const [showPasswordForm, setShowPasswordForm] = useState(false);
+    const [oldPassword, setOldPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [passwordError, setPasswordError] = useState<string | null>(null);
+    const [passwordSuccess, setPasswordSuccess] = useState(false);
+
+    // inizializza i campi quando il profilo è caricato
+    useEffect(() => {
+        if (profilo) {
+            setNome(profilo.nome ?? "");
+            setCognome(profilo.cognome ?? "");
+            setTelefono(profilo.telefono ?? "");
+            setCitta(profilo.citta ?? "");
+            setDataNascita(profilo.dataNascita ?? "");
+        }
+    }, [profilo]);
 
     const handleCvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -20,43 +52,65 @@ export default function ProfiloCandidato() {
             setUploadError(null);
         }
     };
+    const handleUpdateProfilo = async () => {
+        if (!profilo) return;
 
-    const handleCvUpload = async () => {
-        if (!cvFile) return;
-        setUploading(true);
+        setSavingProfile(true);
+        setProfileError(null);
+        setProfileSuccess(false);
         setUploadError(null);
         setUploadSuccess(false);
 
         try {
-            const formData = new FormData();
-            formData.append("cv", cvFile);
+            const payload: UpdateProfiloCandidatoRequest = {
+                nome,
+                cognome,
+                dataNascita: dataNascita || null,
+                telefono: telefono || null,
+                citta: citta || null,
+                lingua: lingua || null,
+                // cvUrl NON lo mandiamo: sarà aggiornato dal backend se inviamo un nuovo file
+            };
 
-            const resp = await fetch(`${API_BASE_URL}/candidati/profili/cv`, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                },
-                body: formData,
-            });
+            await updateProfiloCandidato(payload, cvFile ?? undefined);
 
-            if (!resp.ok) {
-                let message = `Errore HTTP ${resp.status}`;
-                try {
-                    const data = await resp.json();
-                    if (data?.message) message = data.message;
-                } catch {}
-                throw new Error(message);
+            setProfileSuccess(true);
+            if (cvFile) {
+                setUploadSuccess(true);
+                setCvFile(null);
             }
 
-            setUploadSuccess(true);
-            reload(); // ricarica il profilo dopo upload
+            await reload();
         } catch (err: any) {
-            console.error("Errore upload CV:", err);
-            setUploadError(err?.message || "Errore durante l'upload del CV");
+            console.error("Errore aggiornamento profilo:", err);
+            const msg = err?.message || "Errore durante l'aggiornamento del profilo";
+            setProfileError(msg);
+            setUploadError(msg);
         } finally {
-            setUploading(false);
+            setSavingProfile(false);
         }
     };
+
+    const handleChangePassword = async () => {
+        setPasswordError(null);
+        setPasswordSuccess(false);
+
+        try {
+            await updatePassword({
+                oldPassword,
+                newPassword,
+            });
+
+            setPasswordSuccess(true);
+            setOldPassword("");
+            setNewPassword("");
+        } catch (err: any) {
+            console.error("Errore cambio password:", err);
+            setPasswordError(err?.message || "Errore durante il cambio password");
+        }
+    };
+
+
 
     if (loading && !profilo) {
         return (
@@ -123,11 +177,48 @@ export default function ProfiloCandidato() {
                         <p className="text-[var(--muted)]">Password</p>
                         <button
                             type="button"
+                            onClick={() => setShowPasswordForm(prev => !prev)}
                             className="inline-flex items-center rounded-lg border px-3 py-1.5 text-sm hover:bg-[var(--border)]"
                         >
-                            Cambia password
+                            {showPasswordForm ? "Chiudi" : "Cambia password"}
                         </button>
+
+                            {showPasswordForm && (
+                                <div className="mt-3 flex flex-col gap-2 max-w-sm">
+                                    <input
+                                        type="password"
+                                        placeholder="Password attuale"
+                                        className="border rounded px-3 py-1.5 text-sm bg-transparent"
+                                        value={oldPassword}
+                                        onChange={(e) => setOldPassword(e.target.value)}
+                                    />
+                                    <input
+                                        type="password"
+                                        placeholder="Nuova password"
+                                        className="border rounded px-3 py-1.5 text-sm bg-transparent"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleChangePassword}
+                                        className="inline-flex items-center rounded-lg border px-3 py-1.5 text-sm hover:bg-[var(--border)]"
+                                    >
+                                        Salva nuova password
+                                    </button>
+
+                                    {passwordError && (
+                                        <p className="text-sm text-red-600 mt-1">{passwordError}</p>
+                                    )}
+                                    {passwordSuccess && (
+                                        <p className="text-sm text-green-600 mt-1">
+                                            Password aggiornata con successo!
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                     </div>
+
                     <div>
                         <p className="text-[var(--muted)]">Data di nascita</p>
                         <p className="font-medium">
@@ -142,11 +233,21 @@ export default function ProfiloCandidato() {
                     </div>
                     <div>
                         <p className="text-[var(--muted)]">Telefono</p>
-                        <p className="font-medium">{profilo.telefono || "-"}</p>
+                        <input
+                            type="tel"
+                            className="mt-1 w-full border rounded px-3 py-1.5 text-sm bg-transparent"
+                            value={telefono}
+                            onChange={(e) => setTelefono(e.target.value)}
+                        />
                     </div>
                     <div>
                         <p className="text-[var(--muted)]">Città</p>
-                        <p className="font-medium">{profilo.citta || "-"}</p>
+                        <input
+                            type="text"
+                            className="mt-1 w-full border rounded px-3 py-1.5 text-sm bg-transparent"
+                            value={citta}
+                            onChange={(e) => setCitta(e.target.value)}
+                        />
                     </div>
                 </div>
 
@@ -173,6 +274,7 @@ export default function ProfiloCandidato() {
                     {cvFile && <p className="mt-2 text-sm text-green-600">File selezionato: {cvFile.name}</p>}
                     {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
                     {uploadSuccess && <p className="mt-2 text-sm text-green-600">CV caricato con successo!</p>}
+
                     {/*<button*/}
                     {/*    type="button"*/}
                     {/*    onClick={handleCvUpload}*/}
@@ -186,11 +288,21 @@ export default function ProfiloCandidato() {
                 <div className="pt-2">
                     <button
                         type="button"
-                        onClick={reload}
+                        onClick={handleUpdateProfilo}
+                        disabled={savingProfile}
                         className="inline-flex items-center rounded-lg border px-3 py-1.5 text-sm hover:bg-[var(--border)]"
                     >
-                        Aggiorna dati profilo
+                        {savingProfile ? "Salvataggio..." : "Aggiorna dati profilo"}
                     </button>
+
+                    {profileError && (
+                        <p className="mt-2 text-sm text-red-600">{profileError}</p>
+                    )}
+                    {profileSuccess && (
+                        <p className="mt-2 text-sm text-green-600">
+                            Profilo aggiornato correttamente!
+                        </p>
+                    )}
                 </div>
             </div>
         </section>
