@@ -80,7 +80,7 @@ export default function NavLinks() {
                 <button
                     type="button"
                     onClick={logout}
-                    className="rounded-full px-3 py-1 text-xs font-medium text-[var(--muted)] hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                    className="rounded-full px-3 py-1 text-xs font-medium text-red-500 hover:text-red-600 hover:bg-red-600/10 transition-colors"
                 >
                     Logout
                 </button>

@@ -1,9 +1,10 @@
 "use client";
 
 import { useUser } from "@/hooks/useUser";
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import { updateProfiloCandidato, updatePassword } from "@/services/user.service";
 import type { UpdateProfiloCandidatoRequest } from "@/types/user";
+import {useAuthStore} from "@/store/authStore";
 
 export default function ProfiloCandidato() {
     const { profilo, loading, error, reload } = useUser();
@@ -34,6 +35,10 @@ export default function ProfiloCandidato() {
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordSuccess, setPasswordSuccess] = useState(false);
 
+    // stato modale eliminazione account
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
     // inizializza i campi quando il profilo è caricato
     useEffect(() => {
         if (profilo) {
@@ -52,6 +57,7 @@ export default function ProfiloCandidato() {
             setUploadError(null);
         }
     };
+
     const handleUpdateProfilo = async () => {
         if (!profilo) return;
 
@@ -69,7 +75,6 @@ export default function ProfiloCandidato() {
                 telefono: telefono || null,
                 citta: citta || null,
                 lingua: lingua || null,
-                // cvUrl NON lo mandiamo: sarà aggiornato dal backend se inviamo un nuovo file
             };
 
             await updateProfiloCandidato(payload, cvFile ?? undefined);
@@ -107,6 +112,43 @@ export default function ProfiloCandidato() {
         } catch (err: any) {
             console.error("Errore cambio password:", err);
             setPasswordError(err?.message || "Errore durante il cambio password");
+        }
+    };
+
+    const { user } = useAuthStore(); // hook a livello di componente
+
+    const handleDeleteAccount = async () => {
+        setDeleting(true);
+        try {
+            const { user, logout } = useAuthStore.getState(); // prendi user e logout
+
+            if (!user?.idUtente) {
+                alert("Utente non trovato");
+                return;
+            }
+
+            const response = await fetch(`/api/utenti/${user.idUtente}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Errore server: ${response.status}`);
+            }
+
+            console.log("Account eliminato");
+
+            // logout e reindirizzamento
+            await fetch("/api/logout", { method: "POST", credentials: "include" });
+            useAuthStore.getState().logout();
+            window.location.href = "/";
+
+        } catch (err: any) {
+            console.error("Errore eliminazione account:", err);
+            alert("Errore durante l'eliminazione dell'account: " + err.message);
+        } finally {
+            setDeleting(false);
+            setShowDeleteModal(false);
         }
     };
 
@@ -183,40 +225,40 @@ export default function ProfiloCandidato() {
                             {showPasswordForm ? "Chiudi" : "Cambia password"}
                         </button>
 
-                            {showPasswordForm && (
-                                <div className="mt-3 flex flex-col gap-2 max-w-sm">
-                                    <input
-                                        type="password"
-                                        placeholder="Password attuale"
-                                        className="border rounded px-3 py-1.5 text-sm bg-transparent"
-                                        value={oldPassword}
-                                        onChange={(e) => setOldPassword(e.target.value)}
-                                    />
-                                    <input
-                                        type="password"
-                                        placeholder="Nuova password"
-                                        className="border rounded px-3 py-1.5 text-sm bg-transparent"
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={handleChangePassword}
-                                        className="inline-flex items-center rounded-lg border px-3 py-1.5 text-sm hover:bg-[var(--border)]"
-                                    >
-                                        Salva nuova password
-                                    </button>
+                        {showPasswordForm && (
+                            <div className="mt-3 flex flex-col gap-2 max-w-sm">
+                                <input
+                                    type="password"
+                                    placeholder="Password attuale"
+                                    className="border rounded px-3 py-1.5 text-sm bg-transparent"
+                                    value={oldPassword}
+                                    onChange={(e) => setOldPassword(e.target.value)}
+                                />
+                                <input
+                                    type="password"
+                                    placeholder="Nuova password"
+                                    className="border rounded px-3 py-1.5 text-sm bg-transparent"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleChangePassword}
+                                    className="inline-flex items-center rounded-lg border px-3 py-1.5 text-sm hover:bg-[var(--border)]"
+                                >
+                                    Salva nuova password
+                                </button>
 
-                                    {passwordError && (
-                                        <p className="text-sm text-red-600 mt-1">{passwordError}</p>
-                                    )}
-                                    {passwordSuccess && (
-                                        <p className="text-sm text-green-600 mt-1">
-                                            Password aggiornata con successo!
-                                        </p>
-                                    )}
-                                </div>
-                            )}
+                                {passwordError && (
+                                    <p className="text-sm text-red-600 mt-1">{passwordError}</p>
+                                )}
+                                {passwordSuccess && (
+                                    <p className="text-sm text-green-600 mt-1">
+                                        Password aggiornata con successo!
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <div>
@@ -258,34 +300,22 @@ export default function ProfiloCandidato() {
                         accept=".pdf,.doc,.docx"
                         onChange={handleCvChange}
                         className="
-                                    block w-full text-sm text-white
-
-                                    file:mr-4 file:py-2 file:px-4
-                                    file:rounded-lg
-                                    file:border file:border-white
-                                    file:text-sm file:font-semibold
-
-                                    file:bg-[var(--card)]
-                                    file:text-white
-
-                                    hover:file:bg-[var(--border)]
-                                    transition-all duration-200"
-                        />
+                            block w-full text-sm text-white
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-lg
+                            file:border file:border-white
+                            file:text-sm file:font-semibold
+                            file:bg-[var(--card)]
+                            file:text-white
+                            hover:file:bg-[var(--border)]
+                            transition-all duration-200"
+                    />
                     {cvFile && <p className="mt-2 text-sm text-green-600">File selezionato: {cvFile.name}</p>}
                     {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
                     {uploadSuccess && <p className="mt-2 text-sm text-green-600">CV caricato con successo!</p>}
-
-                    {/*<button*/}
-                    {/*    type="button"*/}
-                    {/*    onClick={handleCvUpload}*/}
-                    {/*    disabled={!cvFile || uploading}*/}
-                    {/*    className="mt-2 inline-flex items-center rounded-lg border px-3 py-1.5 text-sm hover:bg-[var(--border)]"*/}
-                    {/*>*/}
-                    {/*    {uploading ? "Caricamento..." : "Carica CV"}*/}
-                    {/*</button>*/}
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-2 flex gap-3">
                     <button
                         type="button"
                         onClick={handleUpdateProfilo}
@@ -295,16 +325,55 @@ export default function ProfiloCandidato() {
                         {savingProfile ? "Salvataggio..." : "Aggiorna dati profilo"}
                     </button>
 
-                    {profileError && (
-                        <p className="mt-2 text-sm text-red-600">{profileError}</p>
-                    )}
-                    {profileSuccess && (
-                        <p className="mt-2 text-sm text-green-600">
-                            Profilo aggiornato correttamente!
-                        </p>
-                    )}
+                    <button
+                        type="button"
+                        onClick={() => setShowDeleteModal(true)}
+                        className="inline-flex items-center rounded-lg border border-red-600 px-3 py-1.5 text-sm text-red-600 hover:bg-red-600/10"
+                    >
+                        Elimina account
+                    </button>
                 </div>
+
+                {profileError && (
+                    <p className="mt-2 text-sm text-red-600">{profileError}</p>
+                )}
+                {profileSuccess && (
+                    <p className="mt-2 text-sm text-green-600">
+                        Profilo aggiornato correttamente!
+                    </p>
+                )}
             </div>
+
+            {/* Modale di conferma eliminazione */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-slate-800 rounded-xl border border-border max-w-md w-full p-6">
+                        <h3 className="text-lg font-semibold mb-4 text-white">Conferma eliminazione account</h3>
+                        <p className="text-sm text-gray-300 mb-6">
+                            Sei sicuro di voler eliminare il tuo account? I tuoi dati verranno cancellati definitivamente e questa azione non può essere annullata. Inoltre, le tue candidature verranno annullate.
+                        </p>
+
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setShowDeleteModal(false)}
+                                disabled={deleting}
+                                className="inline-flex items-center rounded-lg border px-4 py-2 text-sm hover:bg-gray-700 text-white"
+                            >
+                                Annulla
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDeleteAccount}
+                                disabled={deleting}
+                                className="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
+                            >
+                                {deleting ? "Eliminazione..." : "Elimina account"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }

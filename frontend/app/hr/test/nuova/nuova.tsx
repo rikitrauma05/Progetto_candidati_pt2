@@ -54,8 +54,7 @@ export default function NuovaTest() {
         if (durataMinuti < 1 || durataMinuti > 60)
             return "La durata deve essere compresa tra 1 e 60 minuti.";
 
-        if (domande.length > 20)
-            return "Non puoi inserire più di 20 domande.";
+        if (domande.length > 20) return <span className="error-message">Non puoi inserire più di 20 domande.</span>;
 
         if (punteggioMax > 100)
             return "Il punteggio massimo non può superare 100.";
