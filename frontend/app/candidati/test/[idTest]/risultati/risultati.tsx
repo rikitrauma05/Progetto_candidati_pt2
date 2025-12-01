@@ -106,24 +106,6 @@ export default function RisultatiTestPage() {
                             ? "Non siamo riusciti a recuperare i risultati."
                             : "Ecco il riepilogo del tuo tentativo."
                 }
-                kpis={
-                    risultato
-                        ? [
-                            {
-                                label: "Punteggio",
-                                value: `${risultato.punteggioTotale} / ${risultato.punteggioMax}`,
-                            },
-                            {
-                                label: "Esito",
-                                value: esitoLabel(risultato.esito),
-                            },
-                            {
-                                label: "Domande corrette",
-                                value: `${risultato.numeroCorrette} / ${risultato.numeroDomande}`,
-                            },
-                        ]
-                        : []
-                }
             />
 
             {errore && (
