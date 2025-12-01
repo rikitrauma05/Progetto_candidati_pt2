@@ -16,12 +16,15 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --background: #0a0a0a;
+        --background: rgba(255, 255, 255, 0.1);
         --foreground: #e5e7eb;
-        --surface: #1a1a1a;
-        --border: #2b2f36;
+        --surface: rgba(255, 255, 255, 0.05);
+        --border: rgba(255, 255, 255, 0.1);
         --accent: #3b82f6;
         --muted: #9ca3af;
+        --radius: 20px;
+
+
     }
 }
 
@@ -36,9 +39,11 @@
 
 html,
 body {
-    height: 100%;
-    background-color: var(--background);
-    color: var(--foreground);
+    min-height: 100%;
+    /* Gradient applicato al body */
+    background: linear-gradient(to bottom, #03071b, #002062, #2156b3);
+    background-attachment: fixed;
+    color: #f8fafc;
     font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
 
@@ -130,5 +135,3 @@ option {
         color: var(--foreground);
     }
 }
-
-
