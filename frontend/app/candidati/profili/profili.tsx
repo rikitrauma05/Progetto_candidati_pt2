@@ -139,8 +139,9 @@ export default function ProfiloCandidato() {
             console.log("Account eliminato");
 
             // logout e reindirizzamento
-            logout();            // resetta lo store
-            window.location.href = "/";  // rimanda alla homepage
+            await fetch("/api/logout", { method: "POST", credentials: "include" });
+            useAuthStore.getState().logout();
+            window.location.href = "/";
 
         } catch (err: any) {
             console.error("Errore eliminazione account:", err);
@@ -346,7 +347,7 @@ export default function ProfiloCandidato() {
             {/* Modale di conferma eliminazione */}
             {showDeleteModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-800 rounded-xl border border-border max-w-md w-full p-6">
+                    <div className="bg-slate-800 rounded-xl border border-border max-w-md w-full p-6">
                         <h3 className="text-lg font-semibold mb-4 text-white">Conferma eliminazione account</h3>
                         <p className="text-sm text-gray-300 mb-6">
                             Sei sicuro di voler eliminare il tuo account? I tuoi dati verranno cancellati definitivamente e questa azione non può essere annullata. Inoltre, le tue candidature verranno annullate.

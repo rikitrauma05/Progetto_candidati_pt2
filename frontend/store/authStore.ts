@@ -44,13 +44,17 @@ export const useAuthStore = create<AuthState>()(
                     refreshToken: tokens?.refreshToken ?? null,
                 })),
 
-            logout: () =>
+            logout: () => {
                 set(() => ({
                     user: null,
                     isAuthenticated: false,
                     accessToken: null,
                     refreshToken: null,
-                })),
+                }));
+                // cancella il persist storage
+                useAuthStore.persist.clearStorage();
+            },
+
 
             setUser: (user) =>
                 set((state) => ({
