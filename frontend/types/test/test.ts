@@ -12,22 +12,23 @@ export type TestListItem = {
     punteggioMax?: number | null;
 };
 
-/* --- STRUTTURA TEST COMPLETA --- */
-export type OpzioneTest = {
+/* --- STRUTTURA TEST COMPLETA (per HR) --- */
+
+// Opzione come arriva da /api/test/{id}/struttura
+export type StrutturaTestOpzioneDto = {
     idOpzione: number;
     testoOpzione: string;
-    corretta: boolean | null;
+    isCorretta: boolean; // <- flag di correttezza
 };
 
-export interface DomandaTest {
+// Domanda come arriva da /api/test/{id}/struttura
+export type StrutturaTestDomandaDto = {
     idDomanda: number;
     testo: string;
-    opzioni: {
-        idOpzione: number;
-        testoOpzione: string;
-    }[];
-}
+    opzioni: StrutturaTestOpzioneDto[];
+};
 
+// DTO completo usato da DettaglioTest
 export type StrutturaTestDto = {
     idTest: number;
     titolo: string;
@@ -37,7 +38,7 @@ export type StrutturaTestDto = {
     punteggioMax: number;
     punteggioMin?: number | null;
     tipo?: string | null;
-    domande: DomandaTest[];
+    domande: StrutturaTestDomandaDto[];
 };
 
 /* --- CREAZIONE TEST (HR) --- */
