@@ -198,12 +198,6 @@ export default function RisultatiTestPage() {
                         >
                             Torna alla lista test
                         </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => router.push(`/candidati/test/${idTest}/introduzione`)}
-                        >
-                            Rivedi informazioni sul test
-                        </Button>
                     </div>
                 </section>
             )}
