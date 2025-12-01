@@ -16,14 +16,16 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --background: rgba(255, 255, 255, 0.1);
+        --background: rgba(255, 0, 255, 0.1);
         --foreground: #e5e7eb;
         --surface: rgba(255, 255, 255, 0.05);
         --border: rgba(255, 255, 255, 0.1);
         --accent: #3b82f6;
         --muted: #9ca3af;
-        --radius: 20px;
-
+        border-start-start-radius: 20px;
+        --error: #ef4444;
+        --error-bg: rgba(239, 68, 68, 0.1);
+        --error-border: rgba(239, 68, 68, 0.3);
 
     }
 }
@@ -124,8 +126,9 @@ select:focus {
 
 /* Ensure options use the theme palette */
 option {
-    background-color: var(--surface);
-    color: var(--foreground);
+    background-color: #cd0f18; /* chiaro/blu pastello */
+    color: #1f2937;            /* testo scuro per leggibilità */
+    padding: 0.25rem 0.5rem;   /* leggero padding interno */
 }
 
 /* Per browser più ostinati in dark mode */
@@ -135,3 +138,23 @@ option {
         color: var(--foreground);
     }
 }
+
+
+/* ============================
+   Error/Warning styles
+   ============================ */
+.error-message {
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    color: var(--error);
+    font-size: 0.875rem;
+    backdrop-filter: blur(10px);
+}
+
+.error-text {
+    color: var(--error);
+    font-size: 0.875rem;
+}
+

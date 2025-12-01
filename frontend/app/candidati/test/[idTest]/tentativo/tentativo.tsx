@@ -13,11 +13,6 @@ import {
 } from "@/services/test.service";
 
 import type {
-    DomandaTest,
-} from "@/types/test/test";
-
-import type {
-
     RispostaDTO,
     GetDomandeResponse,
 } from "@/types/test/tentativo-test";
@@ -37,7 +32,9 @@ export default function TentativoTestPage() {
     const [idTentativo, setIdTentativo] = useState<number | null>(null);
     const [titoloTest, setTitoloTest] = useState<string>("");
     const [durataMinuti, setDurataMinuti] = useState<number>(0);
-    const [domande, setDomande] = useState<DomandaTest[]>([]);
+
+    // domande come arrivano da GetDomandeResponse
+    const [domande, setDomande] = useState<GetDomandeResponse["domande"]>([]);
 
     const [risposte, setRisposte] = useState<RisposteUtente>({});
     const [tempoRimanente, setTempoRimanente] = useState<number>(0);
@@ -85,7 +82,6 @@ export default function TentativoTestPage() {
                     setErrore(
                         "Hai già svolto questo test e non puoi ripeterlo."
                     );
-                    // ci mettiamo in uno stato 'stabile'
                     setStato("PRONTO");
                     setTempoRimanente(0);
                     setDomande([]);

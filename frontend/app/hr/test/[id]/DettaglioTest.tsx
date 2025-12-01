@@ -84,14 +84,16 @@ export default function DettaglioTest({ idTest }: DettaglioTestProps) {
 
             <div className="rounded-xl border bg-[var(--card)] p-6 space-y-3">
                 <p>
-                    <strong>Descrizione:</strong>{" "}
-                    {test.descrizione || "—"}
+                    <strong>Descrizione:</strong> {test.descrizione || "—"}
                 </p>
                 <p>
                     <strong>Durata:</strong> {test.durataMinuti} minuti
                 </p>
                 <p>
                     <strong>Punteggio massimo:</strong> {test.punteggioMax}
+                </p>
+                <p>
+                    <strong>Punteggio minimo:</strong> {test.punteggioMin}
                 </p>
                 <p>
                     <strong>Numero domande:</strong> {test.numeroDomande}
@@ -115,13 +117,13 @@ export default function DettaglioTest({ idTest }: DettaglioTestProps) {
                                 <div
                                     key={opzione.idOpzione}
                                     className={`px-3 py-2 rounded-md border text-sm ${
-                                        opzione.corretta
+                                        opzione.isCorretta
                                             ? "bg-green-500/20 border-green-500 text-green-900"
                                             : "bg-[var(--input)] border-[var(--border)]"
                                     }`}
                                 >
                                     {opzione.testoOpzione}
-                                    {opzione.corretta && (
+                                    {opzione.isCorretta && (
                                         <span className="ml-2 font-semibold">
                                             (Corretta)
                                         </span>
