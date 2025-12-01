@@ -120,32 +120,41 @@ export default function ProfiloCandidato() {
     const handleDeleteAccount = async () => {
         setDeleting(true);
         try {
-            const { user, logout } = useAuthStore.getState(); // prendi user e logout
+            const { user, accessToken } = useAuthStore.getState();
 
-            if (!user?.idUtente) {
-                alert("Utente non trovato");
-                return;
+            if (!user?.idUtente || !accessToken) {
+                throw new Error("Sessione non valida");
             }
 
-            const response = await fetch(`/api/utenti/${user.idUtente}`, {
+            const deleteRes = await fetch(`/api/utenti/${user.idUtente}`, {
                 method: "DELETE",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`,
+                },
             });
 
-            if (!response.ok) {
-                throw new Error(`Errore server: ${response.status}`);
+            if (!deleteRes.ok) {
+                throw new Error(`Errore server: ${deleteRes.status}`);
             }
-
-            console.log("Account eliminato");
-
-            // logout e reindirizzamento
-            await fetch("/api/logout", { method: "POST", credentials: "include" });
             useAuthStore.getState().logout();
-            window.location.href = "/";
+
+            localStorage.removeItem("auth-storage");
+
+            sessionStorage.clear();
+
+            await new Promise(resolve => setTimeout(resolve, 150));
+
+            const stateAfter = useAuthStore.getState();
+            console.log("Store dopo pulizia:", {
+                hasUser: !!stateAfter.user,
+                hasToken: !!stateAfter.accessToken,
+            });
+
+            window.location.replace("/");
 
         } catch (err: any) {
-            console.error("Errore eliminazione account:", err);
-            alert("Errore durante l'eliminazione dell'account: " + err.message);
+            alert("Errore durante l'eliminazione: " + err.message);
         } finally {
             setDeleting(false);
             setShowDeleteModal(false);

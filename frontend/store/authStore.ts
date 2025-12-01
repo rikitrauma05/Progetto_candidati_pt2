@@ -45,14 +45,20 @@ export const useAuthStore = create<AuthState>()(
                 })),
 
             logout: () => {
+
                 set(() => ({
                     user: null,
                     isAuthenticated: false,
                     accessToken: null,
                     refreshToken: null,
                 }));
-                // cancella il persist storage
-                useAuthStore.persist.clearStorage();
+
+                try {
+                    useAuthStore.persist.clearStorage();
+                    localStorage.removeItem("auth-storage");
+                } catch (error) {
+                    console.error("Errore pulizia storage:", error);
+                }
             },
 
 
