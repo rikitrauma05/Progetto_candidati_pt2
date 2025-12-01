@@ -214,8 +214,12 @@ export default function ProfiloCandidato() {
         <section className="max-w-2xl mx-auto">
             <h1 className="text-2xl font-semibold mb-4">Il tuo profilo</h1>
 
-            <div className="rounded-xl border border-border bg-[var(--card)] p-6 space-y-6">
-                <div>
+             <div className="relative rounded-xl border border-border bg-[var(--card)] p-6 space-y-6">
+                 <div className="absolute inset-0 bg-black/10 rounded-xl pointer-events-none"></div>
+                 <div className="relative space-y-6">
+
+
+                 <div>
                     <h2 className="text-lg font-semibold">{profilo.nome} {profilo.cognome}</h2>
                 </div>
 
@@ -351,6 +355,7 @@ export default function ProfiloCandidato() {
                         Profilo aggiornato correttamente!
                     </p>
                 )}
+                 </div>
             </div>
 
             {/* Modale di conferma eliminazione */}
