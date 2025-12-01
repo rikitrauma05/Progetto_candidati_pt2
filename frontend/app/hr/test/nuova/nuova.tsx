@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type React from "react";
 import { useRouter } from "next/navigation";
 import { creaTest } from "@/services/test.service";
 import type { TestCreateRequest, TestType } from "@/types/test/test";
@@ -28,7 +29,7 @@ export default function NuovaTest() {
     const [descrizione, setDescrizione] = useState("");
     const [durataMinuti, setDurataMinuti] = useState<number>(20);
     const [punteggioMax, setPunteggioMax] = useState<number>(100);
-    const [punteggioMin, setPunteggioMin] = useState<number>(60); // nuovo campo
+    const [punteggioMin, setPunteggioMin] = useState<number>(0);
     const [tipoTest, setTipoTest] = useState<TestType>("SOFT_SKILLS");
 
     const [domande, setDomande] = useState<DomandaForm[]>([
@@ -45,7 +46,44 @@ export default function NuovaTest() {
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
 
+    // ============================================================
+    // VALIDAZIONI CLIENT
+    // ============================================================
+
+    const validateBeforeSubmit = () => {
+        if (durataMinuti < 1 || durataMinuti > 60)
+            return "La durata deve essere compresa tra 1 e 60 minuti.";
+
+        if (domande.length > 20)
+            return "Non puoi inserire più di 20 domande.";
+
+        if (punteggioMax > 100)
+            return "Il punteggio massimo non può superare 100.";
+
+        if (punteggioMin < 0)
+            return "Il punteggio minimo non può essere negativo.";
+
+        if (punteggioMin > punteggioMax)
+            return "Il punteggio minimo non può essere maggiore del massimo.";
+
+        for (const d of domande) {
+            if (d.punteggio < 1 || d.punteggio > 10)
+                return "Il punteggio per ogni domanda deve essere tra 1 e 10.";
+        }
+
+        return null;
+    };
+
+    // ============================================================
+    // HANDLER DOMANDE/OPZIONI
+    // ============================================================
+
     const aggiungiDomanda = () => {
+        if (domande.length >= 20) {
+            setError("Non puoi aggiungere più di 20 domande.");
+            return;
+        }
+
         setDomande((prev) => [
             ...prev,
             {
@@ -152,13 +190,16 @@ export default function NuovaTest() {
         );
     };
 
+    // ============================================================
+    // SUBMIT
+    // ============================================================
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (punteggioMin > punteggioMax) {
-            setError(
-                "Il punteggio minimo non può essere maggiore del punteggio massimo."
-            );
+        const validationError = validateBeforeSubmit();
+        if (validationError) {
+            setError(validationError);
             return;
         }
 
@@ -170,7 +211,7 @@ export default function NuovaTest() {
             durataMinuti,
             numeroDomande: domande.length,
             punteggioMax,
-            punteggioMin, // ora usiamo il valore inserito
+            punteggioMin,
             codiceTipoTest: tipoTest,
             domande: domande.map((d) => ({
                 testo: d.testo,
@@ -186,17 +227,27 @@ export default function NuovaTest() {
             setSaving(true);
             await creaTest(payload);
             router.push("/hr/test");
-        } catch (err) {
+        } catch (err: any) {
             console.error("Errore creazione test:", err);
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : "Si è verificato un errore durante il salvataggio del test."
-            );
+
+            const backendMessage =
+                err?.response?.data?.message ||
+                err?.message ||
+                "Errore durante la creazione del test.";
+
+            setError(backendMessage);
         } finally {
             setSaving(false);
         }
     };
+
+    // classe comune per input/select in tema scuro
+    const baseInputClass =
+        "w-full px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--input)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]";
+
+    // ============================================================
+    // RENDER
+    // ============================================================
 
     return (
         <section className="max-w-4xl mx-auto space-y-6">
@@ -213,7 +264,7 @@ export default function NuovaTest() {
 
             <form
                 onSubmit={handleSubmit}
-                className="space-y-6 p-6 border rounded-xl bg-[var(--card)]"
+                className="space-y-6 p-6 border border-[var(--border)] rounded-xl bg-[var(--card)]"
             >
                 {error && (
                     <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -228,7 +279,7 @@ export default function NuovaTest() {
                         <input
                             value={titolo}
                             onChange={(e) => setTitolo(e.target.value)}
-                            className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                            className={baseInputClass}
                             required
                         />
                     </div>
@@ -240,7 +291,7 @@ export default function NuovaTest() {
                         <textarea
                             value={descrizione}
                             onChange={(e) => setDescrizione(e.target.value)}
-                            className="w-full px-3 py-2 rounded-md border bg-[var(--input)] h-24"
+                            className={`${baseInputClass} h-24 resize-none`}
                             required
                         />
                     </div>
@@ -248,15 +299,17 @@ export default function NuovaTest() {
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <div>
                             <label className="text-sm font-medium">
-                                Durata (minuti)
+                                Durata (1–60)
                             </label>
                             <input
                                 type="number"
+                                min={1}
+                                max={60}
                                 value={durataMinuti}
                                 onChange={(e) =>
                                     setDurataMinuti(Number(e.target.value))
                                 }
-                                className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                                className={baseInputClass}
                                 required
                             />
                         </div>
@@ -267,11 +320,13 @@ export default function NuovaTest() {
                             </label>
                             <input
                                 type="number"
+                                min={1}
+                                max={100}
                                 value={punteggioMax}
                                 onChange={(e) =>
                                     setPunteggioMax(Number(e.target.value))
                                 }
-                                className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                                className={baseInputClass}
                                 required
                             />
                         </div>
@@ -282,11 +337,13 @@ export default function NuovaTest() {
                             </label>
                             <input
                                 type="number"
+                                min={0}
+                                max={100}
                                 value={punteggioMin}
                                 onChange={(e) =>
                                     setPunteggioMin(Number(e.target.value))
                                 }
-                                className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                                className={baseInputClass}
                                 required
                             />
                         </div>
@@ -299,7 +356,7 @@ export default function NuovaTest() {
                                 type="number"
                                 value={domande.length}
                                 readOnly
-                                className="w-full px-3 py-2 rounded-md border bg-[var(--input)] bg-gray-100/50"
+                                className={`${baseInputClass} text-xs text-neutral-400 bg-[var(--surface)] cursor-not-allowed`}
                             />
                         </div>
 
@@ -312,7 +369,7 @@ export default function NuovaTest() {
                                 onChange={(e) =>
                                     setTipoTest(e.target.value as TestType)
                                 }
-                                className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
+                                className={baseInputClass}
                             >
                                 {TIPI_TEST.map((t) => (
                                     <option key={t.codice} value={t.codice}>
@@ -343,7 +400,7 @@ export default function NuovaTest() {
                         {domande.map((domanda, idx) => (
                             <div
                                 key={idx}
-                                className="border rounded-lg p-4 bg-[var(--surface)] space-y-4"
+                                className="border border-[var(--border)] rounded-lg p-4 bg-[var(--surface)] space-y-4"
                             >
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1 space-y-2">
@@ -354,10 +411,12 @@ export default function NuovaTest() {
                                             {domande.length > 1 && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => rimuoviDomanda(idx)}
-                                                    className="text-xs text-red-600 hover:underline hover:text-red-700"
+                                                    onClick={() =>
+                                                        rimuoviDomanda(idx)
+                                                    }
+                                                    className="text-xs text-red-500 hover:underline"
                                                 >
-                                                    Rimuovi domanda
+                                                    Rimuovi
                                                 </button>
                                             )}
                                         </div>
@@ -371,7 +430,7 @@ export default function NuovaTest() {
                                                     e.target.value
                                                 )
                                             }
-                                            className="w-full px-3 py-2 rounded-md border bg-[var(--input)] text-sm"
+                                            className={`${baseInputClass} h-20 resize-none`}
                                             placeholder="Testo della domanda"
                                             required
                                         />
@@ -379,10 +438,12 @@ export default function NuovaTest() {
 
                                     <div className="w-32">
                                         <label className="text-xs font-medium">
-                                            Punteggio
+                                            Punteggio (1–10)
                                         </label>
                                         <input
                                             type="number"
+                                            min={1}
+                                            max={10}
                                             value={domanda.punteggio}
                                             onChange={(e) =>
                                                 handleDomandaChange(
@@ -391,12 +452,13 @@ export default function NuovaTest() {
                                                     e.target.value
                                                 )
                                             }
-                                            className="mt-1 w-full px-2 py-1.5 rounded-md border bg-[var(--input)] text-sm"
+                                            className={`${baseInputClass} mt-1 text-sm`}
                                             required
                                         />
                                     </div>
                                 </div>
 
+                                {/* Opzioni */}
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
                                         <span className="text-xs font-medium">
@@ -404,69 +466,68 @@ export default function NuovaTest() {
                                         </span>
                                         <button
                                             type="button"
-                                            onClick={() => aggiungiOpzione(idx)}
+                                            onClick={() =>
+                                                aggiungiOpzione(idx)
+                                            }
                                             className="text-xs text-[var(--accent)] hover:underline"
                                         >
                                             + Aggiungi opzione
                                         </button>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        {domanda.opzioni.map(
-                                            (opzione, idxOpzione) => (
-                                                <div
-                                                    key={idxOpzione}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name={`domanda-${idx}`}
-                                                        checked={
-                                                            opzione.corretta
-                                                        }
-                                                        onChange={() =>
-                                                            setOpzioneCorretta(
+                                    {domanda.opzioni.map(
+                                        (opzione, idxOpzione) => (
+                                            <div
+                                                key={idxOpzione}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name={`domanda-${idx}`}
+                                                    checked={opzione.corretta}
+                                                    onChange={() =>
+                                                        setOpzioneCorretta(
+                                                            idx,
+                                                            idxOpzione
+                                                        )
+                                                    }
+                                                />
+
+                                                <input
+                                                    value={
+                                                        opzione.testoOpzione
+                                                    }
+                                                    onChange={(e) =>
+                                                        handleOpzioneChange(
+                                                            idx,
+                                                            idxOpzione,
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    className={`${baseInputClass} flex-1`}
+                                                    placeholder={`Opzione ${
+                                                        idxOpzione + 1
+                                                    }`}
+                                                    required
+                                                />
+
+                                                {domanda.opzioni.length > 2 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            rimuoviOpzione(
                                                                 idx,
                                                                 idxOpzione
                                                             )
                                                         }
-                                                    />
-                                                    <input
-                                                        value={
-                                                            opzione.testoOpzione
-                                                        }
-                                                        onChange={(e) =>
-                                                            handleOpzioneChange(
-                                                                idx,
-                                                                idxOpzione,
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        className="flex-1 px-3 py-1.5 rounded-md border bg-[var(--input)] text-sm"
-                                                        placeholder={`Opzione ${
-                                                            idxOpzione + 1
-                                                        }`}
-                                                        required
-                                                    />
-                                                    {domanda.opzioni.length >
-                                                        2 && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    rimuoviOpzione(
-                                                                        idx,
-                                                                        idxOpzione
-                                                                    )
-                                                                }
-                                                                className="text-xs text-destructive hover:underline"
-                                                            >
-                                                                Rimuovi
-                                                            </button>
-                                                        )}
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
+                                                        className="text-xs text-destructive hover:underline"
+                                                    >
+                                                        Rimuovi
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )
+                                    )}
                                 </div>
                             </div>
                         ))}
