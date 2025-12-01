@@ -81,6 +81,17 @@ export default function Register() {
         setBusy(true);
 
         try {
+
+            const stateBefore = useAuthStore.getState();
+
+            useAuthStore.getState().logout();
+
+            localStorage.removeItem("auth-storage");
+
+            await new Promise(resolve => setTimeout(resolve, 150));
+
+            const stateAfterClean = useAuthStore.getState();
+
             const ruolo: RuoloCodice = "CANDIDATO";
 
             const payload = {
@@ -97,16 +108,49 @@ export default function Register() {
 
             const resp = await registerApi(payload, cvFile);
 
-            login(resp.user);
-            reset(); // pulisce il form dopo il successo
-            router.push("/candidati/profili");
+
+            if (!resp.accessToken || !resp.refreshToken) {
+                throw new Error("Token mancanti - errore backend");
+            }
+
+            login(resp.user, {
+                accessToken: resp.accessToken,
+                refreshToken: resp.refreshToken,
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const stateAfterLogin = useAuthStore.getState();
+            console.log("Store dopo login:", {
+                hasUser: !!stateAfterLogin.user,
+                hasToken: !!stateAfterLogin.accessToken,
+                isAuthenticated: stateAfterLogin.isAuthenticated,
+                userId: stateAfterLogin.user?.idUtente,
+                tokenMatch: stateAfterLogin.accessToken === resp.accessToken,
+            });
+
+            const savedInLocalStorage = localStorage.getItem("auth-storage");
+
+            if (!stateAfterLogin.accessToken) {
+                throw new Error("Errore salvataggio sessione");
+            }
+
+            reset();
+
+            window.location.replace("/candidati/profili");
+
         } catch (err: any) {
+
             const msg = String(err?.message || "");
 
-            if (msg.includes("EMAIL_GIA_REGISTRATA")) {
+            if (msg.includes("EMAIL_GIA_REGISTRATA") || msg.includes("409")) {
                 setError("Esiste già un account con questa email.");
+            } else if (msg.includes("Token mancanti")) {
+                setError("Errore configurazione server. Contatta l'assistenza.");
+            } else if (msg.includes("Network") || msg.includes("fetch")) {
+                setError("Errore di connessione. Verifica la tua rete.");
             } else {
-                setError("Registrazione non riuscita. Riprova.");
+                setError(`Registrazione non riuscita: ${msg}`);
             }
         } finally {
             setBusy(false);
