@@ -13,102 +13,110 @@ import {
 } from "@/services/test.service";
 
 import type {
-    RispostaDTO,
     GetDomandeResponse,
+    RispostaDTO,
 } from "@/types/test/tentativo-test";
 
-type StatoCaricamento = "CREAZIONE_TENTATIVO" | "CARICAMENTO_DOMANDE" | "PRONTO";
-type RisposteUtente = Record<number, number | null>; // idDomanda -> idOpzione
+type StatoCaricamento = "CREAZIONE" | "DOMANDE" | "PRONTO";
+type RisposteUtente = Record<number, number | null>;
 
 export default function TentativoTestPage() {
+
+    /* ----------------------------------------------------------
+       PARAMETRI URL
+    ---------------------------------------------------------- */
     const params = useParams<{ idTest: string }>();
-    const idTest = Number(params?.idTest ?? "0");
+    const idTest = Number(params.idTest);
 
     const router = useRouter();
 
-    const [stato, setStato] = useState<StatoCaricamento>("CREAZIONE_TENTATIVO");
+    /* ----------------------------------------------------------
+       STATE
+    ---------------------------------------------------------- */
+    const [stato, setStato] = useState<StatoCaricamento>("CREAZIONE");
     const [errore, setErrore] = useState<string | null>(null);
 
     const [idTentativo, setIdTentativo] = useState<number | null>(null);
-    const [titoloTest, setTitoloTest] = useState<string>("");
-    const [durataMinuti, setDurataMinuti] = useState<number>(0);
-
-    // domande come arrivano da GetDomandeResponse
+    const [titoloTest, setTitoloTest] = useState("");
+    const [durataMinuti, setDurataMinuti] = useState(0);
     const [domande, setDomande] = useState<GetDomandeResponse["domande"]>([]);
-
     const [risposte, setRisposte] = useState<RisposteUtente>({});
-    const [tempoRimanente, setTempoRimanente] = useState<number>(0);
-    const [staInviando, setStaInviando] = useState(false);
+    const [tempoRimanente, setTempoRimanente] = useState(0);
     const [tempoScaduto, setTempoScaduto] = useState(false);
+    const [staInviando, setStaInviando] = useState(false);
+    const [indice, setIndice] = useState(0);
 
-    const [indiceDomandaCorrente, setIndiceDomandaCorrente] = useState(0);
-
-    // 1) Avvio tentativo + caricamento domande
+    /* ----------------------------------------------------------
+       INIT — AVVIO TENTATIVO + CARICAMENTO DOMANDE
+    ---------------------------------------------------------- */
     useEffect(() => {
         if (!idTest) return;
 
-        async function initTentativo() {
+        async function init() {
             try {
                 setErrore(null);
-                setStato("CREAZIONE_TENTATIVO");
+                setStato("CREAZIONE");
 
+                // 1) Avvia tentativo
                 const avvio = await avviaTest(idTest);
-                const nuovoIdTentativo = avvio.idTentativo;
-                setIdTentativo(nuovoIdTentativo);
 
-                setStato("CARICAMENTO_DOMANDE");
+                if (!avvio?.idTentativo) {
+                    throw new Error("Tentativo non valido");
+                }
 
-                const datiDomande: GetDomandeResponse =
-                    await getDomandeTentativo(nuovoIdTentativo);
+                const tid = avvio.idTentativo;
+                setIdTentativo(tid);
 
-                setTitoloTest(datiDomande.titoloTest);
-                setDurataMinuti(datiDomande.durataMinuti);
-                setDomande(datiDomande.domande);
+                // 2) Carica domande
+                setStato("DOMANDE");
+
+                const data = await getDomandeTentativo(tid);
+
+                setTitoloTest(data.titoloTest);
+                setDurataMinuti(data.durataMinuti);
+                setDomande(data.domande);
 
                 const iniziali: RisposteUtente = {};
-                for (const d of datiDomande.domande) {
+                data.domande.forEach((d) => {
                     iniziali[d.idDomanda] = null;
-                }
+                });
                 setRisposte(iniziali);
 
-                const seconds = (datiDomande.durataMinuti ?? 0) * 60;
-                setTempoRimanente(seconds);
-                setIndiceDomandaCorrente(0);
+                setTempoRimanente(data.durataMinuti * 60);
 
                 setStato("PRONTO");
             } catch (e: any) {
-                console.error(e);
-                if (e?.status === 409) {
-                    setErrore(
-                        "Hai già svolto questo test e non puoi ripeterlo."
-                    );
+                console.error("ERRORE INIT:", e);
+
+                if (e?.message?.includes("409") || e?.status === 409) {
+                    setErrore("Hai già svolto questo test e non puoi ripeterlo.");
                     setStato("PRONTO");
-                    setTempoRimanente(0);
                     setDomande([]);
-                } else {
-                    setErrore(
-                        "Non è stato possibile avviare il test. Riprova più tardi."
-                    );
+                    return;
                 }
+
+                setErrore("Errore durante l'avvio del test.");
             }
         }
 
-        initTentativo();
+        init();
     }, [idTest]);
 
-    // 2) Timer
+    /* ----------------------------------------------------------
+       TIMER
+    ---------------------------------------------------------- */
     useEffect(() => {
         if (stato !== "PRONTO") return;
         if (tempoRimanente <= 0 || tempoScaduto) return;
 
         const interval = setInterval(() => {
-            setTempoRimanente((prev) => {
-                if (prev <= 1) {
+            setTempoRimanente((t) => {
+                if (t <= 1) {
                     clearInterval(interval);
                     setTempoScaduto(true);
                     return 0;
                 }
-                return prev - 1;
+                return t - 1;
             });
         }, 1000);
 
@@ -123,97 +131,90 @@ export default function TentativoTestPage() {
             .padStart(2, "0")}`;
     }, [tempoRimanente]);
 
-    function onSelezionaRisposta(idDomanda: number, idOpzione: number) {
+    /* ----------------------------------------------------------
+       SELEZIONE RISPOSTA
+    ---------------------------------------------------------- */
+    function seleziona(idDomanda: number, idOpzione: number) {
         setRisposte((prev) => ({
             ...prev,
             [idDomanda]: idOpzione,
         }));
     }
 
-    async function onInviaTest() {
+    /* ----------------------------------------------------------
+       INVIO TEST
+    ---------------------------------------------------------- */
+    async function invia() {
         if (!idTentativo) return;
 
         try {
             setStaInviando(true);
-            setErrore(null);
 
-            const payloadRisposte: RispostaDTO[] = Object.entries(risposte).map(
-                ([idDomandaStr, idOpzione]) => ({
-                    idDomanda: Number(idDomandaStr),
+            const payload: RispostaDTO[] = Object.entries(risposte).map(
+                ([idDomanda, idOpzione]) => ({
+                    idDomanda: Number(idDomanda),
                     idOpzione: idOpzione ?? null,
                 })
             );
 
             await inviaRisposte(idTentativo, {
                 idTentativo,
-                risposte: payloadRisposte,
+                risposte: payload,
             });
 
             router.push(
                 `/candidati/test/${idTest}/risultati?tentativo=${idTentativo}`
             );
         } catch (e) {
-            console.error(e);
-            setErrore(
-                "Si è verificato un errore durante l'invio del test. Riprova."
-            );
+            console.error("ERRORE INVIO:", e);
+            setErrore("Errore durante l'invio del test.");
         } finally {
             setStaInviando(false);
         }
     }
 
-    function onNextOrSubmit() {
-        if (stato !== "PRONTO") return;
-        if (domande.length === 0) return;
-
-        const ultimaIndex = domande.length - 1;
-
-        if (indiceDomandaCorrente < ultimaIndex) {
-            setIndiceDomandaCorrente((prev) =>
-                prev < ultimaIndex ? prev + 1 : prev
-            );
+    function prossima() {
+        if (indice < domande.length - 1) {
+            setIndice(indice + 1);
         } else {
-            if (!staInviando) {
-                onInviaTest();
-            }
+            invia();
         }
     }
 
+    /* ----------------------------------------------------------
+       RENDER
+    ---------------------------------------------------------- */
+
     const testInCaricamento =
-        (stato !== "PRONTO" || !idTentativo) && errore === null;
-    const domandaCorrente =
-        !testInCaricamento && domande.length > 0
-            ? domande[indiceDomandaCorrente]
-            : null;
-    const totaleDomande = domande.length;
-    const isUltimaDomanda =
-        totaleDomande > 0 && indiceDomandaCorrente === totaleDomande - 1;
+        (stato !== "PRONTO" || !idTentativo) && !errore;
+
+    const domanda = !testInCaricamento
+        ? domande[indice] ?? null
+        : null;
 
     if (!idTest) {
         return (
-            <div className="space-y-6">
-                <PageHeader
-                    title="Test non valido"
-                    subtitle="L'identificativo del test non è corretto."
-                    actions={[
-                        {
-                            label: "Torna ai test",
-                            href: "/candidati/test",
-                            variant: "primary",
-                        },
-                    ]}
-                />
-            </div>
+            <PageHeader
+                title="Test non trovato"
+                subtitle="ID non valido."
+                actions={[
+                    {
+                        label: "Torna ai test",
+                        href: "/candidati/test",
+                        variant: "primary",
+                    },
+                ]}
+            />
         );
     }
 
     return (
         <div className="space-y-6">
             <PageHeader
-                title={titoloTest || "Svolgimento del test"}
+                title={titoloTest || "Svolgimento test"}
                 subtitle={
                     testInCaricamento
-                        ? "Stiamo preparando il tuo tentativo di test…"
+                        ? "Preparazione del tentativo…"
                         : "Rispondi alle domande entro il tempo a disposizione."
                 }
                 actions={[
@@ -226,14 +227,16 @@ export default function TentativoTestPage() {
             />
 
             {errore && (
-                <div className="max-w-3xl mx-auto rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-800 dark:text-red-100">
+                <div className="max-w-3xl mx-auto rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-800">
                     {errore}
                 </div>
             )}
 
-            <section className="max-w-4xl mx-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm space-y-6">
+            <section className="max-w-4xl mx-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm space-y-6">
+
+                {/* TIMER */}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="space-y-1">
+                    <div>
                         <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
                             Tempo rimanente
                         </p>
@@ -246,88 +249,69 @@ export default function TentativoTestPage() {
                         >
                             {minutiSecondi}
                         </p>
-                        {tempoScaduto && (
-                            <p className="text-xs text-red-600">
-                                Il tempo è scaduto.
-                            </p>
-                        )}
                     </div>
 
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            disabled={testInCaricamento || staInviando}
-                            onClick={() => {
-                                if (
-                                    window.confirm(
-                                        "Se aggiorni la pagina potresti perdere le risposte non salvate. Vuoi davvero aggiornare?"
-                                    )
-                                ) {
-                                    window.location.reload();
-                                }
-                            }}
-                        >
-                            Aggiorna pagina
-                        </Button>
-                    </div>
+                    <Button
+                        variant="outline"
+                        disabled={testInCaricamento}
+                        onClick={() => {
+                            if (
+                                window.confirm(
+                                    "Aggiornando perderai le risposte non inviate. Continuare?"
+                                )
+                            ) {
+                                window.location.reload();
+                            }
+                        }}
+                    >
+                        Aggiorna
+                    </Button>
                 </div>
 
+                {/* LOADING */}
                 {testInCaricamento && (
-                    <div className="mt-4 space-y-3 text-sm text-[var(--muted)]">
-                        <p>
-                            Preparazione del tentativo in corso. Attendi qualche
-                            istante senza chiudere la pagina.
-                        </p>
-                        <div className="space-y-2">
-                            <div className="h-4 w-1/2 rounded bg-[var(--surface-soft)]" />
-                            <div className="h-4 w-4/5 rounded bg-[var(--surface-soft)]" />
-                            <div className="h-4 w-3/5 rounded bg-[var(--surface-soft)]" />
-                        </div>
-                    </div>
+                    <p className="text-sm text-[var(--muted)]">
+                        Caricamento… attendi qualche secondo.
+                    </p>
                 )}
 
-                {!testInCaricamento && domandaCorrente && (
+                {/* DOMANDE */}
+                {!testInCaricamento && domanda && (
                     <div className="space-y-4">
+
                         <div className="flex items-center justify-between text-xs text-[var(--muted)]">
                             <span>
-                                Domanda {indiceDomandaCorrente + 1} di{" "}
-                                {totaleDomande}
+                                Domanda {indice + 1} di {domande.length}
                             </span>
-                            {durataMinuti > 0 && (
-                                <span>Durata test: {durataMinuti} min</span>
-                            )}
+                            <span>Durata: {durataMinuti} min</span>
                         </div>
 
                         <div className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-soft)] p-4 space-y-3">
-                            <div className="flex items-start justify-between gap-3">
-                                <p className="text-sm font-medium text-[var(--foreground)]">
-                                    {domandaCorrente.testo}
-                                </p>
-                            </div>
+                            <p className="text-sm font-medium text-[var(--foreground)]">
+                                {domanda.testo}
+                            </p>
 
                             <div className="space-y-2">
-                                {domandaCorrente.opzioni.map((opzione) => (
+                                {domanda.opzioni.map((o) => (
                                     <label
-                                        key={opzione.idOpzione}
-                                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-transparent px-2 py-1 text-sm hover:border-[var(--border)] hover:bg-[var(--surface)]"
+                                        key={o.idOpzione}
+                                        className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm cursor-pointer hover:bg-[var(--surface)]"
                                     >
                                         <input
                                             type="radio"
-                                            name={`domanda-${domandaCorrente.idDomanda}`}
                                             className="h-4 w-4"
                                             checked={
-                                                risposte[
-                                                    domandaCorrente.idDomanda
-                                                    ] === opzione.idOpzione
+                                                risposte[domanda.idDomanda] ===
+                                                o.idOpzione
                                             }
                                             onChange={() =>
-                                                onSelezionaRisposta(
-                                                    domandaCorrente.idDomanda,
-                                                    opzione.idOpzione
+                                                seleziona(
+                                                    domanda.idDomanda,
+                                                    o.idOpzione
                                                 )
                                             }
                                         />
-                                        <span>{opzione.testoOpzione}</span>
+                                        <span>{o.testoOpzione}</span>
                                     </label>
                                 ))}
                             </div>
@@ -336,23 +320,22 @@ export default function TentativoTestPage() {
                         <div className="flex justify-end">
                             <Button
                                 variant="primary"
-                                disabled={testInCaricamento || staInviando}
-                                onClick={onNextOrSubmit}
+                                disabled={staInviando}
+                                onClick={prossima}
                             >
-                                {isUltimaDomanda
+                                {indice === domande.length - 1
                                     ? staInviando
-                                        ? "Invio in corso…"
-                                        : "Conferma e invia test"
+                                        ? "Invio…"
+                                        : "Invia test"
                                     : "Prossima domanda"}
                             </Button>
                         </div>
                     </div>
                 )}
 
-                {!testInCaricamento && !domandaCorrente && !errore && (
+                {!testInCaricamento && !domanda && !errore && (
                     <p className="text-sm text-[var(--muted)]">
-                        Non ci sono domande associate a questo test. Contatta il
-                        supporto per segnalare il problema.
+                        Questo test non ha domande configurate.
                     </p>
                 )}
             </section>

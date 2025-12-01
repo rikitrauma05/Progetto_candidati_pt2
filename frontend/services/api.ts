@@ -15,6 +15,10 @@ interface RequestOptions extends RequestInit {
 
 /**
  * Wrapper generico per le chiamate HTTP.
+ *
+ * Modifica rispetto all'originale:
+ * - se lo status è 409, NON viene lanciata un'eccezione,
+ *   ma il body (se presente) viene restituito come risultato.
  */
 async function request<T>(
     path: string,
@@ -47,7 +51,27 @@ async function request<T>(
         headers,
     });
 
+    // Nessun contenuto
+    if (response.status === 204) {
+        return undefined as unknown as T;
+    }
+
+    // Se NON è ok
     if (!response.ok) {
+        // Caso speciale: 409 → NON lancio errore, ritorno il body
+        if (response.status === 409) {
+            let data: any = undefined;
+            try {
+                data = await response.json();
+            } catch {
+                // nessun JSON/nessun body, lascio undefined
+            }
+
+            console.warn("[API] HTTP 409 gestito come risposta valida:", url, data);
+            return (data as T) ?? ({} as T);
+        }
+
+        // Tutti gli altri errori come prima
         let message = `Errore HTTP ${response.status}`;
 
         try {
@@ -64,10 +88,7 @@ async function request<T>(
         throw new Error(message);
     }
 
-    if (response.status === 204) {
-        return undefined as unknown as T;
-    }
-
+    // 2xx con body
     return (await response.json()) as T;
 }
 
