@@ -184,9 +184,9 @@ export default function PosizioniCandidato() {
                                 onChange={(e) => setFiltroSede(e.target.value)}
                                 className="w-full rounded-lg border border-border bg-[var(--background)] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)]"
                             >
-                                <option value="tutte">Tutte le sedi</option>
+                                <option className="bg-neutral-900 / border-neutral-700" value="tutte">Tutte le sedi</option>
                                 {sediDisponibili.map((sede) => (
-                                    <option key={sede} value={sede}>
+                                    <option className="bg-neutral-900 / border-neutral-700" key={sede} value={sede}>
                                         {sede}
                                     </option>
                                 ))}
@@ -204,9 +204,9 @@ export default function PosizioniCandidato() {
                                 }
                                 className="w-full rounded-lg border border-border bg-[var(--background)] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)]"
                             >
-                                <option value="tutti">Tutti i contratti</option>
+                                <option className="bg-neutral-900 / border-neutral-700" value="tutti">Tutti i contratti</option>
                                 {contrattiDisponibili.map((contratto) => (
-                                    <option key={contratto} value={contratto}>
+                                    <option className="bg-neutral-900 / border-neutral-700" key={contratto} value={contratto}>
                                         {contratto}
                                     </option>
                                 ))}
