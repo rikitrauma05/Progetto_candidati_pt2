@@ -18,7 +18,7 @@ export default function RootLayout({
         <html lang="it">
         <body className="min-h-dvh bg-[var(--background)] text-[var(--foreground)] antialiased">
         <div className="min-h-dvh flex flex-col">
-            <header className="border-b border-border bg-black/70 backdrop-blur">
+            <header className="sticky top-0 z-50 border-b border-border bg-black/70 backdrop-blur">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
                     <Link
                         href="/"
