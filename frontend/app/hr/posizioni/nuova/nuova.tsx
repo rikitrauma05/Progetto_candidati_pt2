@@ -35,7 +35,7 @@ export default function NuovaPosizionePage() {
     const [contratto, setContratto] = useState<Contratto>("INDETERMINATO");
     const [idSettore, setIdSettore] = useState<string>("1"); // default Informatica
     const [descrizione, setDescrizione] = useState("");
-    const [ral, setRal] = useState<string>("");
+    const [ral, setRal] = useState<number>(0);
 
     // test
     const [tests, setTests] = useState<TestListItem[]>([]);
@@ -85,7 +85,7 @@ export default function NuovaPosizionePage() {
                 sede,
                 contratto,
                 descrizione: descrizione.trim() || null,
-                ral: ral === "" ? null : Number(ral),
+                ral: ral === 0 ? null : Number(ral),
                 // qui mandiamo l'oggetto idSettore come si aspetta l'entity Posizione
                 idSettore: {
                     idSettore: Number(idSettore),
@@ -245,8 +245,9 @@ export default function NuovaPosizionePage() {
                             </label>
                             <input
                                 type="number"
+                                min={0}
                                 value={ral}
-                                onChange={(e) => setRal(e.target.value)}
+                                onChange={(e) => setRal(Number(e.target.value))}
                                 className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
                                 placeholder="Es. 28000"
                             />
