@@ -167,15 +167,13 @@ export default function NuovaPosizionePage() {
                             <label className="text-sm font-medium">Sede</label>
                             <select
                                 value={sede}
-                                onChange={(e) =>
-                                    setSede(e.target.value as Sede)
-                                }
+                                onChange={(e) => setSede(e.target.value as Sede)}
                                 className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
                             >
-                                <option value="LODI">Lodi</option>
-                                <option value="FIRENZE">Firenze</option>
-                                <option value="PARMA">Parma</option>
-                                <option value="RAPALLO">Rapallo</option>
+                                <option className="bg-neutral-900 / border-neutral-700" value="LODI">Lodi</option>
+                                <option className="bg-neutral-900 / border-neutral-700" value="FIRENZE">Firenze</option>
+                                <option className="bg-neutral-900 / border-neutral-700" value="PARMA">Parma</option>
+                                <option className="bg-neutral-900 / border-neutral-700" value="RAPALLO">Rapallo</option>
                             </select>
                         </div>
 
@@ -192,15 +190,11 @@ export default function NuovaPosizionePage() {
                                 }
                                 className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
                             >
-                                <option value="STAGE">Stage</option>
-                                <option value="PART TIME">Part time</option>
-                                <option value="CONTRATTO">Contratto</option>
-                                <option value="DETERMINATO">
-                                    Tempo determinato
-                                </option>
-                                <option value="INDETERMINATO">
-                                    Tempo indeterminato
-                                </option>
+                                <option className="bg-neutral-900 / border-neutral-700" value="STAGE">Stage</option>
+                                <option className="bg-neutral-900 / border-neutral-700" value="PART TIME">Part time</option>
+                                <option className="bg-neutral-900 / border-neutral-700" value="CONTRATTO">Contratto</option>
+                                <option className="bg-neutral-900 / border-neutral-700" value="DETERMINATO">Tempo determinato</option>
+                                <option className="bg-neutral-900 / border-neutral-700" value="INDETERMINATO">Tempo indeterminato</option>
                             </select>
                         </div>
 
@@ -216,7 +210,7 @@ export default function NuovaPosizionePage() {
                                 className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
                             >
                                 {SETTORI.map((s) => (
-                                    <option key={s.id} value={s.id.toString()}>
+                                    <option className="bg-neutral-900 / border-neutral-700" key={s.id} value={s.id.toString()}>
                                         {s.label}
                                     </option>
                                 ))}
@@ -295,11 +289,11 @@ export default function NuovaPosizionePage() {
                                 }
                                 className="mt-1 w-full px-3 py-2 rounded-md border bg-[var(--input)]"
                             >
-                                <option value="">
+                                <option className="bg-neutral-900 / border-neutral-700" value="">
                                     Nessun test (lascia vuoto)
                                 </option>
                                 {tests.map((t) => (
-                                    <option key={t.idTest} value={t.idTest}>
+                                    <option className="bg-neutral-900 / border-neutral-700" key={t.idTest} value={t.idTest}>
                                         {t.titolo}
                                         {t.durataMinuti
                                             ? ` – ${t.durataMinuti} min`
