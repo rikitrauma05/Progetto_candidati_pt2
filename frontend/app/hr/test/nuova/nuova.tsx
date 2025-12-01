@@ -50,24 +50,92 @@ export default function NuovaTest() {
     // VALIDAZIONI CLIENT
     // ============================================================
 
-    const validateBeforeSubmit = () => {
-        if (durataMinuti < 1 || durataMinuti > 60)
+    const validateBeforeSubmit = (): string | null => {
+        if (durataMinuti < 1 || durataMinuti > 60) {
             return "La durata deve essere compresa tra 1 e 60 minuti.";
+        }
 
-        if (domande.length > 20) return <span className="error-message">Non puoi inserire più di 20 domande.</span>;
+        if (domande.length === 0) {
+            return "Devi inserire almeno una domanda.";
+        }
 
-        if (punteggioMax > 100)
+        if (domande.length > 20) {
+            return "Non puoi inserire più di 20 domande.";
+        }
+
+        if (punteggioMax > 100) {
             return "Il punteggio massimo non può superare 100.";
+        }
 
-        if (punteggioMin < 0)
+        if (punteggioMin < 0) {
             return "Il punteggio minimo non può essere negativo.";
+        }
 
-        if (punteggioMin > punteggioMax)
-            return "Il punteggio minimo non può essere maggiore del massimo.";
+        if (punteggioMin > punteggioMax) {
+            return "Il punteggio minimo non può essere maggiore del punteggio massimo.";
+        }
 
-        for (const d of domande) {
-            if (d.punteggio < 1 || d.punteggio > 10)
-                return "Il punteggio per ogni domanda deve essere tra 1 e 10.";
+        // Mappa: testo normalizzato domanda -> indici (1-based) dove compare
+        const mappaDomande: Record<string, number[]> = {};
+
+        for (let i = 0; i < domande.length; i++) {
+            const d = domande[i];
+            const testoNorm = d.testo.trim().toLowerCase();
+
+            if (!testoNorm) {
+                return `Il testo della domanda ${i + 1} è obbligatorio.`;
+            }
+
+            if (!mappaDomande[testoNorm]) {
+                mappaDomande[testoNorm] = [];
+            }
+            mappaDomande[testoNorm].push(i + 1); // per messaggio umano
+
+            if (d.punteggio < 1 || d.punteggio > 10) {
+                return `Il punteggio della domanda ${i + 1} deve essere compreso tra 1 e 10.`;
+            }
+
+            if (!d.opzioni || d.opzioni.length < 2) {
+                return `La domanda ${i + 1} deve avere almeno due opzioni di risposta.`;
+            }
+
+            const hasCorretta = d.opzioni.some((o) => o.corretta);
+            if (!hasCorretta) {
+                return `La domanda ${i + 1} deve avere almeno un'opzione corretta.`;
+            }
+
+            // Controllo opzioni duplicate nella singola domanda
+            const opzioniSet = new Set<string>();
+            for (let j = 0; j < d.opzioni.length; j++) {
+                const op = d.opzioni[j];
+                const testoOpNorm = op.testoOpzione.trim().toLowerCase();
+
+                if (!testoOpNorm) {
+                    return `Il testo dell'opzione ${j + 1} della domanda ${i + 1} è obbligatorio.`;
+                }
+
+                if (opzioniSet.has(testoOpNorm)) {
+                    return `Le opzioni della domanda ${i + 1} contengono testi duplicati. Modifica le opzioni per renderle tutte diverse.`;
+                }
+
+                opzioniSet.add(testoOpNorm);
+            }
+        }
+
+        // Individuiamo le domande duplicate (testo identico)
+        const duplicateGroups = Object.entries(mappaDomande).filter(
+            ([_, indices]) => indices.length > 1
+        );
+
+        if (duplicateGroups.length > 0) {
+            const dettagli = duplicateGroups
+                .map(
+                    ([testo, indices]) =>
+                        `- "${testo}" usata nelle domande: ${indices.join(", ")}`
+                )
+                .join("\n");
+
+            return `Le seguenti domande risultano duplicate (testo identico):\n${dettagli}`;
         }
 
         return null;
@@ -240,7 +308,6 @@ export default function NuovaTest() {
         }
     };
 
-    // classe comune per input/select in tema scuro
     const baseInputClass =
         "w-full px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--input)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent)]";
 
@@ -266,7 +333,7 @@ export default function NuovaTest() {
                 className="space-y-6 p-6 border border-[var(--border)] rounded-xl bg-[var(--card)]"
             >
                 {error && (
-                    <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive whitespace-pre-line">
                         {error}
                     </div>
                 )}
@@ -459,7 +526,7 @@ export default function NuovaTest() {
 
                                 {/* Opzioni */}
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify_between">
                                         <span className="text-xs font-medium">
                                             Opzioni di risposta
                                         </span>

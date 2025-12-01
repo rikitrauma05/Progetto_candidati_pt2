@@ -60,7 +60,7 @@ export default function DettaglioPosizionePage() {
     }, [idPosizione]);
 
     return (
-        <main className="min-h-dvh bg-slate-950 text-slate-50">
+
             <section className="max-w-4xl mx-auto px-4 py-8 space-y-6">
                 <header className="flex items-center justify-between">
                     <div>
@@ -138,6 +138,6 @@ export default function DettaglioPosizionePage() {
                     </div>
                 )}
             </section>
-        </main>
+
     );
 }
