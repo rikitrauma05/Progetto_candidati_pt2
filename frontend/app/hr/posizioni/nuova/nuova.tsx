@@ -32,10 +32,10 @@ export default function NuovaPosizionePage() {
     // campi posizione
     const [titolo, setTitolo] = useState("");
     const [sede, setSede] = useState<Sede>("LODI");
-    const [contratto, setContratto] = useState<Contratto>("INDETERMINATO");
+    const [contratto, setContratto] = useState<Contratto>("STAGE");
     const [idSettore, setIdSettore] = useState<string>("1"); // default Informatica
     const [descrizione, setDescrizione] = useState("");
-    const [ral, setRal] = useState<number>(0);
+    const [ral, setRal] = useState("");
 
     // test
     const [tests, setTests] = useState<TestListItem[]>([]);
@@ -85,7 +85,7 @@ export default function NuovaPosizionePage() {
                 sede,
                 contratto,
                 descrizione: descrizione.trim() || null,
-                ral: ral === 0 ? null : Number(ral),
+                ral: ral === "" ? null : Number(ral),
                 // qui mandiamo l'oggetto idSettore come si aspetta l'entity Posizione
                 idSettore: {
                     idSettore: Number(idSettore),
@@ -229,6 +229,7 @@ export default function NuovaPosizionePage() {
                             }
                             className="w-full px-3 py-2 rounded-md border bg-[var(--input)] h-24"
                             placeholder="Descrivi le attività e i requisiti della posizione…"
+                            required
                         />
                     </div>
 
@@ -238,10 +239,18 @@ export default function NuovaPosizionePage() {
                                 RAL (opzionale)
                             </label>
                             <input
-                                type="number"
-                                min={0}
+                                type="text"
+                                inputMode="numeric"
+                                pattern="\d*"
                                 value={ral}
-                                onChange={(e) => setRal(Number(e.target.value))}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+
+                                    // Consenti solo cifre
+                                    if (/^\d*$/.test(val)) {
+                                        setRal(val);
+                                    }
+                                }}
                                 className="w-full px-3 py-2 rounded-md border bg-[var(--input)]"
                                 placeholder="Es. 28000"
                             />

@@ -358,7 +358,6 @@ export default function NuovaTest() {
                             value={descrizione}
                             onChange={(e) => setDescrizione(e.target.value)}
                             className={`${baseInputClass} h-24 resize-none`}
-                            required
                         />
                     </div>
 
@@ -438,7 +437,7 @@ export default function NuovaTest() {
                                 className={baseInputClass}
                             >
                                 {TIPI_TEST.map((t) => (
-                                    <option key={t.codice} value={t.codice}>
+                                    <option className="bg-neutral-900 / border-neutral-700" key={t.codice} value={t.codice}>
                                         {t.label}
                                     </option>
                                 ))}
@@ -535,7 +534,7 @@ export default function NuovaTest() {
                                             onClick={() =>
                                                 aggiungiOpzione(idx)
                                             }
-                                            className="text-xs text-[var(--accent)] hover:underline"
+                                            className="text-sm font-semibold text-blue-600 hover:text-blue-700 underline-offset-2 hover:underline"
                                         >
                                             + Aggiungi opzione
                                         </button>
