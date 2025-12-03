@@ -89,9 +89,7 @@ export default function DettaglioTest({ idTest }: DettaglioTestProps) {
                 <p>
                     <strong>Durata:</strong> {test.durataMinuti} minuti
                 </p>
-                <p>
-                    <strong>Punteggio massimo:</strong> {test.punteggioMax}
-                </p>
+
                 <p>
                     <strong>Punteggio minimo:</strong> {test.punteggioMin}
                 </p>

@@ -76,13 +76,13 @@ export default function RisultatiTestPage() {
         load();
     }, [idTest, idTentativo]);
 
-    const percentuale = useMemo(() => {
-        if (!risultato) return null;
-        if (!risultato.punteggioMax) return null;
-        return Math.round(
-            (risultato.punteggioTotale / risultato.punteggioMax) * 100
-        );
-    }, [risultato]);
+    // const percentuale = useMemo(() => {
+    //     if (!risultato) return null;
+    //     if (!risultato.punteggioMax) return null;
+    //     return Math.round(
+    //         (risultato.punteggioTotale / risultato.punteggioMax) * 100
+    //     );
+    // }, [risultato]);
 
     if (!idTest) {
         return (
@@ -133,13 +133,13 @@ export default function RisultatiTestPage() {
 
             {!loading && !errore && risultato && (
                 <section className="max-w-4xl mx-auto space-y-6">
-                    <div className={`rounded-2xl border p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${esitoClass(risultato.esito)}`}>
+                    <div className={`rounded-2xl border p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${esitoClass(String(risultato.punteggioTotale))}`}>
                         <div>
                             <p className="text-xs uppercase tracking-wide">
                                 Esito del tentativo
                             </p>
                             <p className="mt-1 text-lg font-semibold">
-                                {esitoLabel(risultato.esito)}
+                                {esitoLabel(String(risultato.punteggioTotale))}
                             </p>
                             {risultato.completatoAt && (
                                 <p className="text-xs text-[var(--muted)]">
@@ -153,13 +153,8 @@ export default function RisultatiTestPage() {
                                 Punteggio ottenuto
                             </p>
                             <p className="text-xl font-semibold">
-                                {risultato.punteggioTotale} / {risultato.punteggioMax}
+                                {risultato.punteggioTotale}
                             </p>
-                            {typeof percentuale === "number" && (
-                                <p className="text-xs opacity-80">
-                                    ({percentuale}% del punteggio massimo)
-                                </p>
-                            )}
                         </div>
                     </div>
 

@@ -13,7 +13,7 @@ export default function TestIntroduzione() {
             <div className="rounded-2xl p-6 bg-surface border border-border shadow-card">
                 <h2 className="text-2xl font-semibold mb-2">Introduzione al test</h2>
                 <p className="text-muted">
-                    Qui caricheremo titolo, durata, punteggio massimo e istruzioni del test
+                    Qui caricheremo titolo, durata, punteggio e istruzioni del test
                     selezionato (<span className="font-mono">{String(idTest)}</span>).
                 </p>
             </div>

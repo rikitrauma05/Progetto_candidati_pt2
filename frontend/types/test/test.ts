@@ -9,7 +9,6 @@ export type TestListItem = {
     tipo: TestType | string | null | undefined;
     durataMinuti: number;
     descrizione?: string | null;
-    punteggioMax?: number | null;
 };
 
 /* --- STRUTTURA TEST COMPLETA (per HR) --- */
@@ -35,7 +34,6 @@ export type StrutturaTestDto = {
     descrizione?: string | null;
     durataMinuti: number;
     numeroDomande: number;
-    punteggioMax: number;
     punteggioMin?: number | null;
     tipo?: string | null;
     domande: StrutturaTestDomandaDto[];
@@ -59,7 +57,6 @@ export type TestCreateRequest = {
     descrizione?: string | null;
     durataMinuti: number;
     numeroDomande: number;
-    punteggioMax: number;
     punteggioMin?: number | null;
     codiceTipoTest: TestType;
     domande: DomandaCreateRequest[];

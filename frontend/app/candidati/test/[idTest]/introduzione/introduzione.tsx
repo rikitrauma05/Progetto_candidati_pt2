@@ -12,7 +12,7 @@ type StrutturaTestClient = {
     descrizione?: string | null;
     durataMinuti: number;
     numeroDomande: number;
-    punteggioMax: number;
+
     punteggioMin?: number | null;
 };
 
@@ -156,15 +156,6 @@ export default function IntroduzioneTestPage() {
                         </p>
                         <p className="mt-1 text-base font-semibold text-[var(--foreground)]">
                             {test.numeroDomande}
-                        </p>
-                    </div>
-
-                    <div className="rounded-xl bg-[var(--surface-soft)] p-3">
-                        <p className="text-[0.7rem] uppercase tracking-wide">
-                            Punteggio massimo
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-[var(--foreground)]">
-                            {test.punteggioMax} punti
                         </p>
                     </div>
 

@@ -28,7 +28,6 @@ export default function NuovaTest() {
     const [titolo, setTitolo] = useState("");
     const [descrizione, setDescrizione] = useState("");
     const [durataMinuti, setDurataMinuti] = useState<number>(20);
-    const [punteggioMax, setPunteggioMax] = useState<number>(100);
     const [punteggioMin, setPunteggioMin] = useState<number>(0);
     const [tipoTest, setTipoTest] = useState<TestType>("SOFT_SKILLS");
 
@@ -63,16 +62,8 @@ export default function NuovaTest() {
             return "Non puoi inserire più di 20 domande.";
         }
 
-        if (punteggioMax > 100) {
-            return "Il punteggio massimo non può superare 100.";
-        }
-
         if (punteggioMin < 0) {
             return "Il punteggio minimo non può essere negativo.";
-        }
-
-        if (punteggioMin > punteggioMax) {
-            return "Il punteggio minimo non può essere maggiore del punteggio massimo.";
         }
 
         // Mappa: testo normalizzato domanda -> indici (1-based) dove compare
@@ -277,7 +268,6 @@ export default function NuovaTest() {
             descrizione,
             durataMinuti,
             numeroDomande: domande.length,
-            punteggioMax,
             punteggioMin,
             codiceTipoTest: tipoTest,
             domande: domande.map((d) => ({
@@ -381,23 +371,6 @@ export default function NuovaTest() {
 
                         <div>
                             <label className="text-sm font-medium">
-                                Punteggio massimo
-                            </label>
-                            <input
-                                type="number"
-                                min={1}
-                                max={100}
-                                value={punteggioMax}
-                                onChange={(e) =>
-                                    setPunteggioMax(Number(e.target.value))
-                                }
-                                className={baseInputClass}
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="text-sm font-medium">
                                 Punteggio minimo
                             </label>
                             <input
@@ -434,7 +407,8 @@ export default function NuovaTest() {
                                 onChange={(e) =>
                                     setTipoTest(e.target.value as TestType)
                                 }
-                                className={baseInputClass}
+                                className={`${baseInputClass} min-w-80`}
+
                             >
                                 {TIPI_TEST.map((t) => (
                                     <option className="bg-neutral-900 / border-neutral-700" key={t.codice} value={t.codice}>

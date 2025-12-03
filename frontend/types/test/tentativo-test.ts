@@ -13,7 +13,6 @@ export type TentativoListItem = {
     titoloTest: string;
     durataMinuti: number;
     punteggioTotale: number | null;
-    punteggioMax: number;
     esito: EsitoTentativoCodice;
     completatoAt: string | null;
 };
@@ -58,7 +57,6 @@ export type InviaRisposteRequest = {
 export type InviaRisposteResponse = {
     idTentativo: number;
     punteggioTotale: number;
-    punteggioMax: number;
     esito: EsitoTentativoCodice;
 };
 
@@ -68,7 +66,6 @@ export type RisultatoTentativoDettaglio = {
     idTest: number;
     titoloTest: string;
     punteggioTotale: number;
-    punteggioMax: number;
     punteggioMin?: number | null;
     esito: EsitoTentativoCodice;
     completatoAt: string;

@@ -87,9 +87,6 @@ export default function TestPage() {
                             <th className="px-4 py-3 hidden md:table-cell">
                                 Durata
                             </th>
-                            <th className="px-4 py-3 hidden md:table-cell">
-                                Punteggio max
-                            </th>
                             <th className="px-4 py-3">Azioni</th>
                         </tr>
                         </thead>
@@ -114,9 +111,6 @@ export default function TestPage() {
                                 </td>
                                 <td className="px-4 py-3 text-xs hidden md:table-cell">
                                     {test.durataMinuti} min
-                                </td>
-                                <td className="px-4 py-3 text-xs hidden md:table-cell">
-                                    {test.punteggioMax ?? "—"}
                                 </td>
                                 <td className="px-4 py-3">
                                     <Link
