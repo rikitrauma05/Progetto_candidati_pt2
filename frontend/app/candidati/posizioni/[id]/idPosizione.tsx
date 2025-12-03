@@ -1,4 +1,5 @@
-// frontend/app/candidati/posizioni/[id]/idPosizione.tsx
+
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -47,6 +48,11 @@ export default function IdPosizionePage() {
                             href: "/candidati/posizioni",
                             variant: "dark",
                         },
+                        {
+                            label: "Torna alle candidature",
+                            href: "/candidati/candidature/mie",
+                            variant: "dark",
+                        },
                     ]}
                 />
                 <EmptyState
@@ -70,8 +76,13 @@ export default function IdPosizionePage() {
                 }
                 actions={[
                     {
-                        label: "Torna alle posizioni",
+                        label: "Vai alle posizioni",
                         href: "/candidati/posizioni",
+                        variant: "dark",
+                    },
+                    {
+                        label: "Vai alle candidature",
+                        href: "/candidati/candidature",
                         variant: "dark",
                     },
                 ]}
@@ -122,7 +133,7 @@ export default function IdPosizionePage() {
                                 {posizione.titolo}
                             </h2>
                             <p className="text-sm text-muted">
-                                {posizione.sede} •{" "}
+                                {posizione.sede} • {" "}
                                 {posizione.contratto || "Contratto non specificato"}
                             </p>
                         </div>
@@ -150,19 +161,19 @@ export default function IdPosizionePage() {
                             <h3 className="text-base font-semibold">Dettagli</h3>
                             <ul className="text-sm text-muted space-y-1">
                                 <li>
-                                    <strong>Contratto:</strong>{" "}
+                                    <strong>Contratto:</strong> {" "}
                                     {posizione.contratto || "Non specificato"}
                                 </li>
                                 <li>
-                                    <strong>RAL:</strong>{" "}
+                                    <strong>RAL:</strong> {" "}
                                     {posizione.ral ? `${posizione.ral} €` : "Non disponibile"}
                                 </li>
                                 <li>
-                                    <strong>Settore:</strong>{" "}
+                                    <strong>Settore:</strong> {" "}
                                     {(posizione as any).idSettore?.nome || "Non indicato"}
                                 </li>
                                 <li>
-                                    <strong>Stato:</strong>{" "}
+                                    <strong>Stato:</strong> {" "}
                                     {(posizione as any).idStatoPosizione?.descrizione ||
                                         "Attiva"}
                                 </li>
@@ -182,3 +193,4 @@ export default function IdPosizionePage() {
         </div>
     );
 }
+
