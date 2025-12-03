@@ -1,3 +1,5 @@
+// components/ApplyButton.tsx (o dove si trova)
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -30,15 +32,11 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
     const [idTest, setIdTest] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    // All'avvio:
-    // 1) vede se esiste già una candidatura per questa posizione (/candidature/mie)
-    // 2) legge i dettagli della posizione e si prende l'idTest (/posizioni/{id})
     useEffect(() => {
         const load = async () => {
             try {
                 setError(null);
 
-                // 1) Stato candidatura
                 const candidature = await getJson<Candidatura[]>("/candidature/mie");
                 const lista = candidature ?? [];
                 const found = lista.find(
@@ -47,7 +45,6 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
 
                 setAlreadyApplied(!!found);
 
-                // 2) Dettaglio posizione → idTest
                 const pos = await getJson<PosizioneApi>(`/posizioni/${idPosizione}`);
                 if (pos && typeof pos.idTest !== "undefined" && pos.idTest !== null) {
                     setIdTest(pos.idTest);
@@ -59,7 +56,6 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
                     "Errore nel caricamento stato candidatura/posizione:",
                     e,
                 );
-                // se fallisce, lasciamo il bottone "Candidati" e niente test
             }
         };
 
@@ -73,16 +69,16 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
             setLoading(true);
             setError(null);
 
-            await postJson<Candidatura, { idPosizione: number }>(
+            await postJson<{ message: string }, { idPosizione: number }>(
                 "/candidature",
                 { idPosizione },
             );
 
             setAlreadyApplied(true);
 
-            // Se esiste un test associato, dopo esserti candidato puoi andare al test
+            // ✅ Passa idPosizione nell'URL
             if (idTest) {
-                router.push(`/candidati/test/${idTest}/introduzione`);
+                router.push(`/candidati/test/${idTest}/introduzione?idPosizione=${idPosizione}`);
             }
         } catch (e: any) {
             console.error("Errore invio candidatura:", e);
@@ -97,7 +93,8 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
 
     function handleGoToTest() {
         if (!idTest) return;
-        router.push(`/candidati/test/${idTest}/introduzione`);
+        // ✅ Passa idPosizione nell'URL
+        router.push(`/candidati/test/${idTest}/introduzione?idPosizione=${idPosizione}`);
     }
 
     return (
@@ -106,7 +103,6 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
                 fullWidth ? "w-full" : ""
             }`}
         >
-            {/* Bottone principale: Candidati / Candidato (non più cliccabile) */}
             <Button
                 type="button"
                 className={fullWidth ? "flex-1" : ""}
@@ -121,7 +117,6 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
                         : "Candidati"}
             </Button>
 
-            {/* Se sei candidato e la posizione ha un test → mostra "Vai al test" */}
             {alreadyApplied && idTest && (
                 <Button
                     type="button"

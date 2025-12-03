@@ -94,8 +94,8 @@ export function avviaTest(idTest: number, payload?: AvviaTestRequest) {
  * Elenco domande per un tentativo specifico.
  * GET /api/test/tentativi/{idTentativo}/domande
  */
-export function getDomandeTentativo(idTentativo: number) {
-    return getJson<GetDomandeResponse>(`/test/tentativi/${idTentativo}/domande`);
+export function getDomandeTentativo(idTest: number) {
+    return getJson<GetDomandeResponse>(`/test/${idTest}/domande`);
 }
 
 /**
@@ -134,15 +134,35 @@ export function inviaRispostaSingola(
         payload
     );
 }
+export type CompletaTestRequest = {
+    idTest: number;
+    idPosizione: number;
+    iniziatoAt: string;
+    risposte: RispostaDTO[];
+};
+
+export type RispostaDTO = {
+    idDomanda: number;
+    idOpzione: number | null;
+};
+
+export type CompletaTestResponse = {
+    idTentativo: number;
+    punteggioTotale: number;
+    esito: string;
+};
+
 
 /**
  * Completa il test (fine tempo o ultima domanda).
  * POST /api/test/tentativi/{idTentativo}/completa
  */
-export function completaTest(idTentativo: number) {
-    return postJson<void, {}>(`/test/tentativi/${idTentativo}/completa`, {});
+export function completaTest(payload: CompletaTestRequest) {
+    return postJson<CompletaTestResponse, CompletaTestRequest>(
+        `/test/completa`,
+        payload
+    );
 }
-
 /* ============================================================
  *  RISULTATI TEST
  * ============================================================*/

@@ -1,42 +1,40 @@
+// app/candidati/test/[idTest]/tentativo/tentativo.tsx (o page.tsx)
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-
+import { useParams, useRouter, useSearchParams } from "next/navigation"; // ✅ Aggiungi useSearchParams
 import PageHeader from "@/components/layout/pageHeader";
 import Button from "@/components/ui/button";
+import { getDomandeTentativo, completaTest } from "@/services/test.service"; // ✅ Rimuovi avviaTest, aggiungi completaTest
+import type { GetDomandeResponse, RispostaDTO } from "@/types/test/tentativo-test";
 
-import {
-    avviaTest,
-    getDomandeTentativo,
-    inviaRisposte,
-} from "@/services/test.service";
-
-import type {
-    GetDomandeResponse,
-    RispostaDTO,
-} from "@/types/test/tentativo-test";
-
-type StatoCaricamento = "CREAZIONE" | "DOMANDE" | "PRONTO";
+type StatoCaricamento = "CARICAMENTO" | "PRONTO";
 type RisposteUtente = Record<number, number | null>;
 
 export default function TentativoTestPage() {
-
     /* ----------------------------------------------------------
        PARAMETRI URL
     ---------------------------------------------------------- */
     const params = useParams<{ idTest: string }>();
-    const idTest = Number(params.idTest);
-
+    const searchParams = useSearchParams(); // ✅ AGGIUNGI
     const router = useRouter();
+
+    const idTest = Number(params.idTest);
+    const idPosizione = Number(searchParams.get('idPosizione')); // ✅ Leggi dall'URL
+    //
+    // console.log('🔍 DEBUG - idTest:', idTest);
+    // console.log('🔍 DEBUG - idPosizione:', idPosizione);
+    // console.log('🔍 DEBUG - searchParams:', searchParams.toString());
+
 
     /* ----------------------------------------------------------
        STATE
     ---------------------------------------------------------- */
-    const [stato, setStato] = useState<StatoCaricamento>("CREAZIONE");
+    const [stato, setStato] = useState<StatoCaricamento>("CARICAMENTO");
     const [errore, setErrore] = useState<string | null>(null);
+    const [iniziatoAt] = useState<Date>(new Date()); // ✅ Timestamp di inizio
 
-    const [idTentativo, setIdTentativo] = useState<number | null>(null);
     const [titoloTest, setTitoloTest] = useState("");
     const [durataMinuti, setDurataMinuti] = useState(0);
     const [domande, setDomande] = useState<GetDomandeResponse["domande"]>([]);
@@ -47,30 +45,21 @@ export default function TentativoTestPage() {
     const [indice, setIndice] = useState(0);
 
     /* ----------------------------------------------------------
-       INIT — AVVIO TENTATIVO + CARICAMENTO DOMANDE
+       INIT — CARICA SOLO DOMANDE (NON CREA TENTATIVO)
     ---------------------------------------------------------- */
     useEffect(() => {
-        if (!idTest) return;
+        if (!idTest || !idPosizione) {
+            setErrore("Parametri mancanti: idTest o idPosizione");
+            return;
+        }
 
         async function init() {
             try {
                 setErrore(null);
-                setStato("CREAZIONE");
+                setStato("CARICAMENTO");
 
-                // 1) Avvia tentativo
-                const avvio = await avviaTest(idTest);
-
-                if (!avvio?.idTentativo) {
-                    throw new Error("Tentativo non valido");
-                }
-
-                const tid = avvio.idTentativo;
-                setIdTentativo(tid);
-
-                // 2) Carica domande
-                setStato("DOMANDE");
-
-                const data = await getDomandeTentativo(tid);
+                // ✅ Carica SOLO le domande (NON crea tentativo)
+                const data = await getDomandeTentativo(idTest);
 
                 setTitoloTest(data.titoloTest);
                 setDurataMinuti(data.durataMinuti);
@@ -83,24 +72,15 @@ export default function TentativoTestPage() {
                 setRisposte(iniziali);
 
                 setTempoRimanente(data.durataMinuti * 60);
-
                 setStato("PRONTO");
             } catch (e: any) {
                 console.error("ERRORE INIT:", e);
-
-                if (e?.message?.includes("409") || e?.status === 409) {
-                    setErrore("Hai già svolto questo test e non puoi ripeterlo.");
-                    setStato("PRONTO");
-                    setDomande([]);
-                    return;
-                }
-
-                setErrore("Errore durante l'avvio del test.");
+                setErrore("Errore durante il caricamento del test.");
             }
         }
 
         init();
-    }, [idTest]);
+    }, [idTest, idPosizione]); // ✅ Dipendenze corrette
 
     /* ----------------------------------------------------------
        TIMER
@@ -126,9 +106,7 @@ export default function TentativoTestPage() {
     const minutiSecondi = useMemo(() => {
         const m = Math.floor(tempoRimanente / 60);
         const s = tempoRimanente % 60;
-        return `${m.toString().padStart(2, "0")}:${s
-            .toString()
-            .padStart(2, "0")}`;
+        return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
     }, [tempoRimanente]);
 
     /* ----------------------------------------------------------
@@ -142,10 +120,10 @@ export default function TentativoTestPage() {
     }
 
     /* ----------------------------------------------------------
-       INVIO TEST
+       INVIO TEST — CREA CANDIDATURA + TENTATIVO + RISPOSTE
     ---------------------------------------------------------- */
     async function invia() {
-        if (!idTentativo) return;
+        if (!idTest || !idPosizione) return;
 
         try {
             setStaInviando(true);
@@ -157,17 +135,22 @@ export default function TentativoTestPage() {
                 })
             );
 
-            await inviaRisposte(idTentativo, {
-                idTentativo,
+            // ✅ Invia tutto in una volta (crea candidatura + tentativo + risposte)
+            const response = await completaTest({
+                idTest,
+                idPosizione,
+                iniziatoAt: iniziatoAt.toISOString(),
                 risposte: payload,
             });
 
+            console.log("RESPONSE",response);
+            // ✅ Redirect ai risultati
             router.push(
-                `/candidati/test/${idTest}/risultati?tentativo=${idTentativo}`
+                `/candidati/test/${idTest}/risultati?idTentativo=${response.idTentativo}`
             );
-        } catch (e) {
+        } catch (e: any) {
             console.error("ERRORE INVIO:", e);
-            setErrore("Errore durante l'invio del test.");
+            setErrore(e?.message ?? "Errore durante l'invio del test.");
         } finally {
             setStaInviando(false);
         }
@@ -184,23 +167,18 @@ export default function TentativoTestPage() {
     /* ----------------------------------------------------------
        RENDER
     ---------------------------------------------------------- */
+    const testInCaricamento = stato !== "PRONTO" && !errore;
+    const domanda = !testInCaricamento ? domande[indice] ?? null : null;
 
-    const testInCaricamento =
-        (stato !== "PRONTO" || !idTentativo) && !errore;
-
-    const domanda = !testInCaricamento
-        ? domande[indice] ?? null
-        : null;
-
-    if (!idTest) {
+    if (!idTest || !idPosizione) {
         return (
             <PageHeader
-                title="Test non trovato"
-                subtitle="ID non valido."
+                title="Test non valido"
+                subtitle="Parametri mancanti."
                 actions={[
                     {
-                        label: "Torna ai test",
-                        href: "/candidati/test",
+                        label: "Torna alle posizioni",
+                        href: "/candidati/posizioni",
                         variant: "primary",
                     },
                 ]}
@@ -214,13 +192,13 @@ export default function TentativoTestPage() {
                 title={titoloTest || "Svolgimento test"}
                 subtitle={
                     testInCaricamento
-                        ? "Preparazione del tentativo…"
+                        ? "Caricamento del test…"
                         : "Rispondi alle domande entro il tempo a disposizione."
                 }
                 actions={[
                     {
                         label: "Esci",
-                        href: "/candidati/test",
+                        href: "/candidati/posizioni",
                         variant: "dark",
                     },
                 ]}
@@ -233,7 +211,6 @@ export default function TentativoTestPage() {
             )}
 
             <section className="max-w-4xl mx-auto rounded-xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm space-y-6">
-
                 {/* TIMER */}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -278,7 +255,6 @@ export default function TentativoTestPage() {
                 {/* DOMANDE */}
                 {!testInCaricamento && domanda && (
                     <div className="space-y-4">
-
                         <div className="flex items-center justify-between text-xs text-[var(--muted)]">
                             <span>
                                 Domanda {indice + 1} di {domande.length}

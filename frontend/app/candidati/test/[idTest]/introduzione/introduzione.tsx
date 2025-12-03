@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import PageHeader from "@/components/layout/pageHeader";
 import Button from "@/components/ui/button";
 import { getStrutturaTest } from "@/services/test.service";
@@ -18,7 +18,9 @@ type StrutturaTestClient = {
 
 export default function IntroduzioneTestPage() {
     const params = useParams<{ idTest: string }>();
+    const searchParams = useSearchParams(); // ✅ AGGIUNGI
     const idTest = Number(params?.idTest ?? "0");
+    const idPosizione = Number(searchParams.get('idPosizione')); // ✅ Leggi dall'URL
     const router = useRouter();
 
     const [test, setTest] = useState<StrutturaTestClient | null>(null);
@@ -47,22 +49,23 @@ export default function IntroduzioneTestPage() {
         load();
     }, [idTest]);
 
-    if (!idTest) {
-        return (
-            <div className="space-y-6">
-                <PageHeader
-                    title="Test non valido"
-                    subtitle="L'identificativo del test non è corretto."
-                    actions={[
-                        {
-                            label: "Torna ai test",
-                            href: "/candidati/test",
-                        },
-                    ]}
-                />
-            </div>
-        );
-    }
+        if (!idTest || !idPosizione) {
+            return (
+                <div className="space-y-6">
+                    <PageHeader
+                        title="Test non valido"
+                        subtitle="L'identificativo del test o della posizione non è corretto."
+                        actions={[
+                            {
+                                label: "Torna alle posizioni",
+                                href: "/candidati/posizioni",
+                            },
+                        ]}
+                    />
+                </div>
+            );
+        }
+
 
     if (loading) {
         return (
@@ -105,13 +108,14 @@ export default function IntroduzioneTestPage() {
     }
 
     function handleStartTest() {
-        if (!idTest) return;
+
+        if (!idTest || !idPosizione) return; // ✅ Verifica entrambi
         const conferma = window.confirm(
             "Una volta iniziato il test il tempo inizierà a scorrere e non potrai metterlo in pausa. Vuoi davvero iniziare?",
         );
         if (!conferma) return;
 
-        router.push(`/candidati/test/${idTest}/tentativo`);
+        router.push(`/candidati/test/${idTest}/tentativo?idPosizione=${idPosizione}`);
     }
 
     return (
