@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import PageHeader from "@/components/layout/pageHeader";
 import EmptyState from "@/components/empty/EmptyState";
 import Button from "@/components/ui/button";
@@ -21,7 +22,6 @@ type CandidaturaApi = {
         codice: string;
         descrizione?: string | null;
     } | null;
-    // opzionale: punteggio medio / ultimo punteggio di test per quella posizione
     punteggioTest?: number | null;
 };
 
@@ -55,40 +55,50 @@ export default function CandidatureCandidato() {
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
     const { accessToken } = useAuthStore();
+    const router = useRouter();
 
-    useEffect(() => {
-        async function load() {
-            try {
-                setLoading(true);
-                setErrore(null);
-
-                const res = await fetch(`${API_BASE_URL}/candidature/mie`, {
-                    headers: {
-                        Authorization: accessToken
-                            ? `Bearer ${accessToken}`
-                            : "",
-                    },
-                });
-
-                const text = await res.text();
-                if (!res.ok) {
-                    throw new Error(
-                        text || "Errore nel caricamento delle candidature",
-                    );
-                }
-
-                const data: CandidaturaApi[] = JSON.parse(text);
-                setCandidature(data);
-            } catch (err: any) {
-                console.error(err);
-                setErrore(err.message ?? "Errore imprevisto");
-            } finally {
-                setLoading(false);
-            }
+    async function loadCandidature() {
+        if (!accessToken) {
+            setErrore("Utente non autenticato");
+            setLoading(false);
+            return;
         }
 
-        load();
+        try {
+            setLoading(true);
+            setErrore(null);
+
+            const res = await fetch(`${API_BASE_URL}/candidature/mie`, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            const text = await res.text();
+            if (!res.ok) {
+                throw new Error(text || "Errore nel caricamento delle candidature");
+            }
+
+            const data: CandidaturaApi[] = JSON.parse(text);
+            setCandidature(data);
+        } catch (err: any) {
+            console.error(err);
+            setErrore(err.message ?? "Errore imprevisto");
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        loadCandidature();
     }, [accessToken]);
+
+    const handleTornaAlleCandidature = async () => {
+        await loadCandidature();
+        router.push("/candidati/candidature");
+    };
 
     return (
         <div className="space-y-6">
@@ -114,7 +124,7 @@ export default function CandidatureCandidato() {
                     title="Nessuna candidatura inviata"
                     subtitle="Non hai ancora inviato candidature. Trova una posizione adatta a te e candidati subito."
                     actionSlot={
-                        <Button asChild>
+                        <Button asChild onClick={handleTornaAlleCandidature}>
                             <Link href="/candidati/posizioni">
                                 Vedi posizioni aperte
                             </Link>
@@ -148,10 +158,7 @@ export default function CandidatureCandidato() {
                                         {c.posizione.titolo}
                                     </div>
                                     <div className="text-xs text-[var(--muted)]">
-                                        {[
-                                            c.posizione.sede,
-                                            c.posizione.contratto,
-                                        ]
+                                        {[c.posizione.sede, c.posizione.contratto]
                                             .filter(Boolean)
                                             .join(" • ")}
                                     </div>
@@ -182,6 +189,7 @@ export default function CandidatureCandidato() {
                     </table>
                 </section>
             )}
+
         </div>
     );
 }
