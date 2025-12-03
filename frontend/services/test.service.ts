@@ -159,9 +159,10 @@ export type CompletaTestResponse = {
  */
 export function completaTest(payload: CompletaTestRequest) {
     return postJson<CompletaTestResponse, CompletaTestRequest>(
-        `/test/completa`,
+        `/test/tentativi/completa`,
         payload
     );
+
 }
 /* ============================================================
  *  RISULTATI TEST
@@ -173,6 +174,6 @@ export function completaTest(payload: CompletaTestRequest) {
  */
 export function getRisultatoTentativo(idTentativo: number) {
     return getJson<RisultatoTentativoDettaglio>(
-        `/test/tentativi/${idTentativo}/risultati`
+        `/test/tentativi/${idTentativo}/risultato`
     );
 }

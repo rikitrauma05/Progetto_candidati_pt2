@@ -41,7 +41,7 @@ export default function RisultatiTestPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    const idTentativoParam = searchParams.get("tentativo");
+    const idTentativoParam = searchParams.get("idTentativo");
     const idTentativo = idTentativoParam ? Number(idTentativoParam) : NaN;
 
     const [loading, setLoading] = useState(true);

@@ -142,8 +142,8 @@ export default function TentativoTestPage() {
                 iniziatoAt: iniziatoAt.toISOString(),
                 risposte: payload,
             });
+            console.log("RESPONSE COMPLETATEST:", response);
 
-            console.log("RESPONSE",response);
             // ✅ Redirect ai risultati
             router.push(
                 `/candidati/test/${idTest}/risultati?idTentativo=${response.idTentativo}`
