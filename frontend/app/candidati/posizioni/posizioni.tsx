@@ -236,11 +236,12 @@ export default function PosizioniCandidato() {
                                 titolo={p.titolo}
                                 sede={p.sede}
                                 contratto={p.contratto}
-                                candidature={p.candidatureRicevute}
+                                // candidature={p.candidatureRicevute}   ← RIMOSSA
                                 clickable
                                 href={`/candidati/posizioni/${p.idPosizione}`}
                                 rightSlot={<ApplyButton idPosizione={p.idPosizione} />}
                             />
+
                         ))}
                     </div>
                 )}
