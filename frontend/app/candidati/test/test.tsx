@@ -88,13 +88,6 @@ export default function TestStoricoPage() {
             <PageHeader
                 title="Storico test"
                 subtitle="Visualizza tutti i tentativi di test che hai svolto."
-                actions={[
-                    {
-                        label: "Torna alle posizioni",
-                        href: "/candidati/posizioni",
-                        variant: "dark",
-                    },
-                ]}
             />
 
             {loading && (
