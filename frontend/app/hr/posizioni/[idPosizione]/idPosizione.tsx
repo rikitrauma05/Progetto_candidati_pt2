@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { getJson } from "@/services/api";
+import { getJson, postJson } from "@/services/api";
 import Button from "@/components/ui/button";
 
 type Posizione = {
@@ -15,7 +15,6 @@ type Posizione = {
     descrizione?: string | null;
     ral?: number | null;
 
-    // come da backend: oggetto settore + id test numerico
     idSettore?: {
         idSettore: number;
         nome: string;
@@ -24,16 +23,33 @@ type Posizione = {
     idTest?: number | null;
 };
 
+type CandidatoPosizione = {
+    idCandidatura: number;
+    idCandidato: number;
+    nome: string;
+    cognome: string;
+    email: string;
+    cvUrl?: string | null;
+    punteggioTotale: number | null;
+    esitoTentativo: string | null;
+};
+
 export default function DettaglioPosizionePage() {
     const params = useParams<{ idPosizione: string }>();
     const idPosizione = Number(params?.idPosizione ?? 0);
-
     const router = useRouter();
 
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
     const [posizione, setPosizione] = useState<Posizione | null>(null);
 
+    const [loadingCandidati, setLoadingCandidati] = useState(false);
+    const [candidati, setCandidati] = useState<CandidatoPosizione[]>([]);
+    const [selected, setSelected] = useState<number[]>([]);
+
+    // ------------------------------------------------------
+    // CARICA DETTAGLI POSIZIONE
+    // ------------------------------------------------------
     useEffect(() => {
         if (!idPosizione) {
             setErrore("ID posizione non valido.");
@@ -59,85 +75,206 @@ export default function DettaglioPosizionePage() {
         void load();
     }, [idPosizione]);
 
-    return (
+    // ------------------------------------------------------
+    // CARICA CANDIDATI PER LA POSIZIONE
+    // ------------------------------------------------------
+    async function caricaCandidati() {
+        try {
+            setLoadingCandidati(true);
+            const lista = await getJson<CandidatoPosizione[]>(
+                `/posizioni/${idPosizione}/candidati`
+            );
 
-            <section className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-                <header className="flex items-center justify-between">
+            // ordina per punteggio desc
+            lista.sort((a, b) => (b.punteggioTotale ?? 0) - (a.punteggioTotale ?? 0));
+
+            setCandidati(lista);
+        } catch (err) {
+            console.error(err);
+            setErrore("Errore nel caricamento dei candidati.");
+        } finally {
+            setLoadingCandidati(false);
+        }
+    }
+
+    // ------------------------------------------------------
+    // SELEZIONA FINO A 5
+    // ------------------------------------------------------
+    function toggleSelect(idCandidatura: number) {
+        setSelected((prev) => {
+            if (prev.includes(idCandidatura)) {
+                return prev.filter((x) => x !== idCandidatura);
+            }
+            if (prev.length >= 5) return prev; // massimo 5
+            return [...prev, idCandidatura];
+        });
+    }
+
+    return (
+        <section className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+            {/* HEADER */}
+            <header className="flex items-center justify-between">
+                <div>
+                    <p className="text-xs uppercase text-sky-400/80 tracking-[0.2em]">
+                        area hr
+                    </p>
+                    <h1 className="mt-2 text-2xl font-semibold">Dettaglio posizione</h1>
+                </div>
+
+                <Button variant="outline" onClick={() => router.push("/hr/posizioni")}>
+                    ← Torna alle posizioni
+                </Button>
+            </header>
+
+            {/* ERRORI & LOADING */}
+            {loading && <p className="text-slate-400 text-sm">Caricamento…</p>}
+            {errore && (
+                <div className="rounded-lg border border-red-500 bg-red-950/40 px-3 py-2 text-red-100">
+                    {errore}
+                </div>
+            )}
+
+            {/* DETTAGLIO POSIZIONE */}
+            {!loading && !errore && posizione && (
+                <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
                     <div>
-                        <p className="text-xs uppercase text-sky-400/80 tracking-[0.2em]">
-                            area hr
-                        </p>
-                        <h1 className="mt-2 text-2xl font-semibold">
-                            Dettaglio posizione
-                        </h1>
+                        <h2 className="text-lg font-semibold">{posizione.titolo}</h2>
+                        {posizione.descrizione && (
+                            <p className="text-sm text-slate-300 mt-1">
+                                {posizione.descrizione}
+                            </p>
+                        )}
                     </div>
 
-                    <Button variant="outline" onClick={() => router.push("/hr/posizioni")}>
-                        ← Torna alle posizioni
-                    </Button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <p>
+                            <span className="font-semibold">Sede:</span>{" "}
+                            {posizione.sede || "—"}
+                        </p>
+                        <p>
+                            <span className="font-semibold">Contratto:</span>{" "}
+                            {posizione.contratto || "—"}
+                        </p>
+                        <p>
+                            <span className="font-semibold">Settore:</span>{" "}
+                            {posizione.idSettore?.nome || "—"}
+                        </p>
+                        <p>
+                            <span className="font-semibold">RAL indicativa:</span>{" "}
+                            {posizione.ral ? `€ ${posizione.ral}` : "—"}
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 className="text-sm font-semibold">Test associato</h3>
+                        {typeof posizione.idTest === "number" ? (
+                            <p className="mt-1 text-slate-300 text-sm">
+                                Test ID {posizione.idTest}{" "}
+                                <Link
+                                    href={`/hr/test/${posizione.idTest}`}
+                                    className="ml-2 text-sky-400 hover:underline"
+                                >
+                                    Vai al dettaglio →
+                                </Link>
+                            </p>
+                        ) : (
+                            <p className="mt-1 text-slate-400 text-sm">
+                                Nessun test associato
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ---------------------------------------------- */}
+            {/* CANDIDATI PER LA POSIZIONE */}
+            {/* ---------------------------------------------- */}
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 space-y-4">
+                <header className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">
+                        Candidati & selezione Top 5
+                    </h2>
+
+                    <Button onClick={caricaCandidati}>Carica candidati</Button>
                 </header>
 
-                {loading && (
-                    <p className="text-slate-400 text-sm">Caricamento…</p>
+                {loadingCandidati && (
+                    <p className="text-slate-400 text-sm">Caricamento candidati…</p>
                 )}
 
-                {errore && (
-                    <div className="rounded-lg border border-red-500 bg-red-950/40 px-3 py-2 text-red-100">
-                        {errore}
+                {!loadingCandidati && candidati.length > 0 && (
+                    <div className="space-y-3">
+                        {candidati.map((c) => {
+                            const selectedCard = selected.includes(c.idCandidatura);
+
+                            return (
+                                <div
+                                    key={c.idCandidatura}
+                                    onClick={() => toggleSelect(c.idCandidatura)}
+                                    className={`cursor-pointer rounded-xl border p-4 transition ${
+                                        selectedCard
+                                            ? "border-sky-500 bg-sky-900/20"
+                                            : "border-slate-700 bg-slate-800/40 hover:border-slate-600"
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="font-semibold">
+                                                {c.nome} {c.cognome}
+                                            </p>
+                                            <p className="text-xs text-slate-400">{c.email}</p>
+                                        </div>
+
+                                        <div className="text-right">
+                                            <p className="text-sm">
+                                                Punteggio:{" "}
+                                                <span className="font-semibold">
+                                                    {c.punteggioTotale ?? "—"}
+                                                </span>
+                                            </p>
+                                            <p
+                                                className={`text-xs ${
+                                                    c.esitoTentativo === "SUPERATO"
+                                                        ? "text-green-400"
+                                                        : c.esitoTentativo === "NON_SUPERATO"
+                                                            ? "text-red-400"
+                                                            : "text-yellow-400"
+                                                }`}
+                                            >
+                                                {c.esitoTentativo ?? "—"}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {c.cvUrl && (
+                                        <a
+                                            href={c.cvUrl}
+                                            target="_blank"
+                                            className="text-sky-400 text-xs underline mt-2 inline-block"
+                                        >
+                                            Apri CV →
+                                        </a>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 
-                {!loading && !errore && posizione && (
-                    <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
-                        <div>
-                            <h2 className="text-lg font-semibold">{posizione.titolo}</h2>
-                            {posizione.descrizione && (
-                                <p className="text-sm text-slate-300 mt-1">
-                                    {posizione.descrizione}
-                                </p>
-                            )}
-                        </div>
+                {!loadingCandidati && candidati.length === 0 && (
+                    <p className="text-sm text-slate-400">Nessun candidato disponibile.</p>
+                )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <p>
-                                <span className="font-semibold">Sede:</span>{" "}
-                                {posizione.sede || "—"}
-                            </p>
-                            <p>
-                                <span className="font-semibold">Contratto:</span>{" "}
-                                {posizione.contratto || "—"}
-                            </p>
-                            <p>
-                                <span className="font-semibold">Settore:</span>{" "}
-                                {posizione.idSettore?.nome || "—"}
-                            </p>
-                            <p>
-                                <span className="font-semibold">RAL indicativa:</span>{" "}
-                                {posizione.ral ? `€ ${posizione.ral}` : "—"}
-                            </p>
-                        </div>
-
-                        <div>
-                            <h3 className="text-sm font-semibold">Test associato</h3>
-                            {typeof posizione.idTest === "number" ? (
-                                <p className="mt-1 text-slate-300 text-sm">
-                                    Test ID {posizione.idTest}{" "}
-                                    <Link
-                                        href={`/hr/test/${posizione.idTest}`}
-                                        className="ml-2 text-sky-400 hover:underline"
-                                    >
-                                        Vai al dettaglio →
-                                    </Link>
-                                </p>
-                            ) : (
-                                <p className="mt-1 text-slate-400 text-sm">
-                                    Nessun test associato
-                                </p>
-                            )}
-                        </div>
+                {/* SCELTI */}
+                {selected.length > 0 && (
+                    <div className="mt-4 p-4 rounded-xl bg-sky-900/20 border border-sky-700">
+                        <p className="text-sm font-semibold">
+                            Selezionati: {selected.length} / 5
+                        </p>
                     </div>
                 )}
-            </section>
-
+            </div>
+        </section>
     );
 }
