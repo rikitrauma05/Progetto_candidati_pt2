@@ -92,8 +92,8 @@ export default function IntroduzioneTestPage() {
                     subtitle={errore ?? "Si è verificato un errore imprevisto."}
                     actions={[
                         {
-                            label: "Torna ai test",
-                            href: "/candidati/test",
+                            label: "Torna alle posizioni",
+                            href: "/candidati/posizioni",
                         },
                     ]}
                 />
@@ -128,8 +128,8 @@ export default function IntroduzioneTestPage() {
                 }
                 actions={[
                     {
-                        label: "Torna ai test",
-                        href: "/candidati/test",
+                        label: "Torna alle posizioni",
+                        href: "/candidati/posizioni",
                     },
                 ]}
             />
