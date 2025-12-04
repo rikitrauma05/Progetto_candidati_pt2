@@ -223,21 +223,6 @@ export default function TentativoTestPage() {
                         </p>
                     </div>
 
-                    <Button
-                        variant="outline"
-                        disabled={testInCaricamento}
-                        onClick={() => {
-                            if (
-                                window.confirm(
-                                    "Aggiornando perderai le risposte non inviate. Continuare?"
-                                )
-                            ) {
-                                window.location.reload();
-                            }
-                        }}
-                    >
-                        Aggiorna
-                    </Button>
                 </div>
 
                 {/* LOADING */}
