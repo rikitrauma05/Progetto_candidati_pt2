@@ -82,10 +82,6 @@ export default function NuovaTest() {
             }
             mappaDomande[testoNorm].push(i + 1); // per messaggio umano
 
-            if (d.punteggio < 1 || d.punteggio > 10) {
-                return `Il punteggio della domanda ${i + 1} deve essere compreso tra 1 e 10.`;
-            }
-
             if (!d.opzioni || d.opzioni.length < 2) {
                 return `La domanda ${i + 1} deve avere almeno due opzioni di risposta.`;
             }
@@ -471,27 +467,6 @@ export default function NuovaTest() {
                                             }
                                             className={`${baseInputClass} h-20 resize-none`}
                                             placeholder="Testo della domanda"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="w-32">
-                                        <label className="text-xs font-medium">
-                                            Punteggio (1–10)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            max={10}
-                                            value={domanda.punteggio}
-                                            onChange={(e) =>
-                                                handleDomandaChange(
-                                                    idx,
-                                                    "punteggio",
-                                                    e.target.value
-                                                )
-                                            }
-                                            className={`${baseInputClass} mt-1 text-sm`}
                                             required
                                         />
                                     </div>
