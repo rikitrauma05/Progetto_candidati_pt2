@@ -145,6 +145,8 @@ export default function Register() {
 
             if (msg.includes("EMAIL_GIA_REGISTRATA") || msg.includes("409")) {
                 setError("Esiste già un account con questa email.");
+            } else if (err?.status === 413 || msg.includes("413")) {
+                setError("Il file è troppo grande per essere caricato. Riduci la dimensione del PDF.");
             } else if (msg.includes("Token mancanti")) {
                 setError("Errore configurazione server. Contatta l'assistenza.");
             } else if (msg.includes("Network") || msg.includes("fetch")) {
@@ -225,6 +227,7 @@ export default function Register() {
                             onChange={(e) =>
                                 setFormField("dataNascita", e.currentTarget.value)
                             }
+                            required
                         />
                     </div>
 
@@ -239,6 +242,7 @@ export default function Register() {
                             onChange={(e) =>
                                 setFormField("telefono", e.currentTarget.value)
                             }
+                            required
                         />
                     </div>
                 </div>
@@ -253,6 +257,7 @@ export default function Register() {
                         onChange={(e) =>
                             setFormField("citta", e.currentTarget.value)
                         }
+                        required
                     />
                 </div>
 
