@@ -1,31 +1,27 @@
-// app/candidati/test/[idTest]/tentativo/tentativo.tsx (o page.tsx)
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation"; // ✅ Aggiungi useSearchParams
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import PageHeader from "@/components/layout/pageHeader";
 import Button from "@/components/ui/button";
-import { getDomandeTentativo, completaTest } from "@/services/test.service"; // ✅ Rimuovi avviaTest, aggiungi completaTest
+import { getDomandeTentativo, completaTest } from "@/services/test.service";
 import type { GetDomandeResponse, RispostaDTO } from "@/types/test/tentativo-test";
 
 type StatoCaricamento = "CARICAMENTO" | "PRONTO";
 type RisposteUtente = Record<number, number | null>;
 
 export default function TentativoTestPage() {
+
     /* ----------------------------------------------------------
        PARAMETRI URL
     ---------------------------------------------------------- */
     const params = useParams<{ idTest: string }>();
-    const searchParams = useSearchParams(); // ✅ AGGIUNGI
+    const searchParams = useSearchParams();
     const router = useRouter();
 
     const idTest = Number(params.idTest);
-    const idPosizione = Number(searchParams.get('idPosizione')); // ✅ Leggi dall'URL
-    //
-    // console.log('🔍 DEBUG - idTest:', idTest);
-    // console.log('🔍 DEBUG - idPosizione:', idPosizione);
-    // console.log('🔍 DEBUG - searchParams:', searchParams.toString());
+    const idPosizione = Number(searchParams.get('idPosizione'));
+
 
 
     /* ----------------------------------------------------------
@@ -33,7 +29,7 @@ export default function TentativoTestPage() {
     ---------------------------------------------------------- */
     const [stato, setStato] = useState<StatoCaricamento>("CARICAMENTO");
     const [errore, setErrore] = useState<string | null>(null);
-    const [iniziatoAt] = useState<Date>(new Date()); // ✅ Timestamp di inizio
+    const [iniziatoAt] = useState<Date>(new Date());
 
     const [titoloTest, setTitoloTest] = useState("");
     const [durataMinuti, setDurataMinuti] = useState(0);
@@ -58,7 +54,7 @@ export default function TentativoTestPage() {
                 setErrore(null);
                 setStato("CARICAMENTO");
 
-                // ✅ Carica SOLO le domande (NON crea tentativo)
+
                 const data = await getDomandeTentativo(idTest);
 
                 setTitoloTest(data.titoloTest);
@@ -80,7 +76,7 @@ export default function TentativoTestPage() {
         }
 
         init();
-    }, [idTest, idPosizione]); // ✅ Dipendenze corrette
+    }, [idTest, idPosizione]);
 
     /* ----------------------------------------------------------
        TIMER
@@ -135,7 +131,7 @@ export default function TentativoTestPage() {
                 })
             );
 
-            // ✅ Invia tutto in una volta (crea candidatura + tentativo + risposte)
+
             const response = await completaTest({
                 idTest,
                 idPosizione,
@@ -144,7 +140,6 @@ export default function TentativoTestPage() {
             });
             console.log("RESPONSE COMPLETATEST:", response);
 
-            // ✅ Redirect ai risultati
             router.push(
                 `/candidati/test/${idTest}/risultati?idTentativo=${response.idTentativo}`
             );
