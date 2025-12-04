@@ -75,7 +75,7 @@ export default function PosizioneCard({
                 px-4 py-3 md:px-5 md:py-4
                 shadow-sm
                 flex flex-col gap-3
-                sm:flex-row sm:items-start sm:justify-between
+                sm:flex-row sm:items-center sm:justify-between
                 hover:border-[var(--accent)]
                 hover:bg-[color-mix(in_srgb,var(--surface)_95%,transparent)]
                 hover:shadow-md
@@ -142,9 +142,11 @@ export default function PosizioneCard({
             {(togglePreferitaAction || rightSlot) && (
                 <div
                     className="
-                        shrink-0
-                        flex flex-col items-end gap-2
-                        sm:items-end
+                         shrink-0
+                        flex items-center justify-end gap-2
+                        self-center
+                        w-full sm:w-auto
+
                     "
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -178,7 +180,7 @@ export default function PosizioneCard({
                     )}
 
                     {rightSlot && (
-                        <div className="flex flex-wrap justify-end gap-1 w-full">
+                        <div className="flex flex-wrap justify-end gap-1 w-full sm:justify-center">
                             {rightSlot}
                         </div>
                     )}
