@@ -367,7 +367,7 @@ export default function NuovaTest() {
 
                         <div>
                             <label className="text-sm font-medium">
-                                Punteggio minimo
+                                Punteggio minimo %
                             </label>
                             <input
                                 type="number"

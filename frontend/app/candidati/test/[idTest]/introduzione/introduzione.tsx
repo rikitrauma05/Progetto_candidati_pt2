@@ -169,7 +169,7 @@ export default function IntroduzioneTestPage() {
                                 Punteggio minimo per superare
                             </p>
                             <p className="mt-1 text-base font-semibold text-[var(--foreground)]">
-                                {test.punteggioMin} punti
+                                {test.punteggioMin}%
                             </p>
                         </div>
                     )}

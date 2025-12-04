@@ -47,6 +47,8 @@ export default function RisultatiTestPage() {
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
     const [risultato, setRisultato] = useState<RisultatoTentativoDettaglio | null>(null);
+    const percentuale = ((risultato?.punteggioTotale ?? 0) / (risultato?.numeroDomande ?? 1)) * 100;
+    const punteggioMinimo = ((risultato?.punteggioMin ?? 0))
 
     useEffect(() => {
         if (!idTest || !idTentativo || Number.isNaN(idTentativo)) {
@@ -74,15 +76,7 @@ export default function RisultatiTestPage() {
         }
 
         load();
-    }, [idTest, idTentativo]);
-
-    // const percentuale = useMemo(() => {
-    //     if (!risultato) return null;
-    //     if (!risultato.punteggioMax) return null;
-    //     return Math.round(
-    //         (risultato.punteggioTotale / risultato.punteggioMax) * 100
-    //     );
-    // }, [risultato]);
+    }, [idTest, idTentativo])
 
     if (!idTest) {
         return (
@@ -138,9 +132,6 @@ export default function RisultatiTestPage() {
                             <p className="text-xs uppercase tracking-wide">
                                 Esito del tentativo
                             </p>
-                            <p className="mt-1 text-lg font-semibold">
-                                {esitoLabel(String(risultato.punteggioTotale))}
-                            </p>
                             {risultato.completatoAt && (
                                 <p className="text-xs text-[var(--muted)]">
                                     Completato il: {new Date(risultato.completatoAt).toLocaleString()}
@@ -153,7 +144,7 @@ export default function RisultatiTestPage() {
                                 Punteggio ottenuto
                             </p>
                             <p className="text-xl font-semibold">
-                                {risultato.punteggioTotale}
+                                {percentuale}%
                             </p>
                         </div>
                     </div>
@@ -180,7 +171,7 @@ export default function RisultatiTestPage() {
                             )}
                             {typeof risultato.punteggioMin === "number" && (
                                 <p className="text-sm text-[var(--muted)]">
-                                    Punteggio minimo per superare: <span className="font-medium">{risultato.punteggioMin}</span>
+                                    Punteggio minimo per superare: <span className="font-medium">{risultato.punteggioMin}%</span>
                                 </p>
                             )}
                         </div>
