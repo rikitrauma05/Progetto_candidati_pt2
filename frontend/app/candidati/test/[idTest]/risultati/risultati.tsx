@@ -47,8 +47,7 @@ export default function RisultatiTestPage() {
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
     const [risultato, setRisultato] = useState<RisultatoTentativoDettaglio | null>(null);
-    const percentuale = ((risultato?.punteggioTotale ?? 0) / (risultato?.numeroDomande ?? 1)) * 100;
-    const punteggioMinimo = ((risultato?.punteggioMin ?? 0))
+    const percentuale = (((risultato?.punteggioTotale ?? 0) / (risultato?.numeroDomande ?? 1)) * 100).toFixed(2);
 
     useEffect(() => {
         if (!idTest || !idTentativo || Number.isNaN(idTentativo)) {

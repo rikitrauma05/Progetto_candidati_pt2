@@ -23,6 +23,7 @@ type CandidaturaApi = {
         descrizione?: string | null;
     } | null;
     punteggioTest?: number | null;
+    numeroDomande?: number | null;
 };
 
 function formatData(dataIso: string) {
@@ -56,6 +57,7 @@ export default function CandidatureCandidato() {
     const [errore, setErrore] = useState<string | null>(null);
     const { accessToken } = useAuthStore();
     const router = useRouter();
+
 
     async function loadCandidature() {
         if (!accessToken) {
@@ -168,8 +170,8 @@ export default function CandidatureCandidato() {
                                 </td>
                                 <td className="px-4 py-3 text-xs">
                                     {typeof c.punteggioTest === "number"
-                                        ? `${c.punteggioTest} pt`
-                                        : "—"}
+                                        ? `${((c.punteggioTest / (c?.numeroDomande ?? 1)) * 100).toFixed(2)}%`
+                                        : "Nessun test previsto"}
                                 </td>
                                 <td className="px-4 py-3 text-xs">
                                     {formatStato(c.stato)}
