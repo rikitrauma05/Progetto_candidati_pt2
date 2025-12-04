@@ -1,119 +1,136 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import PageHeader from "@/components/layout/pageHeader";
 import EmptyState from "@/components/empty/EmptyState";
 import Button from "@/components/ui/button";
-import PosizioneCard from "@/components/cards/posizioneCard";
 import { getJson } from "@/services/api";
 
-type PosizioneConStatistiche = {
+type Posizione = {
     idPosizione: number;
     titolo: string;
+    pubblicataAt?: string | null;
     sede?: string | null;
     contratto?: string | null;
-    candidatureRicevute?: number | null;
-    // opzionale: miglior punteggio tra i candidati della posizione
-    migliorPunteggio?: number | null;
+    candidatureRicevute?: number;
 };
 
-export default function CandidaturePerPosizioneHR() {
+export default function HrListaPosizioni() {
+    const router = useRouter();
+
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
-    const [posizioni, setPosizioni] = useState<PosizioneConStatistiche[]>([]);
+    const [posizioni, setPosizioni] = useState<Posizione[]>([]);
+
+    // ============================================================
+    // CARICA POSIZIONI HR
+    // ============================================================
+    async function caricaPosizioni() {
+        try {
+            const data = await getJson<Posizione[]>("/posizioni");
+            setPosizioni(data);
+        } catch {
+            setErrore("Impossibile caricare le posizioni.");
+        }
+    }
 
     useEffect(() => {
         const load = async () => {
-            try {
-                setLoading(true);
-                setErrore(null);
-
-                // Se hai un endpoint specifico HR, cambialo qui
-                // es: "/hr/posizioni/candidature"
-                const data = await getJson<PosizioneConStatistiche[]>("/posizioni");
-
-                setPosizioni(data ?? []);
-            } catch (err: any) {
-                console.error("Errore caricamento posizioni:", err);
-                setErrore(
-                    err?.message ||
-                    "Si è verificato un errore durante il caricamento delle posizioni.",
-                );
-            } finally {
-                setLoading(false);
-            }
+            await caricaPosizioni();
+            setLoading(false);
         };
-
-        void load();
+        load();
     }, []);
 
     return (
-        <div className="space-y-6">
+        <section className="space-y-6">
+
             <PageHeader
-                title="Candidature per posizione"
-                subtitle="Seleziona una posizione per vedere i migliori candidati in base al punteggio."
+                title="Candidati per posizione"
+                subtitle="Seleziona una posizione per vedere i candidati e gestire la top 5."
             />
 
+            {/* LOADING */}
             {loading && (
-                <p className="text-sm text-[var(--muted)]">
-                    Caricamento delle posizioni in corso…
-                </p>
-            )}
-
-            {errore && (
-                <div className="max-w-3xl mx-auto rounded-xl border border-red-500/40 bg-red-900/30 px-4 py-3 text-sm text-red-100">
-                    {errore}
+                <div className="max-w-5xl mx-auto rounded-2xl border border-border bg-[var(--card)] p-6">
+                    <p className="text-sm text-[var(--muted)]">Caricamento…</p>
                 </div>
             )}
 
+            {/* ERROR */}
+            {!loading && errore && (
+                <div className="max-w-5xl mx-auto rounded-2xl border border-red-500/40 bg-red-900/30 p-6">
+                    <p className="text-red-200 text-sm">{errore}</p>
+                </div>
+            )}
+
+            {/* EMPTY */}
             {!loading && !errore && posizioni.length === 0 && (
                 <EmptyState
-                    title="Nessuna posizione attiva"
-                    subtitle="Non ci sono ancora posizioni con candidature. Crea una nuova posizione per iniziare."
-                    actionSlot={
-                        <Button asChild>
-                            <Link href="/hr/posizioni/nuova">
-                                Crea una posizione
-                            </Link>
-                        </Button>
-                    }
+                    title="Nessuna posizione"
+                    subtitle="Non hai ancora pubblicato posizioni."
                 />
             )}
 
+            {/* POSIZIONI */}
             {!loading && !errore && posizioni.length > 0 && (
-                <div className="max-w-6xl mx-auto grid gap-4 sm:grid-cols-1 md:grid-cols-2">
-                    {posizioni.map((p) => (
-                        <PosizioneCard
-                            key={p.idPosizione}
-                            id={p.idPosizione}
-                            titolo={p.titolo}
-                            sede={p.sede ?? undefined}
-                            contratto={p.contratto ?? undefined}
-                            candidature={p.candidatureRicevute ?? undefined}
-                            clickable
-                            href={`/hr/candidati/${p.idPosizione}`}
-                            rightSlot={
-                                <div className="flex flex-col items-end gap-1">
-                                    {typeof p.migliorPunteggio === "number" && (
-                                        <p className="text-xs text-[var(--muted)]">
-                                            Top punteggio:{" "}
-                                            <span className="font-semibold text-[var(--foreground)]">
-                                                {p.migliorPunteggio} pt
-                                            </span>
-                                        </p>
-                                    )}
-                                    <Button asChild size="sm" variant="outline">
-                                        <Link href={`/hr/candidati/${p.idPosizione}`}>
-                                            Vedi top 5
-                                        </Link>
+                <div className="max-w-5xl mx-auto rounded-2xl border border-border bg-[var(--card)] overflow-hidden">
+
+                    <div className="border-b border-border px-4 py-3 text-sm text-[var(--muted)]">
+                        Posizioni aperte
+                    </div>
+
+                    <table className="w-full text-sm">
+                        <thead className="bg-[var(--surface)]">
+                        <tr>
+                            <th className="px-4 py-3 text-left">Titolo</th>
+                            <th className="px-4 py-3 text-left hidden md:table-cell">Sede</th>
+                            <th className="px-4 py-3 text-left hidden md:table-cell">Contratto</th>
+                            <th className="px-4 py-3 text-left">Candidature</th>
+                            <th className="px-4 py-3 text-left">Azioni</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        {posizioni.map((p) => (
+                            <tr key={p.idPosizione} className="border-t border-border">
+
+                                <td className="px-4 py-3 font-medium">{p.titolo}</td>
+
+                                <td className="px-4 py-3 text-xs hidden md:table-cell">
+                                    {p.sede ?? "—"}
+                                </td>
+
+                                <td className="px-4 py-3 text-xs hidden md:table-cell">
+                                    {p.contratto ?? "—"}
+                                </td>
+
+                                <td className="px-4 py-3 text-xs">
+                                    {p.candidatureRicevute ?? 0}
+                                </td>
+
+                                <td className="px-4 py-3">
+                                    <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={() =>
+                                            router.push(`/hr/candidati/${p.idPosizione}`)
+                                        }
+                                    >
+                                        Vedi candidati
                                     </Button>
-                                </div>
-                            }
-                        />
-                    ))}
+                                </td>
+
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+
                 </div>
             )}
-        </div>
+
+        </section>
     );
 }

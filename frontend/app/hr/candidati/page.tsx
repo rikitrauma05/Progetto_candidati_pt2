@@ -1,2 +1,2 @@
-import HrCandidati from "./candidati";
-export default HrCandidati;
+import HrCandidatiPage from "./candidati";
+export default HrCandidatiPage;

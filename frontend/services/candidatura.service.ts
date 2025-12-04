@@ -1,23 +1,19 @@
 import { getJson, postJson, API_BASE_URL } from "./api";
 import type {
     CandidaturaForCandidate,
-    CandidaturaForHR,
     CreateCandidaturaRequest,
-    UpdateStatoCandidaturaRequest,
 } from "@/types/candidatura";
 import { useAuthStore } from "@/store/authStore";
 
 /**
- * Helper locale per chiamate PATCH con JSON + Bearer token.
+ * Helper PATCH JSON autenticato.
  */
-async function patchJson<T, B = unknown>(
-    path: string,
-    body?: B
-): Promise<T> {
+async function patchJson<T, B = unknown>(path: string, body?: B): Promise<T> {
     const { accessToken } = useAuthStore.getState();
 
     const headers = new Headers();
     headers.set("Accept", "application/json");
+
     if (body !== undefined) {
         headers.set("Content-Type", "application/json");
     }
@@ -31,6 +27,11 @@ async function patchJson<T, B = unknown>(
         body: body !== undefined ? JSON.stringify(body) : undefined,
     });
 
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `Errore HTTP ${response.status}`);
+    }
+
     if (response.status === 204) {
         return undefined as unknown as T;
     }
@@ -40,7 +41,7 @@ async function patchJson<T, B = unknown>(
 
 /**
  * GET /candidature/mie
- * Lista candidature del candidato loggato.
+ * Tutte le candidature del candidato loggato.
  */
 export function getCandidatureCandidato() {
     return getJson<CandidaturaForCandidate[]>("/candidature/mie");
@@ -48,32 +49,29 @@ export function getCandidatureCandidato() {
 
 /**
  * POST /candidature
- * Il candidato si candida a una posizione.
+ * Crea candidatura (solo check preliminare).
  */
 export function createCandidatura(payload: CreateCandidaturaRequest) {
     return postJson<void, CreateCandidaturaRequest>("/candidature", payload);
 }
 
 /**
- * GET /hr/posizioni/{idPosizione}/candidature
- * Lista candidature per posizione lato HR.
+ * GET /posizioni/{id}/candidati
+ * (Usato nella TOP5 HR)
  */
-export function getCandidatureByPosizione(idPosizione: number) {
-    return getJson<CandidaturaForHR[]>(
-        `/hr/posizioni/${idPosizione}/candidature`
-    );
+export function getCandidatiPerPosizione(idPosizione: number) {
+    return getJson(`/posizioni/${idPosizione}/candidati`);
 }
 
 /**
- * PATCH /hr/candidature/{idCandidatura}/stato
- * Aggiorna lo stato (SCARTATA, COLLOQUIO, ASSUNTO, ...).
+ * PATCH /candidature/{id}/stato?stato=ACCETTATA / RESPINTA
+ * Aggiorna lo stato lato HR.
  */
 export function updateStatoCandidatura(
     idCandidatura: number,
-    payload: UpdateStatoCandidaturaRequest
+    stato: "ACCETTATA" | "RESPINTA"
 ) {
-    return patchJson<void, UpdateStatoCandidaturaRequest>(
-        `/hr/candidature/${idCandidatura}/stato`,
-        payload
+    return patchJson<void>(
+        `/candidature/${idCandidatura}/stato?stato=${stato}`
     );
 }
