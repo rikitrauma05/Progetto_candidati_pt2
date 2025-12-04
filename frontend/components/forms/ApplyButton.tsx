@@ -121,7 +121,7 @@ export default function ApplyButton({ idPosizione, fullWidth }: ApplyButtonProps
                 <Button
                     type="button"
                     variant="outline"
-                    disabled={loading}
+                    disabled={loading || alreadyApplied}
                     onClick={handleGoToTest}
                     className={fullWidth ? "flex-1" : ""}
                 >
