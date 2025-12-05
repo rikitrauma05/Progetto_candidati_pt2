@@ -107,13 +107,6 @@ export default function PosizioniHR() {
                     <EmptyState
                         title="Nessuna posizione trovata"
                         subtitle="Non sono presenti posizioni al momento."
-                        actionSlot={
-                            <Button asChild>
-                                <Link href="/hr/posizioni/nuova">
-                                    Crea nuova posizione
-                                </Link>
-                            </Button>
-                        }
                     />
                 )}
 
