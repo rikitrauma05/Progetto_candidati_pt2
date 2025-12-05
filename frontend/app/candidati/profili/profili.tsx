@@ -313,15 +313,20 @@ export default function ProfiloCandidato() {
                         accept=".pdf,.doc,.docx"
                         onChange={handleCvChange}
                         className="
-                            block w-full text-sm text-white
-                            file:mr-4 file:py-2 file:px-4
-                            file:rounded-lg
-                            file:border file:border-white
-                            file:text-sm file:font-semibold
-                            file:bg-[var(--card)]
-                            file:text-white
-                            hover:file:bg-[var(--border)]
-                            transition-all duration-200"
+    block text-sm text-white
+    bg-transparent       /* niente background sul contenitore */
+    border-0             /* niente bordo sul contenitore */
+    rounded-none         /* niente raggio sul contenitore */
+    transition-all duration-200
+
+    /* stile SOLO del bottone interno */
+    file:mr-4 file:px-4 file:py-2
+    file:rounded-lg
+    file:border file:border-white/60
+    file:bg-[var(--card)]
+    file:text-white file:font-semibold
+    hover:file:bg-[var(--border)]
+  "
                     />
                     {cvFile && <p className="mt-2 text-sm text-green-600">File selezionato: {cvFile.name}</p>}
                     {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
