@@ -128,8 +128,8 @@ export default function RisultatiTestPage() {
                 <section className="max-w-4xl mx-auto space-y-6">
                     <div className={`rounded-2xl border p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${esitoClass(String(risultato.punteggioTotale))}`}>
                         <div>
-                            <p className="text-xs uppercase tracking-wide">
-                                Esito del tentativo
+                            <p className={`text-xs px-2 py-1 rounded border ${esitoClass(risultato.esito)}`}>
+                               ESITO TENTATIVO: {esitoLabel(risultato.esito).toUpperCase()}
                             </p>
                             {risultato.completatoAt && (
                                 <p className="text-xs text-[var(--muted)]">

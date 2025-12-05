@@ -117,7 +117,7 @@ export default function HrTopCandidatiPerPosizione() {
                         ? `Top candidati – ${posizione.titolo}`
                         : "Top candidati per posizione"
                 }
-                subtitle="I migliori 5 candidati in base al punteggio per la posizione selezionata."
+                subtitle="I migliori candidati per questa posizione"
                 actions={[
                     {
                         label: "Torna alle posizioni",
@@ -161,8 +161,7 @@ export default function HrTopCandidatiPerPosizione() {
             {!loading && !errore && posizione && topCandidati.length > 0 && (
                 <div className="max-w-5xl mx-auto rounded-2xl border border-border bg-[var(--card)] overflow-hidden">
                     <div className="border-b border-border px-4 py-3 text-sm text-[var(--muted)]">
-                        Mostrati al massimo 5 candidati, ordinati per punteggio
-                        decrescente.
+                        Mostrati i primi 5 candidati, scorri pure per vedere i successivi
                     </div>
                     <table className="w-full text-sm">
                         <thead className="bg-[var(--surface)]">
