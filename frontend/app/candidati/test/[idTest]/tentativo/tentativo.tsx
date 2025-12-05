@@ -10,6 +10,19 @@ import type { GetDomandeResponse, RispostaDTO } from "@/types/test/tentativo-tes
 type StatoCaricamento = "CARICAMENTO" | "PRONTO";
 type RisposteUtente = Record<number, number | null>;
 
+function getLocalISOString(date: Date): string {
+    const pad = (n: number) => (n < 10 ? '0' + n : n);
+    const y = date.getFullYear();
+    const m = pad(date.getMonth() + 1);
+    const d = pad(date.getDate());
+    const h = pad(date.getHours());
+    const min = pad(date.getMinutes());
+    const s = pad(date.getSeconds());
+
+    // Formato: YYYY-MM-DDTHH:MM:SS
+    return `${y}-${m}-${d}T${h}:${min}:${s}`;
+}
+
 export default function TentativoTestPage() {
 
     /* ----------------------------------------------------------
@@ -135,7 +148,7 @@ export default function TentativoTestPage() {
             const response = await completaTest({
                 idTest,
                 idPosizione,
-                iniziatoAt: iniziatoAt.toISOString(),
+                iniziatoAt: getLocalISOString(iniziatoAt),
                 risposte: payload,
             });
             console.log("RESPONSE COMPLETATEST:", response);
