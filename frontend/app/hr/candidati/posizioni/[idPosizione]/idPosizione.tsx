@@ -148,8 +148,8 @@ export default function HrTopCandidatiPerPosizione() {
                 }
                 actions={[
                     {
-                        label: "Torna alle posizioni",
-                        href: "/hr/candidati",
+                        label: "Torna alle Candidature",
+                        href: "/hr/candidati/",
                     },
                 ]}
             />
@@ -177,11 +177,6 @@ export default function HrTopCandidatiPerPosizione() {
                 <EmptyState
                     title="Nessun candidato"
                     subtitle="Non ci sono candidati valutabili per questa posizione."
-                    actionSlot={
-                        <Button onClick={() => router.push("/hr/candidati/posizioni")}>
-                            Torna alle posizioni
-                        </Button>
-                    }
                 />
             )}
 
