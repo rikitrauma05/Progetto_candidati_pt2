@@ -15,8 +15,8 @@ type CandidatoPerPosizione = {
     cognome: string;
     email: string;
     cvUrl?: string | null;
-    punteggioTotale?: number | null;  // null = nessun test previsto
-    stato?: string | null;            // ACCETTATA / IN_VALUTAZIONE / RESPINTA
+    punteggioTotale?: number | null;
+    stato?: string | null;
 };
 
 type Posizione = {
@@ -39,9 +39,6 @@ export default function HrTopCandidatiPerPosizione() {
 
     const [azioneInCorso, setAzioneInCorso] = useState<number | null>(null);
 
-    // ============================================
-    // CARICA POSIZIONE
-    // ============================================
     async function caricaPosizione() {
         try {
             const data = await getJson<Posizione>(`/posizioni/${id}`);
@@ -51,9 +48,6 @@ export default function HrTopCandidatiPerPosizione() {
         }
     }
 
-    // ============================================
-    // CARICA CANDIDATI
-    // ============================================
     async function caricaCandidati() {
         try {
             const lista = await getJson<CandidatoPerPosizione[]>(
@@ -63,22 +57,17 @@ export default function HrTopCandidatiPerPosizione() {
             const normalizzati = lista.map(c => ({
                 ...c,
                 stato: c.stato ?? "IN_VALUTAZIONE",
-                // punteggio: se null → nessun test previsto
                 punteggioTotale: c.punteggioTotale ?? null
             }));
 
-            // Ordinamento:
-            // - se tutti hanno punteggio null → ordina per ordine candidatura (lista originale)
-            // - altrimenti ordina per punteggio desc
             const esistonoTest = normalizzati.some(c => c.punteggioTotale !== null);
 
             const ordinati = esistonoTest
                 ? [...normalizzati].sort(
                     (a, b) => (b.punteggioTotale ?? 0) - (a.punteggioTotale ?? 0)
                 )
-                : normalizzati; // nessun test → ordine naturale
+                : normalizzati;
 
-            // Togli respinti e prendi top 5
             setCandidati(ordinati.filter(c => c.stato !== "RESPINTA").slice(0, 5));
 
         } catch {
@@ -86,9 +75,6 @@ export default function HrTopCandidatiPerPosizione() {
         }
     }
 
-    // ============================================
-    // PATCH – Aggiorna stato candidatura
-    // ============================================
     async function aggiornaStato(
         idCandidatura: number,
         nuovoStato: "ACCETTATA" | "RESPINTA"
@@ -118,9 +104,6 @@ export default function HrTopCandidatiPerPosizione() {
         }
     }
 
-    // ============================================
-    // INIT LOAD
-    // ============================================
     useEffect(() => {
         if (!id || Number.isNaN(id)) {
             setErrore("ID posizione non valido.");
@@ -217,15 +200,19 @@ export default function HrTopCandidatiPerPosizione() {
                                 </td>
 
                                 <td className="px-4 py-3 flex gap-2">
+
+                                    {/* ACCETTA */}
                                     {c.stato !== "ACCETTATA" ? (
                                         <Button
                                             size="sm"
                                             variant="secondary"
                                             className="text-green-600 hover:bg-green-600 hover:text-white"
                                             disabled={azioneInCorso === c.idCandidatura}
-                                            onClick={() =>
-                                                aggiornaStato(c.idCandidatura, "ACCETTATA")
-                                            }
+                                            onClick={() => {
+                                                if (window.confirm("Sei sicuro di voler ACCETTARE questo candidato?")) {
+                                                    aggiornaStato(c.idCandidatura, "ACCETTATA");
+                                                }
+                                            }}
                                         >
                                             {azioneInCorso === c.idCandidatura ? "..." : "Accetta"}
                                         </Button>
@@ -235,15 +222,18 @@ export default function HrTopCandidatiPerPosizione() {
                                         </Button>
                                     )}
 
+                                    {/* RIFIUTA */}
                                     {c.stato !== "ACCETTATA" && (
                                         <Button
                                             size="sm"
                                             variant="secondary"
                                             className="text-red-600 hover:bg-red-600 hover:text-white"
                                             disabled={azioneInCorso === c.idCandidatura}
-                                            onClick={() =>
-                                                aggiornaStato(c.idCandidatura, "RESPINTA")
-                                            }
+                                            onClick={() => {
+                                                if (window.confirm("Sei sicuro di voler RIFIUTARE questo candidato?")) {
+                                                    aggiornaStato(c.idCandidatura, "RESPINTA");
+                                                }
+                                            }}
                                         >
                                             {azioneInCorso === c.idCandidatura ? "..." : "Rifiuta"}
                                         </Button>
