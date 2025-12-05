@@ -169,7 +169,6 @@ export default function DettaglioPosizionePage() {
                         <h3 className="text-sm font-semibold">Test associato</h3>
                         {typeof posizione.idTest === "number" ? (
                             <p className="mt-1 text-slate-300 text-sm">
-                                Test ID {posizione.idTest}{" "}
                                 <Link
                                     href={`/hr/test/${posizione.idTest}`}
                                     className="ml-2 text-sky-400 hover:underline"

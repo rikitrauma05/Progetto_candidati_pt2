@@ -49,7 +49,14 @@ export default function HrListaPosizioni() {
 
             <PageHeader
                 title="Candidati per posizione"
-                subtitle="Seleziona una posizione per vedere i candidati e gestire la top 5."
+                subtitle="Seleziona una posizione per vedere i candidati e gestire la top 5.
+                            Verrano visualizzate solo le candidature che hanno superato l'iter dei test,
+                            per facilitare la selezione di candidati adando a presentare solo i migliori"
+
+
+
+
+
             />
 
             {/* LOADING */}

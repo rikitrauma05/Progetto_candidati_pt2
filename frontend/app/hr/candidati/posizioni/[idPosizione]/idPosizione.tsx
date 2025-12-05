@@ -231,6 +231,7 @@ export default function HrTopCandidatiPerPosizione() {
 
                                 <td className="px-4 py-3 flex gap-2">
 
+                                    {/* ACCETTA */}
                                     {c.stato !== "ACCETTATA" ? (
                                         <Button
                                             size="sm"
@@ -249,6 +250,7 @@ export default function HrTopCandidatiPerPosizione() {
                                         </Button>
                                     )}
 
+                                    {/* RIFIUTA */}
                                     {c.stato !== "ACCETTATA" && (
                                         <Button
                                             size="sm"
