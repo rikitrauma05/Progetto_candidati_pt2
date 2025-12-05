@@ -116,7 +116,7 @@ export default function HrListaPosizioni() {
                                         size="sm"
                                         variant="secondary"
                                         onClick={() =>
-                                            router.push(`/hr/candidati/${p.idPosizione}`)
+                                            router.push(`/hr/candidati/posizioni/${p.idPosizione}`)
                                         }
                                     >
                                         Vedi candidati

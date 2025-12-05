@@ -16,8 +16,7 @@ type CandidatoPerPosizione = {
     email: string;
     cvUrl?: string | null;
     punteggioTotale?: number | null;
-    esitoTentativo?: string | null;
-    stato?: string | null; // NORMALIZZATO
+    stato?: string | null;   // <----- NOME CORRETTO
 };
 
 type Posizione = {
@@ -40,44 +39,40 @@ export default function HrTopCandidatiPerPosizione() {
 
     const [azioneInCorso, setAzioneInCorso] = useState<number | null>(null);
 
-    // ================================================================
-    // CARICA POSIZIONE
-    // ================================================================
+    // Carica i dati della posizione
     async function caricaPosizione() {
         try {
             const data = await getJson<Posizione>(`/posizioni/${id}`);
             setPosizione(data);
         } catch {
-            setErrore("Impossibile caricare la posizione.");
+            setErrore("Impossibile caricare i dettagli della posizione.");
         }
     }
 
-    // ================================================================
-    // CARICA CANDIDATI (con normalizzazione dello stato)
-    // ================================================================
+    // Carica la lista candidati normalizzata
     async function caricaCandidati() {
         try {
-            const lista = await getJson<any[]>(`/posizioni/${id}/candidati`);
+            const lista = await getJson<CandidatoPerPosizione[]>(
+                `/posizioni/${id}/candidati`
+            );
 
-            const normalizzati: CandidatoPerPosizione[] = lista.map(c => ({
+            const normalizzati = lista.map(c => ({
                 ...c,
-                stato: c.stato?.codice ?? c.stato ?? "IN_VALUTAZIONE",
+                stato: c.stato ?? "IN_VALUTAZIONE",
+                punteggioTotale: c.punteggioTotale ?? 0,
             }));
 
-            const attivi = normalizzati.filter(c => c.stato !== "RESPINTA");
+            normalizzati.sort((a, b) => b.punteggioTotale - a.punteggioTotale);
 
-            attivi.sort((a, b) => (b.punteggioTotale ?? 0) - (a.punteggioTotale ?? 0));
-
-            setCandidati(attivi.slice(0, 5));
+            // Mostra solo top 5 e nasconde respinti
+            setCandidati(normalizzati.filter(c => c.stato !== "RESPINTA").slice(0, 5));
 
         } catch {
             setErrore("Errore nel caricamento dei candidati.");
         }
     }
 
-    // ================================================================
-    // HR — AGGIORNA STATO CANDIDATURA
-    // ================================================================
+    // PATCH stato candidatura
     async function aggiornaStato(
         idCandidatura: number,
         nuovoStato: "ACCETTATA" | "RESPINTA"
@@ -85,9 +80,12 @@ export default function HrTopCandidatiPerPosizione() {
         setAzioneInCorso(idCandidatura);
 
         try {
-            await patchJson(`/candidature/${idCandidatura}/stato?stato=${nuovoStato}`);
+            await patchJson(
+                `/candidature/${idCandidatura}/stato?stato=${nuovoStato}`
+            );
 
             if (nuovoStato === "RESPINTA") {
+                // UI immediata + backend refresh
                 setCandidati(prev =>
                     prev.filter(c => c.idCandidatura !== idCandidatura)
                 );
@@ -112,9 +110,6 @@ export default function HrTopCandidatiPerPosizione() {
         }
     }
 
-    // ================================================================
-    // INIT LOAD
-    // ================================================================
     useEffect(() => {
         if (!id || Number.isNaN(id)) {
             setErrore("ID posizione non valido.");
@@ -131,16 +126,17 @@ export default function HrTopCandidatiPerPosizione() {
         load();
     }, [id]);
 
-    // ==================================================================
-    // RENDER
-    // ==================================================================
     return (
         <section className="space-y-6">
-
             <PageHeader
                 title={posizione ? `Top 5 candidati – ${posizione.titolo}` : "Caricamento…"}
-                subtitle="I migliori candidati ordinati per punteggio."
-                actions={[{ label: "Torna alle posizioni", href: "/hr/candidati" }]}
+                subtitle="I candidati migliori per questa posizione."
+                actions={[
+                    {
+                        label: "Torna alle posizioni",
+                        href: "/hr/candidati/",
+                    },
+                ]}
             />
 
             {loading && (
@@ -155,7 +151,7 @@ export default function HrTopCandidatiPerPosizione() {
                     <Button
                         className="mt-4"
                         variant="outline"
-                        onClick={() => router.push("/hr/candidati")}
+                        onClick={() => router.push("/hr/candidati/posizioni")}
                     >
                         Torna alle posizioni
                     </Button>
@@ -166,9 +162,11 @@ export default function HrTopCandidatiPerPosizione() {
                 <EmptyState
                     title="Nessun candidato"
                     subtitle="Non ci sono candidati valutabili per questa posizione."
-                    actionSlot={<Button onClick={() => router.push("/hr/candidati")}>
-                        Torna alle posizioni
-                    </Button>}
+                    actionSlot={
+                        <Button onClick={() => router.push("/hr/candidati/posizioni")}>
+                            Torna alle posizioni
+                        </Button>
+                    }
                 />
             )}
 
@@ -185,14 +183,13 @@ export default function HrTopCandidatiPerPosizione() {
                             <th className="px-4 py-3 text-left">Candidato</th>
                             <th className="px-4 py-3 hidden md:table-cell text-left">Email</th>
                             <th className="px-4 py-3 text-left">Punteggio</th>
-                            <th className="px-4 py-3 text-left">CV</th>
                             <th className="px-4 py-3 text-left">Stato</th>
                             <th className="px-4 py-3 text-left">Azioni</th>
                         </tr>
                         </thead>
 
                         <tbody>
-                        {candidati.map((c) => (
+                        {candidati.map(c => (
                             <tr key={c.idCandidatura} className="border-t border-border">
 
                                 <td className="px-4 py-3 font-medium">
@@ -204,30 +201,15 @@ export default function HrTopCandidatiPerPosizione() {
                                 </td>
 
                                 <td className="px-4 py-3 text-xs font-semibold">
-                                    {c.punteggioTotale ?? 0} pt
+                                    {c.punteggioTotale} pt
                                 </td>
 
                                 <td className="px-4 py-3 text-xs">
-                                    {c.cvUrl ? (
-                                        <a
-                                            href={`http://localhost:8080/api/files/cv/${c.cvUrl.split("/").pop()}`}
-                                            target="_blank"
-                                            className="text-blue-500 underline"
-                                        >
-                                            Apri CV
-                                        </a>
-                                    ) : "—"}
-                                </td>
-
-                                <td className="px-4 py-3 text-xs">
-                                        <span className="px-2 py-1 rounded-md border text-[var(--muted)]">
-                                            {c.stato === "ACCETTATA" ? "Accettato" : "In valutazione"}
-                                        </span>
+                                    {c.stato === "ACCETTATA" ? "Accettato" : "In valutazione"}
                                 </td>
 
                                 <td className="px-4 py-3 flex gap-2">
 
-                                    {/* ACCETTA */}
                                     {c.stato !== "ACCETTATA" ? (
                                         <Button
                                             size="sm"
@@ -246,7 +228,6 @@ export default function HrTopCandidatiPerPosizione() {
                                         </Button>
                                     )}
 
-                                    {/* RIFIUTA */}
                                     {c.stato !== "ACCETTATA" && (
                                         <Button
                                             size="sm"
