@@ -140,7 +140,7 @@ export default function HrTopCandidatiPerPosizione() {
             <PageHeader
                 title={posizione ? `Top 5 candidati – ${posizione.titolo}` : "Caricamento…"}
                 subtitle="I migliori candidati ordinati per punteggio."
-                actions={[{ label: "Torna alle posizioni", href: "/hr/candidati" }]}
+                actions={[{ label: "Torna alle Candidature", href: "/hr/candidati" }]}
             />
 
             {loading && (
@@ -166,9 +166,6 @@ export default function HrTopCandidatiPerPosizione() {
                 <EmptyState
                     title="Nessun candidato"
                     subtitle="Non ci sono candidati valutabili per questa posizione."
-                    actionSlot={<Button onClick={() => router.push("/hr/candidati")}>
-                        Torna alle posizioni
-                    </Button>}
                 />
             )}
 
