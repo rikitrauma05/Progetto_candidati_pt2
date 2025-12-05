@@ -17,6 +17,8 @@ type CandidatoPerPosizione = {
     cvUrl?: string | null;
     punteggioTotale?: number | null;
     stato?: string | null;
+    numeroDomande?: number | null;
+
 };
 
 type Posizione = {
@@ -126,7 +128,9 @@ export default function HrTopCandidatiPerPosizione() {
                 title={posizione ? `Top candidati – ${posizione.titolo}` : "Caricamento…"}
                 subtitle={
                     candidati.some(c => c.punteggioTotale !== null)
-                        ? "I migliori 5 candidati ordinati per punteggio."
+                        ? "I migliori 5 candidati ordinati per punteggio. " +
+                          "Una volta rifiutato un candidato verrà eliminato da questa lista (Procedi con cautela)"
+
                         : "Candidati ordinati per ordine di candidatura (nessun test previsto)."
                 }
                 actions={[
@@ -186,13 +190,11 @@ export default function HrTopCandidatiPerPosizione() {
                                 <td className="px-4 py-3 text-xs hidden md:table-cell">
                                     {c.email}
                                 </td>
-
-                                <td className="px-4 py-3 text-xs font-semibold">
-                                    {c.punteggioTotale === null
-                                        ? "Nessun test previsto"
-                                        : `${c.punteggioTotale} pt`}
+                                <td className="px-4 py-3 text-xs">
+                                    {typeof c.punteggioTotale === "number"
+                                        ? `${Math.round((c.punteggioTotale / (c?.numeroDomande ?? 1)) * 100)}%`
+                                        : "Nessun test previsto"}
                                 </td>
-
                                 <td className="px-4 py-3 text-xs">
                                     {c.stato === "ACCETTATA"
                                         ? "Accettato"
