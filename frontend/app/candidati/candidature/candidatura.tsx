@@ -170,7 +170,7 @@ export default function CandidatureCandidato() {
                                 </td>
                                 <td className="px-4 py-3 text-xs">
                                     {typeof c.punteggioTest === "number"
-                                        ? `${((c.punteggioTest / (c?.numeroDomande ?? 1)) * 100).toFixed(2)}%`
+                                        ? `${Math.round((c.punteggioTest / (c?.numeroDomande ?? 1)) * 100)}%`
                                         : "Nessun test previsto"}
                                 </td>
                                 <td className="px-4 py-3 text-xs">
