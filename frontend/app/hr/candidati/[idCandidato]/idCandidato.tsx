@@ -23,9 +23,13 @@ type CandidatoTop = {
     statoCandidatura?: string | null;
 };
 
-type TopCandidatiResponse = {
-    posizione: PosizioneInfo;
-    topCandidati: CandidatoTop[];
+type CandidatoPerPosizione = {
+    idCandidato: number;
+    nome: string;
+    cognome: string;
+    email: string;
+    punteggioTotale: number | null;
+    statoCandidatura?: string | null; // oppure cambia il nome in base al tuo DTO
 };
 
 function formatStato(stato?: string | null) {
@@ -52,7 +56,8 @@ export default function HrTopCandidatiPerPosizione() {
 
     const [loading, setLoading] = useState(true);
     const [errore, setErrore] = useState<string | null>(null);
-    const [dati, setDati] = useState<TopCandidatiResponse | null>(null);
+    const [posizione, setPosizione] = useState<PosizioneInfo | null>(null);
+    const [topCandidati, setTopCandidati] = useState<CandidatoTop[]>([]);
 
     useEffect(() => {
         if (!idPosizione || Number.isNaN(idPosizione)) {
@@ -66,13 +71,30 @@ export default function HrTopCandidatiPerPosizione() {
                 setLoading(true);
                 setErrore(null);
 
-                // Cambia l'endpoint se nel backend è diverso
-                // es: `/candidature/posizione/${idPosizione}/top?limit=5`
-                const resp = await getJson<TopCandidatiResponse>(
-                    `/posizioni/${idPosizione}/top-candidati?limit=5`,
+                // 1) dettagli posizione
+                const pos = await getJson<PosizioneInfo>(`/posizioni/${idPosizione}`);
+                setPosizione(pos);
+
+                // 2) tutti i candidati per quella posizione
+                const lista = await getJson<CandidatoPerPosizione[]>(
+                    `/posizioni/${idPosizione}/candidati`,
                 );
 
-                setDati(resp);
+                // normalizza stato + ordina + prendi top 5
+                const normalizzati: CandidatoTop[] = lista.map((c) => ({
+                    idCandidato: c.idCandidato,
+                    nome: c.nome,
+                    cognome: c.cognome,
+                    email: c.email,
+                    punteggioTotale: c.punteggioTotale ?? 0,
+                    statoCandidatura: c.statoCandidatura ?? "IN_VALUTAZIONE",
+                }));
+
+                normalizzati.sort(
+                    (a, b) => (b.punteggioTotale ?? 0) - (a.punteggioTotale ?? 0),
+                );
+
+                setTopCandidati(normalizzati.slice(0, 5));
             } catch (err: any) {
                 console.error("Errore nel caricamento dei top candidati:", err);
                 setErrore(
@@ -87,9 +109,6 @@ export default function HrTopCandidatiPerPosizione() {
         void load();
     }, [idPosizione]);
 
-    const posizione = dati?.posizione;
-    const topCandidati = dati?.topCandidati ?? [];
-
     return (
         <section className="space-y-6">
             <PageHeader
@@ -98,7 +117,7 @@ export default function HrTopCandidatiPerPosizione() {
                         ? `Top candidati – ${posizione.titolo}`
                         : "Top candidati per posizione"
                 }
-                subtitle="I migliori 5 candidati in base al punteggio per la posizione selezionata."
+                subtitle="I migliori candidati per questa posizione"
                 actions={[
                     {
                         label: "Torna alle posizioni",
@@ -142,8 +161,7 @@ export default function HrTopCandidatiPerPosizione() {
             {!loading && !errore && posizione && topCandidati.length > 0 && (
                 <div className="max-w-5xl mx-auto rounded-2xl border border-border bg-[var(--card)] overflow-hidden">
                     <div className="border-b border-border px-4 py-3 text-sm text-[var(--muted)]">
-                        Mostrati al massimo 5 candidati, ordinati per punteggio
-                        decrescente.
+                        Mostrati i primi 5 candidati, scorri pure per vedere i successivi
                     </div>
                     <table className="w-full text-sm">
                         <thead className="bg-[var(--surface)]">
