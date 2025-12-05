@@ -1,6 +1,6 @@
 // frontend/services/test.service.ts
 
-import { getJson, postJson } from "./api";
+import { getJson, postJson, deleteJson } from "./api";
 
 import type {
     TentativoListItem,
@@ -58,6 +58,16 @@ export async function getTentativiCandidato(): Promise<TentativoListItem[]> {
 /* ============================================================
  *  GESTIONE TEST (HR/Admin)
  * ============================================================*/
+
+/**
+ * Eliminazione di un test (solo HR).
+ * DELETE /api/test/{idTest}
+ */
+export async function deleteTest(idTest: number) {
+    // 204 → ritorna undefined
+    // 409 → request() NON lancia errore, ma ritorna il body JSON come T
+    return deleteJson<any>(`/test/${idTest}`);
+}
 
 /**
  * Creazione di un nuovo test.

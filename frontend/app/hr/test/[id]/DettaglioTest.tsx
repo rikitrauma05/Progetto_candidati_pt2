@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getStrutturaTest } from "@/services/test.service";
+import { useRouter } from "next/navigation";
+import { getStrutturaTest , deleteTest } from "@/services/test.service";
 import type { StrutturaTestDto } from "@/types/test/test";
 
 type DettaglioTestProps = {
@@ -13,6 +14,9 @@ export default function DettaglioTest({ idTest }: DettaglioTestProps) {
     const [test, setTest] = useState<StrutturaTestDto | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const router = useRouter();
+
 
     useEffect(() => {
         const load = async () => {
@@ -34,6 +38,28 @@ export default function DettaglioTest({ idTest }: DettaglioTestProps) {
 
         load();
     }, [idTest]);
+
+    const handleDelete = async () => {
+        const conferma = confirm("Sei sicuro di voler eliminare questo test?");
+        if (!conferma) return;
+
+        try {
+            const res = await deleteTest(idTest);
+            // api.ts: per 204 -> undefined, per 409 -> body JSON
+            if (res) {
+                const msg =
+                    (res as any).message ||
+                    "Impossibile eliminare: il test è associato a una o più posizioni.";
+                alert(msg);
+                return;
+            }
+
+            alert("Test eliminato con successo.");
+            router.push("/hr/test");
+        } catch (e: any) {
+            alert(e?.message || "Errore durante l'eliminazione del test.");
+        }
+    };
 
     if (loading) {
         return (
@@ -74,12 +100,22 @@ export default function DettaglioTest({ idTest }: DettaglioTestProps) {
                     </p>
                 </div>
 
-                <Link
-                    href="/hr/test"
-                    className="px-4 py-2 rounded-lg border border-[var(--border)] font-medium hover:bg-[var(--accent)]/10"
-                >
-                    Torna ai test
-                </Link>
+                <div className="flex gap-3">
+                    <Link
+                        href="/hr/test"
+                        className="px-4 py-2 rounded-lg border border-[var(--border)] font-medium hover:bg-[var(--accent)]/10"
+                    >
+                        Torna ai test
+                    </Link>
+
+                    <button
+                        type="button"
+                        onClick={handleDelete}
+                        className="px-4 py-2 rounded-lg border border-red-600 bg-red-600 text-white font-medium hover:bg-red-700"
+                    >
+                        Elimina test
+                    </button>
+                </div>
             </header>
 
             <div className="rounded-xl border bg-[var(--card)] p-6 space-y-3">
