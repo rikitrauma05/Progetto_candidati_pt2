@@ -52,6 +52,7 @@ export default function TentativoTestPage() {
     const [tempoScaduto, setTempoScaduto] = useState(false);
     const [staInviando, setStaInviando] = useState(false);
     const [indice, setIndice] = useState(0);
+    const getTimerStorageKey = (idTest: number) => `test-timer-id-${idTest}`;
 
     /* ----------------------------------------------------------
        INIT — CARICA SOLO DOMANDE (NON CREA TENTATIVO)
@@ -80,37 +81,68 @@ export default function TentativoTestPage() {
                 });
                 setRisposte(iniziali);
 
-                setTempoRimanente(data.durataMinuti * 60);
+                const chiaveTempo = getTimerStorageKey(idTest);
+                const tempoSalvato = localStorage.getItem(chiaveTempo);
+                let tempoIniziale = data.durataMinuti * 60; // Tempo predefinito
+
+                if (tempoSalvato) {
+                    const tempoRecuperato = parseInt(tempoSalvato, 10);
+                    // Usiamo il tempo recuperato solo se è positivo
+                    if (tempoRecuperato > 0) {
+                        tempoIniziale = tempoRecuperato;
+                        console.log(`[Timer] Tempo recuperato: ${tempoIniziale}s`);
+                    } else {
+                        // Tempo salvato è <= 0, cancelliamo la chiave e usiamo il tempo iniziale
+                        localStorage.removeItem(chiaveTempo);
+                        console.log("[Timer] Tempo scaduto o non valido salvato, reset.");
+                    }
+                } else {
+                    // Se non c'è nulla in storage, salviamo il tempo pieno per la prima volta
+                    localStorage.setItem(chiaveTempo, String(tempoIniziale));
+                    console.log(`[Timer] Nuovo test avviato: ${tempoIniziale}s`);
+                }
+
+                setTempoRimanente(tempoIniziale);
                 setStato("PRONTO");
             } catch (e: any) {
-                console.error("ERRORE INIT:", e);
-                setErrore("Errore durante il caricamento del test.");
+                setErrore("C'è stato un errore nel ricaricamento del test.")
             }
         }
 
         init();
     }, [idTest, idPosizione]);
 
-    /* ----------------------------------------------------------
-       TIMER
-    ---------------------------------------------------------- */
+
     useEffect(() => {
         if (stato !== "PRONTO") return;
         if (tempoRimanente <= 0 || tempoScaduto) return;
 
+        const chiaveTempo = getTimerStorageKey(idTest); // Ottieni la chiave qui
+
         const interval = setInterval(() => {
             setTempoRimanente((t) => {
-                if (t <= 1) {
+                const nuovoTempo = t - 1;
+
+                if (nuovoTempo >= 0) {
+                    localStorage.setItem(chiaveTempo, String(nuovoTempo));
+                    return nuovoTempo;
+                } else {
                     clearInterval(interval);
                     setTempoScaduto(true);
+                    localStorage.removeItem(chiaveTempo); // Pulisci lo storage al termine
+
+                    invia();
+
                     return 0;
                 }
-                return t - 1;
             });
         }, 1000);
 
-        return () => clearInterval(interval);
-    }, [stato, tempoRimanente, tempoScaduto]);
+        return () => {
+            clearInterval(interval);
+        }
+
+    }, [stato, tempoRimanente, tempoScaduto, idTest, invia]);
 
     const minutiSecondi = useMemo(() => {
         const m = Math.floor(tempoRimanente / 60);
