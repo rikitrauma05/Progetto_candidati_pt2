@@ -115,13 +115,13 @@ export default function DettaglioTest({ idTest }: DettaglioTestProps) {
                                 <div
                                     key={opzione.idOpzione}
                                     className={`px-3 py-2 rounded-md border text-sm ${
-                                        opzione.isCorretta
-                                            ? "bg-green-500/20 border-green-500 text-green-900"
+                                        opzione.corretta
+                                            ? "bg-green-500/20 border-green-500 text-white-900"
                                             : "bg-[var(--input)] border-[var(--border)]"
                                     }`}
                                 >
                                     {opzione.testoOpzione}
-                                    {opzione.isCorretta && (
+                                    {opzione.corretta && (
                                         <span className="ml-2 font-semibold">
                                             (Corretta)
                                         </span>

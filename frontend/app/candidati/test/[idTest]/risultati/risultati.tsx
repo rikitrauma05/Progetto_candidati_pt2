@@ -143,7 +143,7 @@ export default function RisultatiTestPage() {
                                 Punteggio ottenuto
                             </p>
                             <p className="text-xl font-semibold">
-                                {percentuale}%
+                                {Math.round(Number(percentuale))}%
                             </p>
                         </div>
                     </div>

@@ -17,7 +17,7 @@ export type TestListItem = {
 export type StrutturaTestOpzioneDto = {
     idOpzione: number;
     testoOpzione: string;
-    isCorretta: boolean; // <- flag di correttezza
+    corretta: boolean; // <- flag di correttezza
 };
 
 // Domanda come arriva da /api/test/{id}/struttura
