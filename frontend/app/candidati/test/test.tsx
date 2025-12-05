@@ -161,7 +161,7 @@ export default function TestStoricoPage() {
                                 </td>
                                 <td className="px-4 py-3 text-right">
                                     <Link
-                                        href={`/candidati/test/${t.idTest}/risultati?tentativo=${t.idTentativo}`}
+                                        href={`/candidati/test/${t.idTest}/risultati?idTentativo=${t.idTentativo}`}
                                         className="text-sm font-medium text-blue-500 hover:underline"
                                     >
                                         Vedi risultati →
