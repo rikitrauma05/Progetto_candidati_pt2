@@ -215,19 +215,22 @@ export default function NuovaTest() {
 
     const aggiungiOpzione = (indexDomanda: number) => {
         setDomande((prev) =>
-            prev.map((d, i) =>
-                i === indexDomanda
-                    ? {
-                        ...d,
-                        opzioni: [
-                            ...d.opzioni,
-                            { testoOpzione: "", corretta: false },
-                        ],
+            prev.map((d, i) => {
+                if (i === indexDomanda) {
+                    if (d.opzioni.length >= 4) {
+                        setError("Non puoi aggiungere più di 4 opzioni per domanda.");
+                        return d;
                     }
-                    : d
-            )
+                    return {
+                        ...d,
+                        opzioni: [...d.opzioni, { testoOpzione: "", corretta: false }],
+                    };
+                }
+                return d;
+            })
         );
     };
+
 
     const rimuoviOpzione = (indexDomanda: number, indexOpzione: number) => {
         setDomande((prev) =>
