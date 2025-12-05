@@ -15,8 +15,8 @@ type CandidatoPerPosizione = {
     cognome: string;
     email: string;
     cvUrl?: string | null;
-    punteggioTotale?: number | null;
-    stato?: string | null;   // <----- NOME CORRETTO
+    punteggioTotale?: number | null;  // null = nessun test previsto
+    stato?: string | null;            // ACCETTATA / IN_VALUTAZIONE / RESPINTA
 };
 
 type Posizione = {
@@ -39,7 +39,9 @@ export default function HrTopCandidatiPerPosizione() {
 
     const [azioneInCorso, setAzioneInCorso] = useState<number | null>(null);
 
-    // Carica i dati della posizione
+    // ============================================
+    // CARICA POSIZIONE
+    // ============================================
     async function caricaPosizione() {
         try {
             const data = await getJson<Posizione>(`/posizioni/${id}`);
@@ -49,7 +51,9 @@ export default function HrTopCandidatiPerPosizione() {
         }
     }
 
-    // Carica la lista candidati normalizzata
+    // ============================================
+    // CARICA CANDIDATI
+    // ============================================
     async function caricaCandidati() {
         try {
             const lista = await getJson<CandidatoPerPosizione[]>(
@@ -59,20 +63,32 @@ export default function HrTopCandidatiPerPosizione() {
             const normalizzati = lista.map(c => ({
                 ...c,
                 stato: c.stato ?? "IN_VALUTAZIONE",
-                punteggioTotale: c.punteggioTotale ?? 0,
+                // punteggio: se null → nessun test previsto
+                punteggioTotale: c.punteggioTotale ?? null
             }));
 
-            normalizzati.sort((a, b) => b.punteggioTotale - a.punteggioTotale);
+            // Ordinamento:
+            // - se tutti hanno punteggio null → ordina per ordine candidatura (lista originale)
+            // - altrimenti ordina per punteggio desc
+            const esistonoTest = normalizzati.some(c => c.punteggioTotale !== null);
 
-            // Mostra solo top 5 e nasconde respinti
-            setCandidati(normalizzati.filter(c => c.stato !== "RESPINTA").slice(0, 5));
+            const ordinati = esistonoTest
+                ? [...normalizzati].sort(
+                    (a, b) => (b.punteggioTotale ?? 0) - (a.punteggioTotale ?? 0)
+                )
+                : normalizzati; // nessun test → ordine naturale
+
+            // Togli respinti e prendi top 5
+            setCandidati(ordinati.filter(c => c.stato !== "RESPINTA").slice(0, 5));
 
         } catch {
             setErrore("Errore nel caricamento dei candidati.");
         }
     }
 
-    // PATCH stato candidatura
+    // ============================================
+    // PATCH – Aggiorna stato candidatura
+    // ============================================
     async function aggiornaStato(
         idCandidatura: number,
         nuovoStato: "ACCETTATA" | "RESPINTA"
@@ -80,18 +96,11 @@ export default function HrTopCandidatiPerPosizione() {
         setAzioneInCorso(idCandidatura);
 
         try {
-            await patchJson(
-                `/candidature/${idCandidatura}/stato?stato=${nuovoStato}`
-            );
+            await patchJson(`/candidature/${idCandidatura}/stato?stato=${nuovoStato}`);
 
             if (nuovoStato === "RESPINTA") {
-                // UI immediata + backend refresh
-                setCandidati(prev =>
-                    prev.filter(c => c.idCandidatura !== idCandidatura)
-                );
-            }
-
-            if (nuovoStato === "ACCETTATA") {
+                setCandidati(prev => prev.filter(c => c.idCandidatura !== idCandidatura));
+            } else {
                 setCandidati(prev =>
                     prev.map(c =>
                         c.idCandidatura === idCandidatura
@@ -102,7 +111,6 @@ export default function HrTopCandidatiPerPosizione() {
             }
 
             await caricaCandidati();
-
         } catch {
             alert("Errore aggiornamento stato");
         } finally {
@@ -110,6 +118,9 @@ export default function HrTopCandidatiPerPosizione() {
         }
     }
 
+    // ============================================
+    // INIT LOAD
+    // ============================================
     useEffect(() => {
         if (!id || Number.isNaN(id)) {
             setErrore("ID posizione non valido.");
@@ -129,12 +140,16 @@ export default function HrTopCandidatiPerPosizione() {
     return (
         <section className="space-y-6">
             <PageHeader
-                title={posizione ? `Top 5 candidati – ${posizione.titolo}` : "Caricamento…"}
-                subtitle="I candidati migliori per questa posizione."
+                title={posizione ? `Top candidati – ${posizione.titolo}` : "Caricamento…"}
+                subtitle={
+                    candidati.some(c => c.punteggioTotale !== null)
+                        ? "I migliori 5 candidati ordinati per punteggio."
+                        : "Candidati ordinati per ordine di candidatura (nessun test previsto)."
+                }
                 actions={[
                     {
                         label: "Torna alle posizioni",
-                        href: "/hr/candidati/",
+                        href: "/hr/candidati/posizioni",
                     },
                 ]}
             />
@@ -172,11 +187,6 @@ export default function HrTopCandidatiPerPosizione() {
 
             {!loading && !errore && candidati.length > 0 && (
                 <div className="max-w-5xl mx-auto rounded-2xl border border-border bg-[var(--card)] overflow-hidden">
-
-                    <div className="border-b border-border px-4 py-3 text-sm text-[var(--muted)]">
-                        I migliori 5 candidati ordinati per punteggio
-                    </div>
-
                     <table className="w-full text-sm">
                         <thead className="bg-[var(--surface)]">
                         <tr>
@@ -191,7 +201,6 @@ export default function HrTopCandidatiPerPosizione() {
                         <tbody>
                         {candidati.map(c => (
                             <tr key={c.idCandidatura} className="border-t border-border">
-
                                 <td className="px-4 py-3 font-medium">
                                     {c.nome} {c.cognome}
                                 </td>
@@ -201,15 +210,18 @@ export default function HrTopCandidatiPerPosizione() {
                                 </td>
 
                                 <td className="px-4 py-3 text-xs font-semibold">
-                                    {c.punteggioTotale} pt
+                                    {c.punteggioTotale === null
+                                        ? "Nessun test previsto"
+                                        : `${c.punteggioTotale} pt`}
                                 </td>
 
                                 <td className="px-4 py-3 text-xs">
-                                    {c.stato === "ACCETTATA" ? "Accettato" : "In valutazione"}
+                                    {c.stato === "ACCETTATA"
+                                        ? "Accettato"
+                                        : "In valutazione"}
                                 </td>
 
                                 <td className="px-4 py-3 flex gap-2">
-
                                     {c.stato !== "ACCETTATA" ? (
                                         <Button
                                             size="sm"
@@ -241,7 +253,6 @@ export default function HrTopCandidatiPerPosizione() {
                                             {azioneInCorso === c.idCandidatura ? "..." : "Rifiuta"}
                                         </Button>
                                     )}
-
                                 </td>
                             </tr>
                         ))}
