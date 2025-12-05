@@ -149,7 +149,7 @@ export default function HrTopCandidatiPerPosizione() {
                 actions={[
                     {
                         label: "Torna alle posizioni",
-                        href: "/hr/candidati/posizioni",
+                        href: "/hr/candidati",
                     },
                 ]}
             />

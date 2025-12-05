@@ -143,9 +143,7 @@ export default function TestStoricoPage() {
                                     <div className="font-medium">
                                         {t.titoloTest}
                                     </div>
-                                    <div className="text-xs text-[var(--muted)]">
-                                        ID test: {t.idTest}
-                                    </div>
+
                                 </td>
                                 <td className="px-4 py-3">
                                         <span
