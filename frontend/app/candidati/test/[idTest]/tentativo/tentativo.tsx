@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import PageHeader from "@/components/layout/pageHeader";
 import Button from "@/components/ui/button";
@@ -53,6 +53,14 @@ export default function TentativoTestPage() {
     const [staInviando, setStaInviando] = useState(false);
     const [indice, setIndice] = useState(0);
     const getTimerStorageKey = (idTest: number) => `test-timer-id-${idTest}`;
+
+    // Ref per evitare invii multipli e per leggere risposte stabili dentro useCallback
+    const inviatoRef = useRef(false);
+    const risposteRef = useRef<RisposteUtente>(risposte);
+
+    useEffect(() => {
+        risposteRef.current = risposte;
+    }, [risposte]);
 
     /* ----------------------------------------------------------
        INIT — CARICA SOLO DOMANDE (NON CREA TENTATIVO)
@@ -113,63 +121,21 @@ export default function TentativoTestPage() {
     }, [idTest, idPosizione]);
 
 
-    useEffect(() => {
-        if (stato !== "PRONTO") return;
-        if (tempoRimanente <= 0 || tempoScaduto) return;
-
-        const chiaveTempo = getTimerStorageKey(idTest); // Ottieni la chiave qui
-
-        const interval = setInterval(() => {
-            setTempoRimanente((t) => {
-                const nuovoTempo = t - 1;
-
-                if (nuovoTempo >= 0) {
-                    localStorage.setItem(chiaveTempo, String(nuovoTempo));
-                    return nuovoTempo;
-                } else {
-                    clearInterval(interval);
-                    setTempoScaduto(true);
-                    localStorage.removeItem(chiaveTempo); // Pulisci lo storage al termine
-
-                    invia();
-
-                    return 0;
-                }
-            });
-        }, 1000);
-
-        return () => {
-            clearInterval(interval);
-        }
-
-    }, [stato, tempoRimanente, tempoScaduto, idTest, invia]);
-
-    const minutiSecondi = useMemo(() => {
-        const m = Math.floor(tempoRimanente / 60);
-        const s = tempoRimanente % 60;
-        return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-    }, [tempoRimanente]);
-
-    /* ----------------------------------------------------------
-       SELEZIONE RISPOSTA
-    ---------------------------------------------------------- */
-    function seleziona(idDomanda: number, idOpzione: number) {
-        setRisposte((prev) => ({
-            ...prev,
-            [idDomanda]: idOpzione,
-        }));
-    }
-
     /* ----------------------------------------------------------
        INVIO TEST — CREA CANDIDATURA + TENTATIVO + RISPOSTE
+       reso stabile con useCallback e proteggo da invii multipli con inviatoRef
     ---------------------------------------------------------- */
-    async function invia() {
+    const invia = useCallback(async () => {
+        if (inviatoRef.current) return;
+        inviatoRef.current = true;
+
         if (!idTest || !idPosizione) return;
 
         try {
             setStaInviando(true);
 
-            const payload: RispostaDTO[] = Object.entries(risposte).map(
+            // ! RISPOSTEREF.CURRENT viene letto qui, garantendo l'ultimo stato
+            const payload: RispostaDTO[] = Object.entries(risposteRef.current).map(
                 ([idDomanda, idOpzione]) => ({
                     idDomanda: Number(idDomanda),
                     idOpzione: idOpzione ?? null,
@@ -185,15 +151,83 @@ export default function TentativoTestPage() {
             });
             console.log("RESPONSE COMPLETATEST:", response);
 
+            localStorage.removeItem(getTimerStorageKey(idTest)); // pulisco storage al termine
+
             router.push(
                 `/candidati/test/${idTest}/risultati?idTentativo=${response.idTentativo}`
             );
         } catch (e: any) {
             console.error("ERRORE INVIO:", e);
             setErrore(e?.message ?? "Errore durante l'invio del test.");
+            // RE-IMPOSTO inviatoRef a false in caso di fallimento per permettere ritentativo
+            inviatoRef.current = false;
         } finally {
             setStaInviando(false);
         }
+    }, [idTest, idPosizione, iniziatoAt, router]);
+
+
+    /* ----------------------------------------------------------
+       EFFETTO 1: GESTIONE DEL TIMER E SCADENZA (Modificata)
+       - Imposta solo il tempoRimanente e tempoScaduto
+    ---------------------------------------------------------- */
+    useEffect(() => {
+        if (stato !== "PRONTO" || tempoScaduto) return;
+
+        const chiaveTempo = getTimerStorageKey(idTest);
+
+        const interval = setInterval(() => {
+            setTempoRimanente((t) => {
+                const nuovoTempo = t - 1;
+
+                if (nuovoTempo > 0) {
+                    localStorage.setItem(chiaveTempo, String(nuovoTempo));
+                    return nuovoTempo;
+                } else if (nuovoTempo <= 0) {
+                    // Tempo SCADUTO!
+                    clearInterval(interval);
+                    localStorage.removeItem(chiaveTempo);
+                    setTempoScaduto(true); // <--- Imposta lo stato per l'altro useEffect
+                    return 0;
+                }
+                return t; // non dovrebbe succedere
+            });
+        }, 1000);
+
+        return () => {
+            clearInterval(interval);
+        }
+
+    }, [stato, idTest, tempoScaduto]); // Non dipende più da tempoRimanente, invia
+
+
+    /* ----------------------------------------------------------
+       EFFETTO 2: INVIO AUTOMATICO (Nuovo blocco dedicato)
+       - Si attiva solo quando tempoScaduto diventa TRUE.
+    ---------------------------------------------------------- */
+    useEffect(() => {
+        if (tempoScaduto) {
+            // Se tempoScaduto è TRUE, chiama invia()
+            console.log("[Timer] Tempo scaduto, avvio invio automatico.");
+            invia();
+        }
+    }, [tempoScaduto, invia]);
+
+
+    const minutiSecondi = useMemo(() => {
+        const m = Math.floor(tempoRimanente / 60);
+        const s = tempoRimanente % 60;
+        return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    }, [tempoRimanente]);
+
+    /* ----------------------------------------------------------
+       SELEZIONE RISPOSTA
+    ---------------------------------------------------------- */
+    function seleziona(idDomanda: number, idOpzione: number) {
+        setRisposte((prev) => ({
+            ...prev,
+            [idDomanda]: idOpzione,
+        }));
     }
 
     function prossima() {
@@ -248,17 +282,16 @@ export default function TentativoTestPage() {
                 {/* TIMER */}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p className="text-xs uppercase tracking-wide text-[var(--muted)]">
-                            Tempo rimanente
-                        </p>
                         <p
                             className={`font-mono text-xl ${
-                                tempoRimanente <= 60 && tempoRimanente > 0
+                                tempoRimanente <= 60 && tempoRimanente >= 0
                                     ? "text-red-600"
                                     : "text-[var(--foreground)]"
                             }`}
                         >
-                            {minutiSecondi}
+                            {tempoScaduto || tempoRimanente === 0
+                                ? "Tempo scaduto, invio del test in corso..."
+                                : minutiSecondi}
                         </p>
                     </div>
 
@@ -305,6 +338,7 @@ export default function TentativoTestPage() {
                                                     o.idOpzione
                                                 )
                                             }
+                                            disabled={staInviando || tempoScaduto}
                                         />
                                         <span>{o.testoOpzione}</span>
                                     </label>
@@ -315,7 +349,7 @@ export default function TentativoTestPage() {
                         <div className="flex justify-end">
                             <Button
                                 variant="primary"
-                                disabled={staInviando}
+                                disabled={staInviando || tempoScaduto}
                                 onClick={prossima}
                             >
                                 {indice === domande.length - 1
