@@ -175,6 +175,7 @@ export default function HrTopCandidatiPerPosizione() {
                             <th className="px-4 py-3 text-left">Candidato</th>
                             <th className="px-4 py-3 hidden md:table-cell text-left">Email</th>
                             <th className="px-4 py-3 text-left">Punteggio</th>
+                            <th className="px-4 py-3 text-left">CV</th>
                             <th className="px-4 py-3 text-left">Stato</th>
                             <th className="px-4 py-3 text-left">Azioni</th>
                         </tr>
@@ -194,6 +195,18 @@ export default function HrTopCandidatiPerPosizione() {
                                     {typeof c.punteggioTotale === "number"
                                         ? `${Math.round((c.punteggioTotale / (c?.numeroDomande ?? 1)) * 100)}%`
                                         : "Nessun test previsto"}
+                                </td>
+                                <td className="px-4 py-3 text-xs">
+                                    {c.cvUrl ? (
+                                        <a
+                                            href={`http://localhost:8080/api/files/cv/${c.cvUrl.split("/").pop()}`}
+                                            target="_blank"
+                                            className="text-blue-500 underline"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Apri CV
+                                        </a>
+                                    ) : "—"}
                                 </td>
                                 <td className="px-4 py-3 text-xs">
                                     {c.stato === "ACCETTATA"
