@@ -117,10 +117,12 @@ export async function register(
  * response: { accessToken }
  * (solo se implementato nel backend)
  */
-export function refreshToken(refreshToken: string) {
+export async function refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
+    // 🔥 IMPORTANTE: passa true come terzo parametro per bypassare ensureFreshToken
     return postJson<RefreshTokenResponse, { refreshToken: string }>(
         "/auth/refresh",
-        { refreshToken }
+        { refreshToken },
+        true  // skipTokenCheck
     );
 }
 

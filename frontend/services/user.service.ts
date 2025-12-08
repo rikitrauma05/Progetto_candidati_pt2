@@ -13,10 +13,8 @@ export type Candidato = {
         email: string;
         telefono?: string | null;
         citta?: string | null;
-        // altri campi se servono...
     };
     active: boolean;
-    // opzionali, calcolati lato FE
     ultimaPosizione?: string;
     punteggioTotale?: number;
 };

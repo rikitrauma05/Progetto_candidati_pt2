@@ -24,6 +24,8 @@ export type LoginResponse = {
 
 export type RefreshTokenResponse = {
     accessToken: string;
+    refreshToken: string;
+    user: User;
 };
 
 export type MeResponse = User;

@@ -1,109 +1,163 @@
-// frontend/services/api.ts
-
 import { useAuthStore } from "@/store/authStore";
 import { refreshToken as callRefreshToken } from "@/services/auth.service";
-import {RefreshTokenResponse} from "@/types/auth";
+import type { RefreshTokenResponse } from "@/types/auth";
 
-// In .env.local metti esattamente:
-// NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api
+// Base URL API
 export const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-type MergedHeaders = Record<string, string | undefined>;
 
 interface RequestOptions extends RequestInit {
     method?: HttpMethod;
 }
 
 /**
- * Wrapper generico per le chiamate HTTP.
- *
- * Modifica rispetto all'originale:
- * - se lo status è 409, NON viene lanciata un'eccezione,
- *   ma il body (se presente) viene restituito come risultato.
+ * Wrapper centrale per tutte le chiamate HTTP
+ * - Gestisce automaticamente access token
+ * - Rinnova token se scaduto
+ * - Ritenta la richiesta originale dopo refresh
  */
 async function request<T>(
     path: string,
     options: RequestOptions = {},
+    skipTokenCheck: boolean = false
 ): Promise<T> {
     const url = `${API_BASE_URL}${path}`;
 
-    const { accessToken } = useAuthStore.getState();
-
-    const headers = new Headers(options.headers);
-
-    if (!headers.has("Accept")) {
-        headers.set("Accept", "application/json");
+    if (!skipTokenCheck) {
+        await ensureFreshToken();
     }
 
-    const isFormData = options.body instanceof FormData;
+    const headers = new Headers(options.headers);
+    if (!headers.has("Accept")) headers.set("Accept", "application/json");
 
+    const isFormData = options.body instanceof FormData;
     if (!isFormData && options.body && !headers.has("Content-Type")) {
         headers.set("Content-Type", "application/json");
     }
 
-    if (accessToken && !headers.has("Authorization")) {
-        headers.set("Authorization", `Bearer ${accessToken}`);
+    const currentToken = useAuthStore.getState().accessToken;
+    if (!headers.has("Authorization") && currentToken) {
+        headers.set("Authorization", `Bearer ${currentToken}`);
     }
 
-    const response = await fetch(url, {
-        ...options,
-        headers,
-    });
+    const doFetch = async () => fetch(url, { ...options, headers });
 
-    // Nessun contenuto
-    if (response.status === 204) {
-        return undefined as unknown as T;
-    }
+    let response = await doFetch();
 
-    // Se NON è ok
-    if (!response.ok) {
-        // Caso speciale: 409 → NON lancio errore, ritorno il body
-        if (response.status === 409) {
-            let data: any = undefined;
-            try {
-                data = await response.json();
-            } catch {
-                // nessun JSON/nessun body, lascio undefined
-            }
+    // --- Se il server dice 401 o 403 → tentiamo refresh token e retry ---
+    if ((response.status === 401 || response.status === 403)) {
+        const authStore = useAuthStore.getState();
 
-            console.warn("[API] HTTP 409 gestito come risposta valida:", url, data);
-            return (data as T) ?? ({} as T);
+        if (!authStore.refreshToken) {
+            authStore.logout();
+            throw new Error("SESSIONE_SCADUTA_RIFARE_LOGIN");
         }
-
-        // Tutti gli altri errori come prima
-        let message = `Errore HTTP ${response.status}`;
 
         try {
-            const data = await response.json();
-            if (typeof data === "string") {
-                message = data;
-            } else if ((data as any)?.message) {
-                message = (data as any).message;
-            }
-        } catch {
-            // se non è JSON, lascio il messaggio generico
-        }
+            const refreshData: RefreshTokenResponse = await callRefreshToken(authStore.refreshToken);
 
+            // 🔥 AGGIORNATO: usa il nuovo refreshToken se presente
+            authStore.setTokens({
+                accessToken: refreshData.accessToken,
+                refreshToken: refreshData.refreshToken || authStore.refreshToken,
+            });
+
+            headers.set("Authorization", `Bearer ${refreshData.accessToken}`);
+            response = await doFetch();
+
+            if (response.status === 401 || response.status === 403) {
+                authStore.logout();
+                throw new Error("SESSIONE_SCADUTA_RIFARE_LOGIN");
+            }
+
+        } catch (err) {
+            console.error("Refresh token fallito, logout", err);
+            const authStore = useAuthStore.getState();
+            authStore.logout();
+            throw new Error("SESSIONE_SCADUTA_RIFARE_LOGIN");
+        }
+    }
+
+    // --- Gestione risposta ---
+    if (response.status === 204) return undefined as unknown as T;
+
+    if (!response.ok) {
+        let message = `HTTP Error ${response.status}`;
+        try {
+            const data = await response.json();
+            if (typeof data === "string") message = data;
+            else if ((data as any)?.message) message = (data as any).message;
+        } catch {
+            // lascio il messaggio generico
+        }
         throw new Error(message);
     }
 
-    // 2xx con body
-    return (await response.json()) as T;
+    return response.json() as Promise<T>;
 }
 
-// Helpers
+function isTokenExpiringSoon(): boolean {
+    const authStore = useAuthStore.getState();
+    const token = authStore.accessToken;
 
+    if (!token) return false;
+
+    try {
+        const payloadBase64 = token.split('.')[1];
+        const payload = JSON.parse(atob(payloadBase64));
+        const exp = payload.exp * 1000;
+        const now = Date.now();
+        const timeLeft = exp - now;
+        const isExpiring = timeLeft < 5000;
+
+        return isExpiring;
+    } catch (err) {
+        console.error("❌ Errore parsing JWT", err);
+        return false;
+    }
+}
+
+async function ensureFreshToken() {
+
+    const authStore = useAuthStore.getState();
+    const shouldRefresh = isTokenExpiringSoon();
+
+    console.log("🔍 Checking token...", {
+        shouldRefresh,
+        hasRefreshToken: !!authStore.refreshToken
+    });
+
+    if (shouldRefresh && authStore.refreshToken) {
+        try {
+            const refreshData = await callRefreshToken(authStore.refreshToken);
+
+            authStore.setTokens({
+                accessToken: refreshData.accessToken,
+                refreshToken: refreshData.refreshToken || authStore.refreshToken,
+            });
+
+        } catch (err) {
+            console.error("Proactive refresh failed", err);
+            authStore.logout();
+            throw new Error("SESSIONE_SCADUTA_RIFARE_LOGIN");
+        }
+    } else {
+        console.log("Skip refresh - token ancora valido");
+    }
+}
+
+// --- HELPERS ---
 export function getJson<T>(path: string) {
     return request<T>(path, { method: "GET" });
 }
 
-export function postJson<T, B = unknown>(path: string, body?: B) {
+export function postJson<T, B = unknown>(path: string, body?: B, skipTokenCheck?: boolean) {
     return request<T>(path, {
         method: "POST",
         body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
+    }, skipTokenCheck);
 }
 
 export function putJson<T, B = unknown>(path: string, body?: B) {
@@ -125,85 +179,4 @@ export function deleteJson<T, B = unknown>(path: string, body?: B) {
         method: "DELETE",
         body: body !== undefined ? JSON.stringify(body) : undefined,
     });
-
-    async function fetchWithAuth(url: string, options: RequestInit = {}) {
-        const authStore = useAuthStore.getState();
-        const accessToken = authStore.accessToken;
-        const existingHeaders = options.headers;
-
-        // 1. Unifica gli header esistenti in un unico oggetto indicizzabile (MergedHeaders)
-        const initialHeaders: MergedHeaders = existingHeaders
-            ? Object.fromEntries(new Headers(existingHeaders).entries())
-            : {};
-
-        // 2. Costruisci l'oggetto Headers Completo con il token
-        let mergedHeaders: MergedHeaders = {
-            ...initialHeaders,
-            // Sovrascrivi o aggiungi l'Authorization
-            'Authorization': accessToken ? `Bearer ${accessToken}` : undefined,
-        };
-
-        // 3. Filtra i valori `undefined` e costruisci HeadersInit finale
-        //    Questo risolve il TS2769 finale e il TS7053
-        const buildFinalHeaders = (mHeaders: MergedHeaders): Record<string, string> => {
-            const final: Record<string, string> = {};
-            for (const key in mHeaders) {
-                // Qui TypeScript è più felice perché `mHeaders` è un Record<string, ...>
-                const value = mHeaders[key];
-                if (value !== undefined) {
-                    final[key] = value;
-                }
-            }
-            return final;
-        };
-
-        // Rimuovi l'header Authorization da options se presente, per non duplicarlo
-        const { headers: _, ...optionsWithoutHeaders } = options;
-
-        let response = await fetch(url, {
-            ...optionsWithoutHeaders,
-            headers: buildFinalHeaders(mergedHeaders) // Usa la versione pulita
-        });
-
-        // --- LOGICA DI REFRESH TOKEN (Se l'Access Token è scaduto) ---
-
-        // NOTA: Devi assicurarti che l'API del refresh non richieda un Access Token,
-        // o gestirla con una chiamata fetch non intercettata.
-
-        if (response.status === 403 && authStore.refreshToken) {
-
-            try {
-                // Chiama il servizio di refresh
-                const refreshResp: RefreshTokenResponse = await callRefreshToken(authStore.refreshToken);
-
-                // Aggiorna l'Access Token nello store
-                authStore.setTokens({ accessToken: refreshResp.accessToken });
-
-                // Aggiorna gli headers con il NUOVO token
-                mergedHeaders = {
-                    ...mergedHeaders,
-                    'Authorization': `Bearer ${refreshResp.accessToken}`,
-                };
-
-                // Riprova la richiesta originale con il nuovo token
-                response = await fetch(url, {
-                    ...optionsWithoutHeaders,
-                    headers: buildFinalHeaders(mergedHeaders)
-                });
-
-            } catch (refreshError) {
-                console.error("Refresh Token fallito. Eseguo logout.", refreshError);
-                authStore.logout();
-                throw new Error("SESSIONE_SCADUTA_RIFARE_LOGIN");
-            }
-        }
-
-        // --- GESTIONE FINALE DEGLI ERRORI ---
-        if (!response.ok) {
-            // ... (Logica di gestione errori standard)
-            throw new Error(`HTTP Error ${response.status}`);
-        }
-
-        return response;
-    }
 }

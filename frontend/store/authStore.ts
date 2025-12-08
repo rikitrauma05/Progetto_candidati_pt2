@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { User } from "@/types/user";
+import axios from "axios";
 
 type Tokens = {
     accessToken: string;
@@ -15,7 +16,7 @@ type AuthState = {
     accessToken: string | null;
     refreshToken: string | null;
 
-    hydrated: boolean; // nuovo flag
+    hydrated: boolean;
 
     login: (user: User, tokens?: Tokens) => void;
     logout: () => void;
@@ -23,12 +24,14 @@ type AuthState = {
     setUser: (user: User | null) => void;
     setTokens: (tokens: Partial<Tokens>) => void;
 
+    refreshAccessToken: () => Promise<string | null>;
+
     setHydrated: (v: boolean) => void;
 };
 
 export const useAuthStore = create<AuthState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             user: null,
             isAuthenticated: false,
             accessToken: null,
@@ -45,7 +48,6 @@ export const useAuthStore = create<AuthState>()(
                 })),
 
             logout: () => {
-
                 set(() => ({
                     user: null,
                     isAuthenticated: false,
@@ -61,7 +63,6 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
-
             setUser: (user) =>
                 set((state) => ({
                     ...state,
@@ -76,6 +77,28 @@ export const useAuthStore = create<AuthState>()(
                     refreshToken: tokens.refreshToken ?? state.refreshToken,
                 })),
 
+            refreshAccessToken: async () => {
+                const refreshToken = get().refreshToken;
+                if (!refreshToken) return null;
+
+                try {
+                    const res = await axios.post(
+                        "http://localhost:8080/api/auth/refresh",
+                        { refreshToken }
+                    );
+
+                    const newAccess = res.data.accessToken;
+
+                    set({ accessToken: newAccess });
+
+                    return newAccess;
+                } catch (err) {
+                    console.log("Refresh token failed", err);
+                    get().logout();
+                    return null;
+                }
+            },
+
             setHydrated: (v) => set({ hydrated: v }),
         }),
 
@@ -89,9 +112,7 @@ export const useAuthStore = create<AuthState>()(
             }),
 
             onRehydrateStorage: () => (state) => {
-                if (state) {
-                    state.setHydrated(true);
-                }
+                if (state) state.setHydrated(true);
             },
         }
     )
