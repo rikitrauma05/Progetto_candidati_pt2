@@ -314,9 +314,12 @@ export default function ProfiloCandidato() {
                         onChange={handleCvChange}
                         className="
                             block w-full text-sm text-white
+                            bg-transparent
+                            border-0
+                            rounded-none
                             file:mr-4 file:py-2 file:px-4
                             file:rounded-lg
-                            file:border file:border-white
+                            file:border file:border-white/60
                             file:text-sm file:font-semibold
                             file:bg-[var(--card)]
                             file:text-white
