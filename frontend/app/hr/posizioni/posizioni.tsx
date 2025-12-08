@@ -31,7 +31,7 @@ export default function PosizioniHR() {
                 setErrore(null);
 
                 // L’HR vede tutte le posizioni presenti a DB
-                const data = await getJson<PosizioneListItem[]>("/posizioni");
+                const data = await getJson<PosizioneListItem[]>("/posizioni/hr/mie");
                 setPosizioni(data ?? []);
             } catch (e: any) {
                 console.error(e);
