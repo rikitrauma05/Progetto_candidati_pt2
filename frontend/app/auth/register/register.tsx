@@ -58,8 +58,40 @@ export default function Register() {
         e.preventDefault();
         setError(null);
 
-        if (form.password !== form.conferma) {
-            setError("Le password non coincidono.");
+        if (!form.dataNascita) {
+            setError("Inserisci la data di nascita.");
+            return;
+        }
+
+        const birthDate = new Date(form.dataNascita);
+        const today = new Date();
+
+        const age = today.getFullYear() - birthDate.getFullYear();
+        const hasBirthdayPassed =
+            today.getMonth() > birthDate.getMonth() ||
+            (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+
+        const realAge = hasBirthdayPassed ? age : age - 1;
+
+        if (realAge < 18) {
+            setError("Per registrarti devi essere maggiorenne.");
+            return;
+        }
+
+        if (!form.telefono) {
+            setError("Inserisci il numero di telefono.");
+            return;
+        }
+
+        const tel = form.telefono.trim();
+
+        if (!/^[0-9]+$/.test(tel)) {
+            setError("Il numero di telefono può contenere solo cifre.");
+            return;
+        }
+
+        if (tel.length !== 10) {
+            setError("Il numero di telefono deve essere valido");
             return;
         }
 
@@ -75,6 +107,11 @@ export default function Register() {
 
         if (!consensoPrivacy) {
             setError("Devi accettare l'informativa sulla privacy per continuare.");
+            return;
+        }
+
+        if (form.password !== form.conferma) {
+            setError("Le password non coincidono.");
             return;
         }
 
