@@ -146,10 +146,6 @@ export default function ProfiloCandidato() {
             await new Promise(resolve => setTimeout(resolve, 150));
 
             const stateAfter = useAuthStore.getState();
-            console.log("Store dopo pulizia:", {
-                hasUser: !!stateAfter.user,
-                hasToken: !!stateAfter.accessToken,
-            });
 
             window.location.replace("/");
 

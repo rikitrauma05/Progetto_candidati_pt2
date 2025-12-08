@@ -47,8 +47,6 @@ async function request<T>(
         headers.set("Authorization", `Bearer ${accessToken}`);
     }
 
-    console.log("[API] request", url, options.method ?? "GET");
-
     const response = await fetch(url, {
         ...options,
         headers,
@@ -173,7 +171,6 @@ export function deleteJson<T, B = unknown>(path: string, body?: B) {
         // o gestirla con una chiamata fetch non intercettata.
 
         if (response.status === 403 && authStore.refreshToken) {
-            console.log("Access Token scaduto o non valido. Tentativo di rinnovo...");
 
             try {
                 // Chiama il servizio di refresh

@@ -9,7 +9,6 @@ import {useAuthStore} from "@/store/authStore";
  */
 export async function fetchPosizioni(): Promise<Posizione[]> {
     const { accessToken } = useAuthStore.getState();
-    console.log("AccessToken:", accessToken);
 
 
     const res = await fetch(`${API_BASE_URL}/posizioni`, {

@@ -158,13 +158,6 @@ export default function Register() {
             await new Promise(resolve => setTimeout(resolve, 100));
 
             const stateAfterLogin = useAuthStore.getState();
-            console.log("Store dopo login:", {
-                hasUser: !!stateAfterLogin.user,
-                hasToken: !!stateAfterLogin.accessToken,
-                isAuthenticated: stateAfterLogin.isAuthenticated,
-                userId: stateAfterLogin.user?.idUtente,
-                tokenMatch: stateAfterLogin.accessToken === resp.accessToken,
-            });
 
             const savedInLocalStorage = localStorage.getItem("auth-storage");
 
