@@ -98,13 +98,16 @@ export default function TentativoTestPage() {
                     // Usiamo il tempo recuperato solo se è positivo
                     if (tempoRecuperato > 0) {
                         tempoIniziale = tempoRecuperato;
+                        console.log(`[Timer] Tempo recuperato: ${tempoIniziale}s`);
                     } else {
                         // Tempo salvato è <= 0, cancelliamo la chiave e usiamo il tempo iniziale
                         localStorage.removeItem(chiaveTempo);
+                        console.log("[Timer] Tempo scaduto o non valido salvato, reset.");
                     }
                 } else {
                     // Se non c'è nulla in storage, salviamo il tempo pieno per la prima volta
                     localStorage.setItem(chiaveTempo, String(tempoIniziale));
+                    console.log(`[Timer] Nuovo test avviato: ${tempoIniziale}s`);
                 }
 
                 setTempoRimanente(tempoIniziale);
@@ -146,6 +149,7 @@ export default function TentativoTestPage() {
                 iniziatoAt: getLocalISOString(iniziatoAt),
                 risposte: payload,
             });
+            console.log("RESPONSE COMPLETATEST:", response);
 
             localStorage.removeItem(getTimerStorageKey(idTest)); // pulisco storage al termine
 
@@ -204,6 +208,7 @@ export default function TentativoTestPage() {
     useEffect(() => {
         if (tempoScaduto) {
             // Se tempoScaduto è TRUE, chiama invia()
+            console.log("[Timer] Tempo scaduto, avvio invio automatico.");
             invia();
         }
     }, [tempoScaduto, invia]);
@@ -264,13 +269,7 @@ export default function TentativoTestPage() {
                         ? "Caricamento del test…"
                         : "Rispondi alle domande entro il tempo a disposizione."
                 }
-                actions={[
-                    {
-                        label: "Esci",
-                        href: "/candidati/posizioni",
-                        variant: "dark",
-                    },
-                ]}
+
             />
 
             {errore && (
