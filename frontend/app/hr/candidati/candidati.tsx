@@ -29,7 +29,7 @@ export default function HrListaPosizioni() {
     // ============================================================
     async function caricaPosizioni() {
         try {
-            const data = await getJson<Posizione[]>("/posizioni");
+            const data = await getJson<Posizione[]>("/posizioni/hr/mie");
             setPosizioni(data);
         } catch {
             setErrore("Impossibile caricare le posizioni.");
