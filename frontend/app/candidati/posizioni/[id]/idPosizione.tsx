@@ -76,7 +76,7 @@ export default function IdPosizionePage() {
                 }
                 actions={[
                     {
-                        label: "Vai alle posizioni",
+                        label: "Torna alle posizioni",
                         href: "/candidati/posizioni",
                         variant: "dark",
                     },
