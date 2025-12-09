@@ -11,23 +11,9 @@ export type PosizioneCardProps = {
     contratto?: string;
     candidature?: number;
     punteggio?: number;
-
-    /**
-     * Slot per bottoni/azioni extra (es. "Candidati", "Vai al test").
-     */
     rightSlot?: React.ReactNode;
-
-    /**
-     * Gestione preferiti:
-     * - se togglePreferitaAction è definito, viene mostrata l'icona.
-     * - isPreferita controlla lo stato grafico (piena/vuota).
-     */
     isPreferita?: boolean;
     togglePreferitaAction?: () => void;
-
-    /**
-     * Se true, la card è cliccabile (es. porta al dettaglio) e usa href.
-     */
     clickable?: boolean;
     href?: string;
 };
@@ -49,9 +35,7 @@ export default function PosizioneCard({
     const canNavigate = clickable && !!href;
 
     const handleActivate = () => {
-        if (canNavigate) {
-            router.push(href!);
-        }
+        if (canNavigate) router.push(href!);
     };
 
     const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -93,7 +77,8 @@ export default function PosizioneCard({
                     {titolo}
                 </h3>
 
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs md:text-sm">
+                {/* PRIMA RIGA: sede + contratto */}
+                <div className="mt-1 flex items-center gap-2 text-xs md:text-sm">
                     {sede && (
                         <span
                             className="
@@ -121,32 +106,31 @@ export default function PosizioneCard({
                             <span className="truncate">{contratto}</span>
                         </span>
                     )}
-
-                    {typeof candidature === "number" && (
-                        <span className="inline-flex items-center gap-1 text-[var(--muted)]">
-                            <span className="h-1 w-1 rounded-full bg-[var(--muted)]" />
-                            {candidature} candidature
-                        </span>
-                    )}
-
-                    {typeof punteggio === "number" && (
-                        <span className="inline-flex items-center gap-1 text-[var(--muted)]">
-                            <span className="h-1 w-1 rounded-full bg-[var(--muted)]" />
-                            Punteggio: <span className="font-medium">{punteggio}</span>
-                        </span>
-                    )}
                 </div>
+
+                {/* SECONDA RIGA: candidature */}
+                {typeof candidature === "number" && (
+                    <div className="mt-1 text-xs md:text-sm text-[var(--muted)]">
+                        • {candidature} candidatura{candidature !== 1 ? "e" : ""}
+                    </div>
+                )}
+
+                {/* SECONDA RIGA (opzionale): punteggio */}
+                {typeof punteggio === "number" && (
+                    <div className="mt-1 text-xs md:text-sm text-[var(--muted)]">
+                        • Punteggio: <span className="font-medium">{punteggio}</span>
+                    </div>
+                )}
             </div>
 
             {/* RIGHT: preferiti + azioni extra */}
             {(togglePreferitaAction || rightSlot) && (
                 <div
                     className="
-                         shrink-0
+                        shrink-0
                         flex items-center justify-end gap-2
                         self-center
                         w-full sm:w-auto
-
                     "
                     onClick={(e) => e.stopPropagation()}
                 >
