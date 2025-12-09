@@ -98,16 +98,13 @@ export default function TentativoTestPage() {
                     // Usiamo il tempo recuperato solo se è positivo
                     if (tempoRecuperato > 0) {
                         tempoIniziale = tempoRecuperato;
-                        console.log(`[Timer] Tempo recuperato: ${tempoIniziale}s`);
                     } else {
                         // Tempo salvato è <= 0, cancelliamo la chiave e usiamo il tempo iniziale
                         localStorage.removeItem(chiaveTempo);
-                        console.log("[Timer] Tempo scaduto o non valido salvato, reset.");
                     }
                 } else {
                     // Se non c'è nulla in storage, salviamo il tempo pieno per la prima volta
                     localStorage.setItem(chiaveTempo, String(tempoIniziale));
-                    console.log(`[Timer] Nuovo test avviato: ${tempoIniziale}s`);
                 }
 
                 setTempoRimanente(tempoIniziale);
@@ -149,15 +146,16 @@ export default function TentativoTestPage() {
                 iniziatoAt: getLocalISOString(iniziatoAt),
                 risposte: payload,
             });
-            console.log("RESPONSE COMPLETATEST:", response);
 
-            localStorage.removeItem(getTimerStorageKey(idTest)); // pulisco storage al termine
+            // Reset totale del timer al momento dell'invio
+            const chiaveTempo = getTimerStorageKey(idTest);
+            localStorage.removeItem(chiaveTempo);
+            localStorage.setItem(chiaveTempo, "");
 
             router.push(
                 `/candidati/test/${idTest}/risultati?idTentativo=${response.idTentativo}`
             );
         } catch (e: any) {
-            console.error("ERRORE INVIO:", e);
             setErrore(e?.message ?? "Errore durante l'invio del test.");
             // RE-IMPOSTO inviatoRef a false in caso di fallimento per permettere ritentativo
             inviatoRef.current = false;
@@ -207,8 +205,6 @@ export default function TentativoTestPage() {
     ---------------------------------------------------------- */
     useEffect(() => {
         if (tempoScaduto) {
-            // Se tempoScaduto è TRUE, chiama invia()
-            console.log("[Timer] Tempo scaduto, avvio invio automatico.");
             invia();
         }
     }, [tempoScaduto, invia]);

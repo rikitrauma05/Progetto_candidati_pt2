@@ -23,6 +23,8 @@ export default function Logout() {
                 logout();      // svuota authStore
                 clearUser();   // svuota userStore
 
+                await new Promise((res) => setTimeout(res, 200));
+
                 // Redirect alla pagina login
                 router.replace("/auth/login");
             }
