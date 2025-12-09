@@ -269,7 +269,13 @@ export default function TentativoTestPage() {
                         ? "Caricamento del test…"
                         : "Rispondi alle domande entro il tempo a disposizione."
                 }
-
+                actions={[
+                    {
+                        label: "Esci",
+                        href: "/candidati/posizioni",
+                        variant: "dark",
+                    },
+                ]}
             />
 
             {errore && (
