@@ -1,11 +1,14 @@
 "use client";
 
+import { useAuthStore } from "@/store/authStore";
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "@/components/layout/pageHeader";
 import EmptyState from "@/components/empty/EmptyState";
 import PosizioneCard from "@/components/cards/posizioneCard";
 import ApplyButton from "@/components/forms/ApplyButton";
 import { getJson } from "@/services/api";
+import { fetchPreferitiUtente, togglePreferito } from "@/services/user.service";
+
 
 type Posizione = {
     idPosizione: number;
@@ -35,15 +38,22 @@ type CandidaturaMia = {
 };
 
 export default function PosizioniCandidato() {
+    const { user } = useAuthStore();
     const [posizioni, setPosizioni] = useState<Posizione[]>([]);
     const [idPosizioniCandidate, setIdPosizioniCandidate] = useState<number[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [errore, setErrore] = useState<string | null>(null);
 
+
+
     // filtri
     const [search, setSearch] = useState("");
     const [filtroSede, setFiltroSede] = useState<string>("tutte");
     const [filtroContratto, setFiltroContratto] = useState<string>("tutti");
+    const [preferiti, setPreferiti] = useState<number[]>([]);
+    const [mostraSoloPreferiti, setMostraSoloPreferiti] = useState(false);
+
+
 
     useEffect(() => {
         const load = async () => {
@@ -51,26 +61,35 @@ export default function PosizioniCandidato() {
                 setLoading(true);
                 setErrore(null);
 
-                // Carico posizioni e mie candidature insieme
-                const [posizioniApi, candidatureApi] = await Promise.all([
+                if (!user) {
+                    setErrore("Utente non autenticato.");
+                    return;
+                }
+
+                const idUtente = user.idUtente;
+
+                // Carico posizioni, candidature e preferiti in parallelo
+                const [posizioniApi, candidatureApi, preferitiApi] = await Promise.all([
                     getJson<Posizione[]>("/posizioni"),
                     getJson<CandidaturaMia[]>("/candidature/mie"),
+                    fetchPreferitiUtente(idUtente),
                 ]);
 
                 setPosizioni(posizioniApi ?? []);
 
-                // estraggo gli id delle posizioni per cui SONO già candidato
-                const ids = (candidatureApi ?? [])
+                // ID posizioni candidate
+                const idsCandidature = (candidatureApi ?? [])
                     .map((c) => c.posizione?.idPosizione)
                     .filter((id): id is number => typeof id === "number");
 
-                // rimuovo eventuali duplicati
-                setIdPosizioniCandidate(Array.from(new Set(ids)));
+                setIdPosizioniCandidate(Array.from(new Set(idsCandidature)));
+
+                // ID preferiti da backend
+                setPreferiti(preferitiApi.map(p => p.idPosizione));
+
             } catch (e: any) {
                 console.error("Errore durante il caricamento delle posizioni:", e);
-                setErrore(
-                    e?.message ||
-                    "Si è verificato un errore durante il caricamento delle posizioni.",
+                setErrore(e?.message || "Si è verificato un errore durante il caricamento delle posizioni."
                 );
             } finally {
                 setLoading(false);
@@ -78,7 +97,8 @@ export default function PosizioniCandidato() {
         };
 
         void load();
-    }, []);
+    }, [user]);
+
 
     // opzioni filtri ricavate dai dati
     const sediDisponibili = useMemo(
@@ -108,12 +128,15 @@ export default function PosizioniCandidato() {
     const posizioniFiltrate = useMemo(
         () =>
             posizioni.filter((p) => {
-                // 1) escludo subito le posizioni per cui sono già candidato
                 if (idPosizioniCandidate.includes(p.idPosizione)) {
                     return false;
                 }
 
-                // 2) applico i filtri di ricerca
+                // filtro solo preferiti
+                if (mostraSoloPreferiti && !preferiti.includes(p.idPosizione)) {
+                    return false;
+                }
+
                 const matchTitolo = p.titolo
                     .toLowerCase()
                     .includes(search.toLowerCase().trim());
@@ -128,8 +151,17 @@ export default function PosizioniCandidato() {
 
                 return matchTitolo && matchSede && matchContratto;
             }),
-        [posizioni, search, filtroSede, filtroContratto, idPosizioniCandidate],
+        [posizioni, search, filtroSede, filtroContratto, idPosizioniCandidate, mostraSoloPreferiti, preferiti],
     );
+
+
+    const togglePreferita = (id: number) => {
+        setPreferiti(prev =>
+            prev.includes(id)
+                ? prev.filter(x => x !== id)
+                : [...prev, id]
+        );
+    };
 
     if (loading) {
         return (
@@ -143,6 +175,24 @@ export default function PosizioniCandidato() {
                 </p>
             </div>
         );
+    }
+
+    async function handleTogglePreferito(idPosizione: number) {
+        if (!user) return;
+
+        const isFav = preferiti.includes(idPosizione);
+
+        try {
+            await togglePreferito(user.idUtente, idPosizione, isFav);
+
+            setPreferiti(prev =>
+                isFav
+                    ? prev.filter(id => id !== idPosizione)
+                    : [...prev, idPosizione]
+            );
+        } catch (e) {
+            console.error("Errore toggle preferito:", e);
+        }
     }
 
     return (
@@ -161,7 +211,8 @@ export default function PosizioniCandidato() {
             <div className="max-w-5xl mx-auto space-y-4">
                 {/* FILTRI */}
                 {!errore && posizioni.length > 0 && (
-                    <div className="rounded-2xl border border-border bg-[var(--card)] p-4 grid gap-3 md:grid-cols-3">
+                    <div className="rounded-2xl border border-border bg-[var(--card)] p-4 grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+
                         <div className="md:col-span-1">
                             <label className="block text-xs font-medium text-[var(--muted)] mb-1">
                                 Cerca per titolo
@@ -212,6 +263,20 @@ export default function PosizioniCandidato() {
                                 ))}
                             </select>
                         </div>
+                        <div className="flex items-end justify-end">
+                            <button
+                                onClick={() => setMostraSoloPreferiti(prev => !prev)}
+                                className={`
+                                    p-2 rounded-full border transition
+                                    ${mostraSoloPreferiti
+                                    ? "bg-red-500/20 border-red-500 text-red-400"
+                                    : "bg-[var(--background)] border-border text-[var(--muted)]"}`}
+                                title="Mostra solo preferiti"
+                            >
+                                {mostraSoloPreferiti ? "♥" : "♡"}
+                            </button>
+                        </div>
+
                     </div>
                 )}
 
@@ -236,13 +301,14 @@ export default function PosizioniCandidato() {
                                 titolo={p.titolo}
                                 sede={p.sede}
                                 contratto={p.contratto}
-                                // candidature={p.candidatureRicevute}   ← RIMOSSA
                                 clickable
                                 href={`/candidati/posizioni/${p.idPosizione}`}
                                 rightSlot={<ApplyButton idPosizione={p.idPosizione} />}
+                                isPreferita={preferiti.includes(p.idPosizione)}
+                                togglePreferitaAction={() => handleTogglePreferito(p.idPosizione)}
                             />
-
                         ))}
+
                     </div>
                 )}
             </div>

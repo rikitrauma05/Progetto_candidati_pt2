@@ -1,8 +1,9 @@
 // frontend/services/user.service.ts
-import {API_BASE_URL, deleteJson, getJson, postJson, putJson} from "./api"; // presuppone che tu abbia queste funzioni
+import {API_BASE_URL, deleteJson, getJson, postJson, putJson} from "./api";
 import type { UserProfile } from "@/store/userStore";
 import type { UpdateProfiloCandidatoRequest, UpdatePasswordRequest } from "@/types/user";
 import { useAuthStore } from "@/store/authStore";
+import {Posizione} from "@/types/posizione";
 
 export type Candidato = {
     idCandidato: number;
@@ -167,4 +168,71 @@ export async function updateCandidato(
  */
 export async function deleteCandidato(id: number): Promise<void> {
     return deleteJson<void>(`/hr/candidati/${id}`);
+}
+
+/**
+ * Ritorna la lista dei preferiti dell’utente
+ */
+export async function fetchPreferitiUtente(idUtente: number): Promise<Posizione[]> {
+    const { accessToken } = useAuthStore.getState();
+
+    const res = await fetch(`${API_BASE_URL}/utenti/${idUtente}/preferiti`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    const text = await res.text();
+    console.log("Raw preferiti:", text);  // <-- vedi cosa arriva realmente
+
+    if (!res.ok) throw new Error(`Errore HTTP ${res.status}`);
+
+    return JSON.parse(text);  // invece di res.json(), così vedi se fallisce
+}
+
+/**
+ * Aggiunge una posizione ai preferiti
+ */
+export async function addPreferito(idUtente: number, idPosizione: number): Promise<void> {
+    const { accessToken } = useAuthStore.getState();
+
+    const res = await fetch(`${API_BASE_URL}/utenti/${idUtente}/preferiti/${idPosizione}`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    if (!res.ok) throw new Error(`Errore HTTP ${res.status}`);
+}
+
+/**
+ * Rimuove una posizione dai preferiti
+ */
+export async function removePreferito(idUtente: number, idPosizione: number): Promise<void> {
+    const { accessToken } = useAuthStore.getState();
+
+    const res = await fetch(`${API_BASE_URL}/utenti/${idUtente}/preferiti/${idPosizione}`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    if (!res.ok) throw new Error(`Errore HTTP ${res.status}`);
+}
+
+/**
+ * Toggle comodo
+ */
+export async function togglePreferito(
+    idUtente: number,
+    idPosizione: number,
+    isCurrentlyPreferita: boolean
+) {
+    if (isCurrentlyPreferita) {
+        return removePreferito(idUtente, idPosizione);
+    } else {
+        return addPreferito(idUtente, idPosizione);
+    }
 }

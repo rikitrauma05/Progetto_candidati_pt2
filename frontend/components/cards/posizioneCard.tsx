@@ -1,7 +1,7 @@
 "use client";
 
 import React, { KeyboardEvent } from "react";
-import { Star } from "lucide-react";
+import { Heart } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export type PosizioneCardProps = {
@@ -11,9 +11,23 @@ export type PosizioneCardProps = {
     contratto?: string;
     candidature?: number;
     punteggio?: number;
+
+    /**
+     * Slot per bottoni/azioni extra (es. "Candidati", "Vai al test").
+     */
     rightSlot?: React.ReactNode;
+
+    /**
+     * Gestione preferiti:
+     * - se togglePreferitaAction è definito, viene mostrata l'icona.
+     * - isPreferita controlla lo stato grafico (piena/vuota).
+     */
     isPreferita?: boolean;
     togglePreferitaAction?: () => void;
+
+    /**
+     * Se true, la card è cliccabile (es. porta al dettaglio) e usa href.
+     */
     clickable?: boolean;
     href?: string;
 };
@@ -35,7 +49,9 @@ export default function PosizioneCard({
     const canNavigate = clickable && !!href;
 
     const handleActivate = () => {
-        if (canNavigate) router.push(href!);
+        if (canNavigate) {
+            router.push(href!);
+        }
     };
 
     const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -53,22 +69,23 @@ export default function PosizioneCard({
             onClick={handleActivate}
             onKeyDown={handleKeyDown}
             className="
-                group
-                rounded-2xl border border-[color-mix(in_srgb,var(--border)_70%,transparent)]
-                bg-[color-mix(in_srgb,var(--surface)_85%,transparent)]
-                px-4 py-3 md:px-5 md:py-4
-                shadow-sm
-                flex flex-col gap-3
-                sm:flex-row sm:items-center sm:justify-between
-                hover:border-[var(--accent)]
-                hover:bg-[color-mix(in_srgb,var(--surface)_95%,transparent)]
-                hover:shadow-md
-                hover:-translate-y-0.5
-                transition-all duration-200
-                outline-none
-                focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2
-                focus-visible:ring-offset-[var(--background)]
-            "
+                    relative
+                    group
+                    rounded-2xl border border-[color-mix(in_srgb,var(--border)_70%,transparent)]
+                    bg-[color-mix(in_srgb,var(--surface)_85%,transparent)]
+                    px-4 py-3 md:px-5 md:py-4
+                    shadow-sm
+                    flex flex-col gap-3
+                    sm:flex-row sm:items-center sm:justify-between
+                    hover:border-[var(--accent)]
+                    hover:bg-[color-mix(in_srgb,var(--surface)_95%,transparent)]
+                    hover:shadow-md
+                    hover:-translate-y-0.5
+                    transition-all duration-200
+                    outline-none
+                    focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2
+                    focus-visible:ring-offset-[var(--background)]
+                "
             style={canNavigate ? { cursor: "pointer" } : undefined}
         >
             {/* LEFT: info posizione */}
@@ -77,8 +94,7 @@ export default function PosizioneCard({
                     {titolo}
                 </h3>
 
-                {/* PRIMA RIGA: sede + contratto */}
-                <div className="mt-1 flex items-center gap-2 text-xs md:text-sm">
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs md:text-sm">
                     {sede && (
                         <span
                             className="
@@ -106,32 +122,33 @@ export default function PosizioneCard({
                             <span className="truncate">{contratto}</span>
                         </span>
                     )}
+
+                    {typeof candidature === "number" && (
+                        <span className="inline-flex items-center gap-1 text-[var(--muted)]">
+                            <span className="h-1 w-1 rounded-full bg-[var(--muted)]" />
+                            {candidature} candidature
+                        </span>
+                    )}
+
+                    {typeof punteggio === "number" && (
+                        <span className="inline-flex items-center gap-1 text-[var(--muted)]">
+                            <span className="h-1 w-1 rounded-full bg-[var(--muted)]" />
+                            Punteggio: <span className="font-medium">{punteggio}</span>
+                        </span>
+                    )}
                 </div>
-
-                {/* SECONDA RIGA: candidature */}
-                {typeof candidature === "number" && (
-                    <div className="mt-1 text-xs md:text-sm text-[var(--muted)]">
-                        • {candidature} candidatura{candidature !== 1 ? "e" : ""}
-                    </div>
-                )}
-
-                {/* SECONDA RIGA (opzionale): punteggio */}
-                {typeof punteggio === "number" && (
-                    <div className="mt-1 text-xs md:text-sm text-[var(--muted)]">
-                        • Punteggio: <span className="font-medium">{punteggio}</span>
-                    </div>
-                )}
             </div>
 
             {/* RIGHT: preferiti + azioni extra */}
             {(togglePreferitaAction || rightSlot) && (
                 <div
                     className="
-                        shrink-0
-                        flex items-center justify-end gap-2
-                        self-center
-                        w-full sm:w-auto
-                    "
+                                relative
+                                shrink-0
+                                flex flex-col items-end gap-2
+                                w-full sm:w-auto
+                                pt-10   /* aggiunto: spazio per l’icona preferiti */
+                            "
                     onClick={(e) => e.stopPropagation()}
                 >
                     {togglePreferitaAction && (
@@ -139,23 +156,18 @@ export default function PosizioneCard({
                             type="button"
                             onClick={() => togglePreferitaAction()}
                             aria-pressed={isPreferita}
-                            aria-label={
-                                isPreferita
-                                    ? "Rimuovi dai preferiti"
-                                    : "Aggiungi ai preferiti"
-                            }
+                            aria-label={isPreferita ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti"}
                             className={`
-                                inline-flex h-9 w-9 items-center justify-center
-                                rounded-full border transition-all duration-150
-                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]
-                                ${
-                                isPreferita
-                                    ? "bg-[var(--accent)]/15 border-[var(--accent)] text-[var(--accent)]"
-                                    : "bg-transparent border-[color-mix(in_srgb,var(--border)_70%,transparent)] text-[var(--muted)] hover:bg-white/5"
-                            }
-                            `}
+                                        absolute top-0 right-0
+                                        inline-flex h-9 w-9 items-center justify-center
+                                        rounded-full border transition-all duration-150
+                                        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--accent)]
+                            ${isPreferita
+                                        ? "bg-[var(--accent)]/15 border-[var(--accent)] text-[var(--accent)]"
+                                        : "bg-transparent border-[color-mix(in_srgb,var(--border)_70%,transparent)] text-[var(--muted)] hover:bg-white/5"
+                            }`}
                         >
-                            <Star
+                            <Heart
                                 size={20}
                                 strokeWidth={2}
                                 className={isPreferita ? "fill-current" : "fill-none"}
@@ -163,8 +175,9 @@ export default function PosizioneCard({
                         </button>
                     )}
 
+
                     {rightSlot && (
-                        <div className="flex flex-wrap justify-end gap-1 w-full sm:justify-center">
+                        <div className="flex flex-wrap justify-end gap-1 w-full sm:justify-center mt-6">
                             {rightSlot}
                         </div>
                     )}
